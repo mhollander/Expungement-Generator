@@ -1,0 +1,144 @@
+.form-item {
+	margin-top: .5em;
+	margin-bottom: .5em;
+}
+
+.form-sub-item {
+	margin-top: 0em;
+	margin-bottom: 0em;
+}
+
+.form-item label {
+display: block;
+font-weight: bold;
+}
+
+.boldLabel {
+font-weight: bold;
+}
+
+ul.no-indent {
+list-style-type: none;
+padding: 0;
+margin-left: 0;
+}
+
+.form-item .description {
+font-size: 80%;
+line-height: 130%;
+font-style:italic;
+display: block;
+}
+
+
+.form-text {
+	font-family: Arial,Helvetica,Verdana,"Bitstream Vera Sans",sans-serif;
+	padding: 2px;
+	width: 130px; /* note: this should be tied to the form-item-column width */
+}
+
+.form-text-area-big {
+	height: 150px;
+	width: 300px;
+}
+
+.form-text-area-small {
+	height: 50px;
+	width: 300px;
+}
+
+.form-text-state {
+width: 30px; /* note: this should be tied to the form-itm-column-state width */
+}
+
+.form-text-zip {
+width: 60px;
+}
+
+.form-item-column {
+float: left;
+padding-right: 15px;
+width: 130px;  /* note: this should be tied to the form-text width */
+}
+
+.form-item-column-state{
+float: left;
+padding-right: 15px;
+width: 30px;  /* note: this should be tied to the form-text-state width */
+}
+
+
+.no-float {
+float: right;
+}
+
+.space-line {
+clear:both;
+margin: 0;
+padding: 0;
+width: auto;
+}
+
+
+.content-left {
+float: left;
+width: 30%;
+/* background: green;*/
+}
+
+.content-center {
+float: left;
+width: 45%;
+/* background: blue;*/
+}
+
+.content-right{
+float: left;
+width: 25%;
+/* background: red;*/
+}
+
+.header {
+padding-left: 5px;
+padding-top: 4px;
+padding-bottom: 2px;	
+}
+
+.headerLine {
+border-bottom: 2px solid darkGrey;
+clear: both;
+padding: 0;
+height: 3px;
+}
+
+.header-left {
+
+width: 50%;
+float: left;
+}
+
+.header-right {
+width: 50%;
+float: left;
+text-align: right;
+}
+
+.disclaimer {
+}
+
+.titleMessage {
+font-weight: bold;
+font-size: 125%;
+margin-bottom: 5px;
+}
+
+.item {
+}
+
+.guideStep{
+	font-weight: bold;
+}
+
+.guideStepDesc {
+	display: none;
+}
