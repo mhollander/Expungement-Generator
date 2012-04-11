@@ -61,6 +61,14 @@ else
 	else
 		print "<div><b>No expungeable or redactable offenses found for this individual.</b></div>";
 
+		
+	// write everything to the DB as long as this wasn't a "test" upload.
+	// we determine test upload if a SSN is entered.  If there is no SSN, we assume that 
+	// there was no expungement either - it was just a test to see whether expungements were
+	// possible or a test of the generator itself by yours truly.
+	if (isset($urlPerson['SSN']) && $urlPerson['SSN'] != "")
+		writeExpungementsToDatabase($arrests, $person, $attorney, $db);
+	
 	// if we are debuging, display the expungements
 	if ($GLOBALS['debug']) 
 		screenDisplayExpungements($arrests);
@@ -170,6 +178,18 @@ else
 			if ($arrestSummary->getPID() != null && $arrestSummary->getPID() != "")
 				$person->setPP($arrestSummary->getPID());
 		}
+		
+		// finally, integrate the DOB from the arrests into the person
+		foreach ($arrests as $arrest)
+		{
+			$DOB = $arrest->getDOB();
+			if($DOB != null and $DOB != "")
+			{
+				$person->setDOB($DOB);
+				return;
+			}
+		}
+		
 	}
 		
 	
@@ -242,6 +262,25 @@ else
 		$odf->saveToDisk($outputFile);	
 		
 		return $outputFile;
+	}
+	
+	// writes the expungements to the database
+	// @return none
+	function writeExpungementsToDatabase($arrests, $person, $attorney, $db)
+	{
+		// if this isn't a CLS lawyer, then just return
+		if ($attorney->getProgramID() != 1)
+			return;
+		
+		// otherwise, write the defendant into the db if he doesn't already exist
+		$person->writePersonToDB($db);
+		
+		// and then for each arrest, write the arrest into the database as well
+		foreach ($arrests as $arrest)
+		{
+			$arrest->writeExpungementToDatabase($person, $attorney, $db);
+		}
+		return;
 	}
 	
 	// prints out the expungement data to the screen

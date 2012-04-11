@@ -9,6 +9,7 @@ class Charge
 	private $isRedactable;
 	private $isSummaryRedactable;
 	private $isARD;
+	private $grade;
 	
 	public function __construct($chargeName, $disposition, $codeSection, $dispDate)
 	{
@@ -25,6 +26,7 @@ class Charge
 	public function setIsRedactable($isRedactable) { $this->isRedactable=$isRedactable; }
 	public function setIsSummaryRedactable($isRedactable) { $this->isSummaryRedactable=$isRedactable; }
 	public function setIsARD($isARD) { $this->isARD=$isARD; }
+	public function setGrade($grade) { $this->grade=$grade; }
 
 	public function getChargeName() { return $this->chargeName; }
 	public function getDisposition() { return $this->disposition; }
@@ -33,6 +35,7 @@ class Charge
 	public function getIsRedactable() { return $this->isRedactable; }
 	public function getIsSummaryRedactable() { return $this->isSummaryRedactable; }
 	public function getIsARD() { return $this->isARD; }
+	public function getGrade() { return $this->grade; }
 	
 	public function isRedactable()
 	{

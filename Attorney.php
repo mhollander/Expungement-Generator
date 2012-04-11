@@ -9,6 +9,7 @@ class Attorney
 	private $userid;
 	private $ifp;
 	private $email;
+	private $programID;
 	
 	public function __construct($userid, $db) 
 	{
@@ -23,7 +24,7 @@ class Attorney
 	public function setUserID($userid) { $this->userid = $userid; }
 	public function setIFP($ifp) { $this->ifp = $ifp; }
 	public function setEmail($email) { $this->email = $email; }
-	
+	public function setProgramID($programID) { $this->programID = $programID; }
 	// getters
 	public function getFirstName() { return $this->firstName; }
 	public function getLastName() { return $this->lastName; }
@@ -32,6 +33,7 @@ class Attorney
 	public function getUserID() { return $this->userid; }
 	public function getIFP() { return $this->ifp; }
 	public function getEmail() { return $this->email; }
+	public function getProgramID() { return $this->programID; }
 	
 	// Sets the attorney information by taking a userID, connecting to the database, and pulling
 	// the attorney information from the database.  Requires a db handle to be passed in.
@@ -39,7 +41,7 @@ class Attorney
 	{
 		if (isset($this->userid))
 		{
-			$query = "SELECT * FROM user, userinfo WHERE user.userid='".$this->userid."' AND user.userid=userinfo.userid";
+			$query = "SELECT * FROM user, userinfo, program WHERE user.userid='".$this->userid."' AND user.userid=userinfo.userid AND program.programID=userinfo.programID";
 			$result = mysql_query($query, $db);
 			if (!$result) 
 			{
@@ -55,6 +57,7 @@ class Attorney
 			$this->setPetitionSignature($row['petitionSignature']);
 			$this->setIFP($row['ifp']);
 			$this->setEmail($row['email']);			
+			$this->setProgramID($row['programID']);
 			
 			mysql_free_result($result);
 			}

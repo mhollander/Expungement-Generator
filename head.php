@@ -5,8 +5,6 @@
 	<head>
 		<meta http-equiv="content-type" content="text/html;charset=utf-8" />
 		<link rel="stylesheet" href="css/expStyle.css?reload" type="text/css" media="all" /> 
-		<script src="http://code.jquery.com/jquery-latest.js"></script>
-		<script src="js/eg.js"></script>
 		<title>Expungement Generator</title>
 	</head>
 	<body>

@@ -115,3 +115,16 @@ function dateDifference($date1, $date2)
 		return $difference-1;
 	
 }
+
+// @return a date in the form YYYY-MM-DD
+// @param a date in the form MM/DD/YYYY
+function dateConvert($docketDate)
+{
+	if (preg_match("/\d{1,2}\/\d{1,2}\/\d{2,4}/",$docketDate))
+	{
+		$mysqlDate = new DateTime($docketDate);
+		return $mysqlDate->format('Y-m-d');
+	}
+	else
+		return ("0000-00-00");
+}

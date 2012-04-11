@@ -1,5 +1,5 @@
 <?php
-
+	// @@@@@@@@ TODO - Add extra columns to the arrest column to see if expungement, summary, ard, etc...
 	// @todo pick up judge and case number from MC case and put on petition and order
 	// @todo make aliases work
 	// @todo detect non-philly cases and exclude them?  note them?
@@ -236,7 +236,7 @@ class Arrest
 		}
 	}
 	
-	
+	// @return the first docket number on the array, which should be the CP or lead docket num
 	public function getFirstDocketNumber() 
 	{
 		
@@ -835,7 +835,7 @@ class Arrest
 			print $this->getTemplateName($attorney->getIFP());
 		
 		if ($GLOBALS['debug'])
-			print ($this->isArrestExpungement() || $this->isArrestSummaryExpungement())?("Performing Expungement"):("Performing Redaction");
+			print ($this->isArrestExpungement() || $this->isArrestSummaryExpungement)?("Performing Expungement"):("Performing Redaction");
 		
 		// set attorney variables
 		$odf->setVars("ATTORNEY_HEADER", $attorney->getPetitionHeader());
@@ -1093,7 +1093,6 @@ class Arrest
 
 	}
 	
-	
 	public function simplePrint()
 	{
 		echo "<div>Docket #:";
@@ -1127,9 +1126,132 @@ class Arrest
 		echo "</div><div>";
 		echo "Costs Paid: " . $this->getCostsPaid();
 		echo "</div>";
+	}
+	
+					
+	public function writeExpungementToDatabase($person, $attorney, $db)
+	{
+		// the defendant has already been inserted
+		// next insert the arrest, which includes the defendant ID
+		// next insert each charge, which includes the arrest id and the defendant ID
+		// finally insert the expungement, which includes the arrest id, the defendant id, the chargeid, the userid, and a timestamp
+		$defendantID = $person->getPersonID();
+		$attorneyID = $attorney->getUserID();
+		$arrestID = $this->writeArrestToDatabase($defendantID, $db);
 
+		// we only want to write an expungement to the database if this is a redactable arrest
+		if ($this->isArrestExpungement() || $this->isArrestRedaction() || $this->isArrestSummaryExpungement)
+			$expungementID = $this->writeExpungementDataToDatabase($arrestID, $defendantID, $attorneyID, $db);
+		else
+			$expungementID = "NULL";
+			
+		$numRedactableCharges = 0;
+		foreach ($this->getCharges() as $charge)
+		{
+			// if the charge isn't redactable, we don't want to include an expungement ID
+			// The expungementID may be placed on other charges from the same arrest.
+			// We use a tempID so that we don't change the value of the main variable each time 
+			// through the loop.
+			// If we are a redactable charge, increment the counter.
+			$tempExpungementID = $expungementID;
+			if (!$charge->isRedactable() && !$this->isArrestSummaryExpungement)
+				$tempExpungementID = "NULL";
+			else
+				$numRedactableCharges++;
+				
+			$chargeID = $this->writeChargeToDatabase($charge, $arrestID, $defendantID, $tempExpungementID, $db);
+		}
+		
+		$this->updateExpungementWithNumCharges($expungementID, $numRedactableCharges, $db);
+		
+	}
+	
+	// @return the id of the arrest just inserted into the database
+	// @param $defendantID - the id of the defendant that this arrest concerns
+	// @param $db - the database handle
+	public function writeArrestToDatabase($defendantID, $db)
+	{
+		$sql = "INSERT INTO arrest (`defendantID`, `OTN` ,`DC` ,`docketNumPrimary` ,`docketNumRelated` ,`arrestingOfficer` ,`arrestDate` ,`dispositionDate` ,`judge` ,`costsTotal` ,`costsPaid` ,`costsCharged` ,`costsAdjusted` ,`bailTotal` ,`bailCharged` ,`bailPaid` ,`bailAdjusted` ,`bailTotalToal` ,`bailChargedTotal` ,`bailPaidTotal` ,`bailAdjustedTotal` ,`isARD` ,`isSummary` ,`county` ,`policeLocality`) VALUES ('$defendantID', '" . $this->getOTN() . "', '" . $this->getDC() . "', '" . $this->getFirstDocketNumber() . "', '" . implode("|", $this->getDocketNumber()) . "', '" . $this->getArrestingOfficer() . "', '" . dateConvert($this->getArrestDate()) . "', '" . dateConvert($this->getDispositionDate()) . "', '" . $this->getJudge() . "', '" . $this->getCostsTotal() . "', '" . $this->getCostsPaid() . "', '" . $this->getCostsCharged() . "', '" . $this->getCostsAdjusted() . "', '" . $this->getBailTotal() . "', '" . $this->getBailCharged() . "', '" . $this->getBailPaid() . "', '" . $this->getBailAdjusted() . "', '" . $this->getBailTotalTotal() . "', '" . $this->getBailChargedTotal() . "', '" . $this->getBailPaidTotal() . "', '" . $this->getBailAdjustedTotal() . "', '" . $this->getIsARDExpungement() . "', '" . $this->getIsSummaryArrest() . "', '" . $this->getCounty() . "', '" . $this->getArrestingAgency() . "')";
+
+		if ($GLOBALS['debug'])
+			print $sql;
+		$result = mysql_query($sql, $db);
+		if (!$result) 
+		{
+			if ($GLOBALS['debug'])
+				die('Could not add the arrest to the DB:' . mysql_error());
+			else
+				die('Could not add the arrest to the DB');
+		}
+		return mysql_insert_id();
+	}
+	
+	// @return the id of the charge just inserted into the database
+	// @param $defendantID - the id of the defendant that this arrest concerns
+	// @param $db - the database handle
+	// @param $charge - the charge that we are inserting
+	// @param $arrestID - the id of the arrest that we are innserting
+	public function writeChargeToDatabase($charge, $arrestID, $defendantID, $expungementID, $db)
+	{
+		$sql = "INSERT INTO charge (`arrestID`, `defendantID`, `expungementID`, `chargeName`, `disposition`, `codeSection`, `dispDate`, `isARD`, `isExpungeableNow`, `grade`, `arrestDate`) VALUES ('$arrestID', '$defendantID', $expungementID, '" . $charge->getChargeName() . "', '" . $charge->getDisposition() . "', '" . $charge->getCodeSection() . "', '" . dateConvert($charge->getDispDate()) . "', '" . $charge->getIsARD() . "', '" . $charge->getIsRedactable() . "', '" . $charge->getGrade() . "', '" . dateConvert($this->getArrestDate()) . "')";
+		
+		$result = mysql_query($sql, $db);
+		if (!$result) 
+		{
+			if ($GLOBALS['debug'])
+				die('Could not add the arrest to the DB:' . mysql_error());
+			else
+				die('Could not add the arrest to the DB');
+		}
+		return mysql_insert_id();
+	}
+	
+	// @return the expungementID
+	// @param $defendantID - the id of the defendant that this arrest concerns
+	// @param $db - the database handle
+	// @param $arrestID - the id of the arrest that we are innserting
+	// @param $chargeID - the id of the charge that we are innserting
+	public function writeExpungementDataToDatabase($arrestID, $defendantID, $attorneyID, $db)
+	{
+		$sql  = "INSERT INTO  expungement (`arrestID`, `defendantID`, `userid`, `isExpungement`, `isRedaction`, `isSummaryExpungement`, `timestamp`) VALUES ('$arrestID',  '$defendantID', '$attorneyID', '" . $this->isArrestExpungement() . "', '" . $this->isArrestRedaction() . "', '" . $this->isArrestSummaryExpungement ."', CURRENT_TIMESTAMP)";
+
+		$result = mysql_query($sql, $db);
+		if (!$result) 
+		{
+			if ($GLOBALS['debug'])
+				die('Could not add the expungement to the DB:' . mysql_error());
+			else
+				die('Could not add the expungement to the DB');
+		}
+		return mysql_insert_id();
+	
+	}
+
+	// @return none
+	// @function updateExpungementWithNumCharges - updates the expungement table with the 
+	// number of charges that were expungeable
+	// @param $expungementID The id of the expungement that we want to update.  Will be "NULL" if there is no expungement to update.
+	// @param $numRedactableCharges The number of charges that we want to redact.  Will be zero if there are no charges.
+	// @param $db - the database handle
+	public function updateExpungementWithNumCharges($expungementID, $numRedactableCharges, $db)
+	{
+		if ($expungementID != "NULL" && $numRedactableCharges > 0)
+		{		
+			$sql  = "UPDATE expungement SET numRedactableCharges=$numRedactableCharges WHERE expungementID=$expungementID";
+			
+			$result = mysql_query($sql, $db);
+			if (!$result) 
+			{
+				if ($GLOBALS['debug'])
+					die('Could not update the expungement with the number of arrests:' . mysql_error());
+				else
+					die('Could not update the expungement with the number of arrests.');
+			}
+		}
+		return;
 	}
 	
 }  // end class arrest
+
 
 ?>
