@@ -25,6 +25,7 @@ class Attorney
 	public function setIFP($ifp) { $this->ifp = $ifp; }
 	public function setEmail($email) { $this->email = $email; }
 	public function setProgramID($programID) { $this->programID = $programID; }
+
 	// getters
 	public function getFirstName() { return $this->firstName; }
 	public function getLastName() { return $this->lastName; }

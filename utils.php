@@ -112,8 +112,7 @@ function dateDifference($date1, $date2)
 	if (((int)$date1->format('z')) > ((int)$date2->format('z')))
 		return $difference;
 	else
-		return $difference-1;
-	
+		return $difference-1;	
 }
 
 // @return a date in the form YYYY-MM-DD

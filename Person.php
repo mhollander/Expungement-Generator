@@ -15,7 +15,6 @@ class Person
 	private $alias = array();
 	private $personID;
 	private $DOB;
-
 	
 	public function __construct($first, $last, $PP, $SID, $SSN, $street, $street2, $city, $state, $zip, $alias) 
 	{
