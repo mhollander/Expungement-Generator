@@ -135,10 +135,31 @@ margin-bottom: 5px;
 .item {
 }
 
-.guideStep{
-	font-weight: bold;
+hr.guideStepDesc {
+	border: 0;
+	color: #000;
+	background-color: #000;
+	height: 1px;
 }
 
-.guideStepDesc {
-	display: none;
+.guideStep{
+	font-weight: bold;
+	font-size: 1.25em;
+	color: #447bd4;
+	margin-top: 20px;
 }
+
+.guideStep:hover{
+	color: #104ba9;
+	background-color: #8f989f;
+}
+
+div.guideStepDesc {
+	display: none;
+	margin-left: 1em;
+}
+
+ul.guideStepDesc {
+	margin-top: .5em;
+}
+

@@ -1126,6 +1126,7 @@ class Arrest
 		echo "</div><div>";
 		echo "Costs Paid: " . $this->getCostsPaid();
 		echo "</div>";
+<<<<<<< HEAD
 	}
 	
 					
@@ -1252,6 +1253,5 @@ class Arrest
 	}
 	
 }  // end class arrest
-
 
 ?>
