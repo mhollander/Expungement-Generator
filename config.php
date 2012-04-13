@@ -6,7 +6,7 @@
 $debug=FALSE;
 
 // database connection information
-$dbPassword = "xxxxxxxx";
+$dbPassword = "XRNRJR6vHGejwNCp";
 $dbUser = "ronholla_ExpUser";
 $dbName = "ronholla_expungementsite";
 $dbHost = "localhost";
