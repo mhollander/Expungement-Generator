@@ -844,6 +844,8 @@ class Arrest
 		$odf->setVars("ATTORNEY_LAST", $attorney->getLastName());
 		$odf->setVars("ATTORNEY_ELEC_SIG", $attorney->getFirstName() . " " . $attorney->getLastName());
 
+		// set the date.  Format = Month[word] Day[number], Year[4 digit number]
+		$odf->setVars("PETITION_DATE", date("F j, Y"));
 		// set the type of petition
 		if ($newTemplate)
 		{
@@ -1126,7 +1128,6 @@ class Arrest
 		echo "</div><div>";
 		echo "Costs Paid: " . $this->getCostsPaid();
 		echo "</div>";
-<<<<<<< HEAD
 	}
 	
 					
