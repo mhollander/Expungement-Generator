@@ -2,6 +2,7 @@
 	<div class="header-left">
 	<a href="index.php">Home</a>
 	<a href="index.php">Expunge</a>
+	<a href="userguide.php">Help</a>
 	</div>
 	<div class="header-right">
 <?php
