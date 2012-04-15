@@ -10,6 +10,7 @@ class Attorney
 	private $ifp;
 	private $email;
 	private $programID;
+	private $programName;
 	
 	public function __construct($userid, $db) 
 	{
@@ -25,6 +26,7 @@ class Attorney
 	public function setIFP($ifp) { $this->ifp = $ifp; }
 	public function setEmail($email) { $this->email = $email; }
 	public function setProgramID($programID) { $this->programID = $programID; }
+	public function setProgramName($programName) { $this->programName = $programName; }
 
 	// getters
 	public function getFirstName() { return $this->firstName; }
@@ -35,6 +37,7 @@ class Attorney
 	public function getIFP() { return $this->ifp; }
 	public function getEmail() { return $this->email; }
 	public function getProgramID() { return $this->programID; }
+	public function getProgramName() { return $this->programName; }
 	
 	// Sets the attorney information by taking a userID, connecting to the database, and pulling
 	// the attorney information from the database.  Requires a db handle to be passed in.
@@ -59,9 +62,15 @@ class Attorney
 			$this->setIFP($row['ifp']);
 			$this->setEmail($row['email']);			
 			$this->setProgramID($row['programID']);
+			$this->setProgramName($row['programName']);
 			
 			mysql_free_result($result);
 			}
+	}
+	
+	public function getIFPMessage()
+	{
+		return $this->getProgramName() . " is a non-profit legal services organization that provides free legal assistance to low-income individuals.  I, attorney for the petitioner, certify that petitioner meets the financial eligibility standards for representation by " . $this->getProgramName() . " and that I am providing free legal service to petitioner.";
 	}
 	
 	// prints attorney information to the screen in basic format

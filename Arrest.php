@@ -62,7 +62,6 @@ class Arrest
 	public static $ARDexpungementTemplate = "ARDexpungementTemplate.odt";
 	public static $ARDexpungementTemplateIFP = "ARDexpungementTemplateIFP.odt";
 	public static $overviewTemplate = "overviewTemplate.odt";
-	public static $ifpMessage = "Community Legal Services is a non-profit legal services organization that provides free legal assistance to low-income individuals.  I, attorney for the petitioner, certify that petitioner meets the financial eligibility standards for representation by Community Legal Services and that I am providing free legal service to petitioner.";
 	
 	protected static $unknownInfo = "N/A";
 	
@@ -862,7 +861,7 @@ class Arrest
 		}
 		
 		if ($attorney->getIFP())
-			$odf->setVars("IFP_MESSAGE", self::$ifpMessage);
+			$odf->setVars("IFP_MESSAGE", $attorney->getIFPMessage());
 		
 		
 		// setting docket number involves looping through all docket numbers and setting
