@@ -98,7 +98,7 @@ else
 		<div class="guideStep">Step 6: Go to the expungement generator website</div>
 		<div class="guideStepDesc">
 			<hr class="guideStepDesc"/>
-			The expungement generator website can be found at <a href="http://www.ronhollander.com/crepdb" target="_blank">http://www.ronhollander.com/crepdb"</a>.
+			The expungement generator website can be found at <a href="http://www.ronhollander.com/crepdb" target="_blank">http://www.ronhollander.com/crepdb</a>.
 			<ul class="guideStepDesc">
 				<li>If you aren't already logged in, login.</li>
 				<li>Click on the "Expunge" link at the top of the page if you aren't already there:<br/><img border="1" src="images/eg_expungeclick.png"></li>
@@ -109,7 +109,7 @@ else
 		<div class="guideStepDesc">
 			<hr class="guideStepDesc"/>
 			<ul class="guideStepDesc">
-				<li>Put in as much information as you have.  Expungements will be rejected if you are missing any informaiton that is readily obtainable.</li>
+				<li>Put in as much information as you have.  Expungements will be rejected if you are missing any information that is readily obtainable.</li>
 				<li>For the name field, enter the person's real name.  Do not enter any aliases.</li>
 				<li>If there is no SID or PID available for the person, you can leave SID and/or PID blank and the generator will put "N/A" in for them.</li>
 				<li>If you don't know the SID or PID, try calling your local clerk of courts to see if they will give you that information.</li>
