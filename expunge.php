@@ -92,10 +92,10 @@ else
 		// loop over all of the files that we uploaded and read them in to see if they are expungeable
 		foreach($files["userFile"]["tmp_name"] as $file)
 		{
-			$command = $toolsDir . $pdftotext . " -layout \"" . $file . "\" " . $tempFile;
+			$command = $toolsDir . $pdftotext . " -layout \"" . $file . "\" \"" . $tempFile . "\"";
 			system($command, $ret);
 			if($GLOBALS['debug'])
-				print "The pdftotext command: $command <BR />";
+				print "<br>The pdftotext command: $command <BR />";
 			
 			if ($ret == 0)
 			{

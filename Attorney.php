@@ -50,9 +50,9 @@ class Attorney
 			if (!$result) 
 			{
 				if ($GLOBALS['debug'])
-					die('Could not set the Attorney Information from the DB:' . mysql_error());
+					die('Could not get the Attorney Information from the DB:' . mysql_error());
 				else
-					die('Could not set the Attorney Information from the DB');
+					die('Could not get the Attorney Information from the DB');
 			}
 			$row = mysql_fetch_assoc($result);
 			$this->setFirstName($row['firstName']);
