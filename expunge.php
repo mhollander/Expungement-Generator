@@ -57,7 +57,7 @@ else
 
 	print "<div>&nbsp;</div>";
 	if (count($files) > 0)
-		print "<div><b>Download Petitions and Overview: <a href='$baseURL/data/" . basename($zipFile). "'>" . basename($zipFile) . "</a></b></div>";
+		print "<div><b>Download Petitions and Overview: <a href='" .$baseURL . "data/" . basename($zipFile). "'>" . basename($zipFile) . "</a></b></div>";
 	else
 		print "<div><b>No expungeable or redactable offenses found for this individual.</b></div>";
 
