@@ -248,6 +248,7 @@ else
 				if ($arrest->isArrestSummaryExpungement($arrests))
 					$expType = "Summary Expungement";
 				$theArrest->setVars("DOCKET", implode(", ", $arrest->getDocketNumber()));
+				$theArrest->setVars("OTN", $arrest->getOTN());
 				$theArrest->setVars("EXPUNGEMENT_TYPE", $expType);
 				$theArrest->setVars("UNPAID_COSTS", number_format($arrest->getCostsTotal() - $arrest->getBailTotal(),2));
 				$theArrest->setVars("BAIL",number_format($arrest->getBailTotalTotal(),2));
