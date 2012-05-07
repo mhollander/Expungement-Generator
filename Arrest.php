@@ -78,8 +78,8 @@ class Arrest
 	protected static $DOBSearch = "/Date Of Birth:?\s+(\d{1,2}\/\d{1,2}\/\d{4})/i";
 	protected static $nameSearch = "/^Defendant\s+(.*), (.*)/";
 
-	// ($1 = charge, $2 = disposition, $3 = code section
-	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Guilty|Not Guilty|Nolle Prossed|Guilty Plea|Guilty Plea - Negotiated|Withdrawn|Charge Changed|Held for Court|Dismissed - Rule 1013 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Judgment of Acquittal \(Prior to)\s+\w{0,2}\s+(\w{1,2}\247\d+(\-|\247|\w+)*)/"; // removed "Replacement by Information"
+	// ($1 = charge, $2 = disposition, $3 = grade, $4 = code section
+	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Guilty|Not Guilty|Nolle Prossed|Guilty Plea|Guilty Plea - Negotiated|Withdrawn|Charge Changed|Held for Court|Dismissed - Rule 1013 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Judgment of Acquittal \(Prior to)\s+(\w{0,2})\s+(\w{1,2}\247\d+(\-|\247|\w+)*)/"; // removed "Replacement by Information"
 	protected static $chargesSearchOverflow = "/^\s+(\w+\s*\w*)\s*$/";
 	// disposition date can appear in two different ways (that I have found):
 	// 1) it can appear on its own line, on a line that looks like: 
@@ -371,9 +371,8 @@ class Arrest
 				else
 					$dispositionDate = NULL;
 					
-				$charge = new Charge($charge, $matches[2], trim($matches[3]), trim($dispositionDate));
+				$charge = new Charge($charge, $matches[2], trim($matches[4]), trim($dispositionDate), trim($matches[3]));
 				$this->addCharge($charge);
-				
 			}
 			
 			else if (preg_match(self::$bailSearch, $line, $matches))
@@ -1067,12 +1066,16 @@ class Arrest
 				
 			$theCharges->CHARGE($charge->getChargeName());
 			$theCharges->CODE_SEC($charge->getCodeSection());
+			if ($newTemplate)
+				$theCharges->GRADE($charge->getGrade());
 			$theCharges->DISP($charge->getDisposition());
 			$theCharges->DISP_DATE($dispDate);
 			$theCharges->merge();
 
 			$theCharges1->CHARGE1($charge->getChargeName());
 			$theCharges1->CODE_SEC1($charge->getCodeSection());
+			if ($newTemplate)
+				$theCharges1->GRADE($charge->getGrade());
 			$theCharges1->DISP1($charge->getDisposition());
 			$theCharges1->DISP_DATE1($dispDate);
 			$theCharges1->merge();
