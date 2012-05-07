@@ -11,12 +11,13 @@ class Charge
 	private $isARD;
 	private $grade;
 	
-	public function __construct($chargeName, $disposition, $codeSection, $dispDate)
+	public function __construct($chargeName, $disposition, $codeSection, $dispDate, $grade)
 	{
 		$this->setChargeName($chargeName);
 		$this->setDisposition($disposition);
 		$this->setCodeSection($codeSection);
 		$this->setDispDate($dispDate);
+		$this->setGrade($grade);
 	}
 	
 	public function setChargeName($chargeName) { $this->chargeName=$chargeName; }
@@ -35,7 +36,7 @@ class Charge
 	public function getIsRedactable() { return $this->isRedactable; }
 	public function getIsSummaryRedactable() { return $this->isSummaryRedactable; }
 	public function getIsARD() { return $this->isARD; }
-	public function getGrade() { return $this->grade; }
+	public function getGrade() { if (!isset($this->grade) || $this->grade == "") $this->setGrade("unk"); return $this->grade; }
 	
 	public function isRedactable()
 	{
