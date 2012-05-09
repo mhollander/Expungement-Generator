@@ -1040,6 +1040,12 @@ class Arrest
 			$odf->setVars("COURT_STREET", $courtInformation['address']) . ' ' . $courtInformation['address2'];
 			$odf->setVars("COURT_CITY_STATE_ZIP", $courtInformation['city'] . ", " . $courtInformation['state'] . " " . $courtInformation['zip']);
 			
+			// if this isn't philadelphia, say that the CHR is attached
+			if ($this->getCounty()!="Philadelphia")
+				$odf->setVars("INCLUDE_CHR", "I have attached a copy of my Pennsylvania State Police Criminal History which I have obtained within 60 days before filing this petition.");
+			else
+				$odf->setVars("INCLUDE_CHR", "");
+			
 			// if this is a summary arrest and we aren't in philadelphia, this is a 490 petition
 			// otherwise it is a 790 petition
 			if ($this->isArrestSummaryExpungement)
