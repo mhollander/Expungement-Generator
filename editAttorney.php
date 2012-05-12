@@ -47,6 +47,7 @@ else
 ?>
 		<div class="titleMessage">Edit <?php print(getLoggedInUserName());?>'s Profile</div>
 		<div>Use the form below to edit your profile.</div>
+		<div><a href="attorneyExpInfo.php">Click to view your expungement history.</a></div>
 		
 		<div>&nbsp;</div>
 		<form action="editAttorney.php" method="post">
