@@ -11,6 +11,7 @@ class Attorney
 	private $email;
 	private $programID;
 	private $programName;
+	private $userLevel;
 	
 	public function __construct($userid, $db) 
 	{
@@ -27,7 +28,8 @@ class Attorney
 	public function setEmail($email) { $this->email = $email; }
 	public function setProgramID($programID) { $this->programID = $programID; }
 	public function setProgramName($programName) { $this->programName = $programName; }
-
+	public function setUserLevel($userLevel) { $this->userLevel = $userLevel; }
+	
 	// getters
 	public function getFirstName() { return $this->firstName; }
 	public function getLastName() { return $this->lastName; }
@@ -38,6 +40,7 @@ class Attorney
 	public function getEmail() { return $this->email; }
 	public function getProgramID() { return $this->programID; }
 	public function getProgramName() { return $this->programName; }
+	public function getUserLevel() { return $this->userLevel; }
 	
 	// Sets the attorney information by taking a userID, connecting to the database, and pulling
 	// the attorney information from the database.  Requires a db handle to be passed in.
@@ -63,6 +66,7 @@ class Attorney
 			$this->setEmail($row['email']);			
 			$this->setProgramID($row['programID']);
 			$this->setProgramName($row['programName']);
+			$this->setUserLevel($row['userLevel']);
 			
 			mysql_free_result($result);
 			}
