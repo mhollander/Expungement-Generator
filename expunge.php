@@ -104,12 +104,13 @@ else
 
 				$arrest = new Arrest();
 
-				if ($arrest->isDocketSheet($thisRecord))
+				if ($arrest->isDocketSheet($thisRecord[1]))
 				{
-					// if this is a docket sheet, read the arrest and add it to the arrests array
+					// if this is a regular docket sheet, use the regular parsing function
 					$arrest->readArrestRecord($thisRecord);
 					
-					// don't include arrests that were summary traffic tickets or something
+					// now add the arrest to the arrests array
+					// but don't include arrests that were summary traffic tickets or something
 					if ($arrest->isArrestCriminal())
 						$arrests[] = $arrest;
 				}
