@@ -52,6 +52,7 @@ class Arrest
 	private $isHeldForCourt;
 	private $isSummaryArrest = FALSE;
 	private $isArrestSummaryExpungement;
+	private $isMDJ = FALSE;
 	
 	public static $redactionTemplate = "redactionTemplate.odt";
 	public static $expungementTemplate = "expungementTemplate.odt";
@@ -66,12 +67,16 @@ class Arrest
 	protected static $unknownInfo = "N/A";
 	
 	protected static $countySearch = "/\sof\s(\w+)\sCOUNTY/i";
+	protected static $mdjCountySearch = "/County:\s+(.*)\s+Disposition Date:/";
 	protected static $OTNSearch = "/OTN:\s+(\D\d+)/";
 	protected static $DCSearch = "/District Control Number\s+(\d+)/";
 	protected static $docketSearch = "/Docket Number:\s+((MC|CP)\-\d{2}\-(\D{2})\-\d*\-\d{4})/";
+	protected static $mdjDocketSearch = "/Docket Number:\s+(MJ\-\d{5}\-(\D{2})\-\d*\-\d{4})/";
 	protected static $arrestingAgencyAndOfficerSearch = "/Arresting Agency:\s+(.*)\s+Arresting Officer: (\D+)/";
+	protected static $mdjArrestingAgencySearch = "/Arresting Agency:\s+(.*)\s+ArrestDate:/";
 	protected static $arrestDateSearch = "/Arrest Date:\s+(\d{1,2}\/\d{1,2}\/\d{4})/";
 	protected static $complaintDateSearch = "/Complaint Date:\s+(\d{1,2}\/\d{1,2}\/\d{4})/";
+	protected static $mdjComplaintDateSearch = "/Issue Date:\s+(\d{1,2}\/\d{1,2}\/\d{4})/";
 	protected static $judgeSearch = "/Final Issuing Authority:\s+(.*)/";
 	protected static $judgeAssignedSearch = "/Judge Assigned:\s+(.*)\s+Date Filed:/";
 	protected static $migratedJudgeSearch = "/migrated/i";
@@ -80,16 +85,24 @@ class Arrest
 
 	// ($1 = charge, $2 = disposition, $3 = grade, $4 = code section
 	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Guilty|Not Guilty|Nolle Prossed|Guilty Plea|Guilty Plea - Negotiated|Withdrawn|Charge Changed|Held for Court|Dismissed - Rule 1013 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Judgment of Acquittal \(Prior to)\s+(\w{0,2})\s+(\w{1,2}\247\d+(\-|\247|\w+)*)/"; // removed "Replacement by Information"
+	
+	// $1 = code section, $3 = grade, $4 = charge, $5 = offense date, $6 = disposition
+	protected static mdjChargesSearch = "/\d\s+(\w{1,2}\s+\247\s+(\-|\247|\w+|\s))*\s+(\w{0,2})\s+(\D+)\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+(\D+)/";
+	
 	protected static $chargesSearchOverflow = "/^\s+(\w+\s*\w*)\s*$/";
-	// disposition date can appear in two different ways (that I have found):
+	// disposition date can appear in two different ways (that I have found) and a third for MDJ cases:
 	// 1) it can appear on its own line, on a line that looks like: 
 	//    Status   mm/dd/yyyy    Final  Disposition
 	//    Trial   mm/dd/yyyy    Final  Disposition
 	//    Preliminary Hearing   mm/dd/yyyy    Final  Disposition
 	//    Migrated Dispositional Event   mm/dd/yyyy    Final  Disposition
 	// 2) on the line after the charge disp
+	// 3) for MDJ cases, disposition date appears on a line by itself, so it is easier to find
 	protected static $dispDateSearch = "/(Status|Status of Restitution|Status - Community Court|Status Listing|Migrated Dispositional Event|Trial|Preliminary Hearing)\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+Final Disposition/";
 	protected static $dispDateSearch2 = "/(.*)\s(\d{1,2}\/\d{1,2}\/\d{4})/";
+	
+	protected static $mdjDispDateSearch = "/Disposition Date:\s+(.*)/";
+	
 	
 	// this is a crazy one.  Basically matching whitespace then $xx.xx then whitespace then 
 	// -$xx.xx, etc...  The fields show up as Assesment, Payment, Adjustments, Non-Monetary, Total
@@ -132,6 +145,7 @@ class Arrest
 	public function getIsRedaction()  { return $this->isRedaction; }
 	public function getIsHeldForCourt()  { return $this->isHeldForCourt; }
 	public function getIsSummaryArrest()  { return $this->isSummaryArrest; }
+	public function getIsMDJ() { return $this->isMDJ; }
 		
 	//setters
 	public function setCounty($county) { $this->county = ucwords(strtolower($county)); }
@@ -171,6 +185,7 @@ class Arrest
 	public function setIsRedaction($isRedaction)  {  $this->isRedaction = $isRedaction; }
 	public function setIsArrestSummaryExpungement($isSummaryExpungement) { $this->isArrestSummaryExpungement = $isSummaryExpungement; }
 	public function setIsHeldForCourt($isHeldForCourt)  {  $this->isHeldForCourt = $isHeldForCourt; }
+	public function setIsMDJ($isMDJ)  {  $this->isMDJ = $isMDJ; }
 
 	// add a Bail amount to an already created bail figure
 	public function addBailTotal($bailTotal) 
@@ -251,28 +266,46 @@ class Arrest
 	// @return true if the arrestRecordFile is a docket sheet, false if it isn't
 	public function isDocketSheet($arrestRecordFile)
 	{
-		if (preg_match("/Docket/i", $arrestRecordFile[1]))
+		if (preg_match("/Docket/i", $arrestRecordFile))
 			return true;
 		else
 			return false;
 	}
-		
+
+	// @return true if the arrestRecordFile is a docket sheet, false if it isn't
+	public function isMDJDocketSheet($arrestRecordFile)
+	{
+		if (preg_match("/Magisterial District Judge/i", $arrestRecordFile))
+			return true;
+		else
+			return false;
+	}
+
+	
 	// reads in a record and sets all of the relevant variable.
 	// assumes that the record is an array of lines, read through the "file" function.
 	// the file should be created by running pdftotext.exe on a pdf of the defendant's arrest.
 	// this does not read the summary.
 	public function readArrestRecord($arrestRecordFile)
 	{
+		// check to see if this is an MDJ docket sheet.  If it is, we have to
+		// read it a bit differently in places
+		if ($this->isMDJDocketSheet($arrestRecrodFile[0]))
+			$this->setIsMDJ(true);
+
 		foreach ($arrestRecordFile as $line_num => $line)
 		{
-
-		
 			// print "$line_num: $line<br/>" . self::$countySearch;
 			
+			// first, do all of the searches that are common to the MDJ and CP/MC docket sheets
+			// then we will do the MDJ and CP/MC docket sheet searches separately
+						
 			// figure out which county we are in
 			if (preg_match(self::$countySearch, $line, $matches))
 				$this->setCounty(trim($matches[1]));
-					
+			elseif (preg_match(self::$mdjCountySearch, $line, $matches))
+				$this->setCounty(trim($matches[1]));
+				
 			// find the docket Number
 			else if (preg_match(self::$docketSearch, $line, $matches))
 			{
@@ -286,21 +319,22 @@ class Arrest
 				else
 					$this->setIsSummaryArrest(FALSE);
 			}
+			else if (preg_match(self::$mdjDocketSearch, $line, $matches))
+			{
+				$this->setDocketNumber(array(trim($matches[1])));
+			}
 			
-			else if (preg_match(self::$OTNSearch, $line, $matches))
-				$this->setOTN(trim($matches[1]));
-			
-			else if (preg_match(self::$DCSearch, $line, $matches))
-				$this->setDC(trim($matches[1]));
-
-			
+			// find the arrest date
 			else if (preg_match(self::$arrestDateSearch, $line, $matches))
 				$this->setArrestDate(trim($matches[1]));
 
+			// find the complaint date
 			else if (preg_match(self::$complaintDateSearch, $line, $matches))
 				$this->setComplaintDate(trim($matches[1]));
+			else if (preg_match(self::$mdjComplaintDateSearch, $line, $matches))
+				$this->setComplaintDate(trim($matches[1]));
 
-			// aresting agency and officer are on the same line, so we have to find
+			// for non-mdj, aresting agency and officer are on the same line, so we have to find
 			// them together and deal with them together.
 			else if (preg_match(self::$arrestingAgencyAndOfficerSearch, $line, $matches))
 			{
@@ -316,6 +350,8 @@ class Arrest
 					$ao = "Unknown Officer";
 				$this->setArrestingOfficer($ao);
 			}	
+			else if (preg_match(self::$mdjArrestingAgencySearch, $line, $matches))
+				$this->setArrestingAgency(trim($matches[1]));
 
 			// the judge name can appear in multiple places.  Start by checking to see if the
 			// judge's name appears in the Judge Assigned field.  If it does, then set it.
@@ -346,6 +382,8 @@ class Arrest
 
 			else if (preg_match(self::$dispDateSearch, $line, $matches))
 				$this->setDispositionDate($matches[2]);
+			else if (preg_match(self::$mdjDispDateSearch, $line, $matches))
+				$this->setDispositionDate($matches[1]);
 				
 			// charges can be spread over two lines sometimes; we need to watch out for that
 			else if (preg_match(self::$chargesSearch, $line, $matches))
@@ -374,6 +412,20 @@ class Arrest
 				$charge = new Charge($charge, $matches[2], trim($matches[4]), trim($dispositionDate), trim($matches[3]));
 				$this->addCharge($charge);
 			}
+			
+			// match a charge for MDJ
+			else if (preg_match(self::$mdjChargesSearch, $line, $matches))
+			{
+				$charge = trim($matches[3]);
+			
+				// add the charge to the charge array
+				if (isset($this->dispositionDate))
+					$dispositionDate = $this->getDispositionDate();
+				else
+					$dispositionDate = NULL;
+				$charge = new Charge($charge, $matches[6], trim($matches[1]), trim($dispositionDate), trim($matches[3]));
+				$this->addCharge($charge);
+			}			
 			
 			else if (preg_match(self::$bailSearch, $line, $matches))
 			{
