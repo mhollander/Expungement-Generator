@@ -2,13 +2,11 @@
 	// @@@@@@@@ TODO - Add extra columns to the arrest column to see if expungement, summary, ard, etc...
 	// @todo pick up judge and case number from MC case and put on petition and order
 	// @todo make aliases work
-	// @todo detect non-philly cases and exclude them?  note them?
 	// @todo think about whether I want to have the charges array check to see if a duplicate
 	//		 charge is being added and prevent duplicate charges.  A good example of this is if
 	//       a charge is "replaced by information" and then later there is a disposition. 
 	// 		 we probably don't want both the replaced by information and the final disposition on 
 	// 		 the petition.  This is especially true if the finally dispoition is Guilty
-	// @todo add verification and ifp; add checkboxes for non philly expungements; judge address?
 
 require_once("Charge.php");
 require_once("Person.php");
@@ -18,6 +16,7 @@ require_once("utils.php");
 class Arrest
 {
 
+	private $mdjDistrictNumber;
 	private $county;
 	private $OTN;
 	private $DC;
@@ -65,29 +64,38 @@ class Arrest
 	public static $overviewTemplate = "overviewTemplate.odt";
 	
 	protected static $unknownInfo = "N/A";
+	protected static $unknownOfficer = "Unknown officer";
 	
+	protected static $mdjDistrictNumberSearch = "/Magisterial District Judge\s(.*)/i";
 	protected static $countySearch = "/\sof\s(\w+)\sCOUNTY/i";
-	protected static $mdjCountySearch = "/County:\s+(.*)\s+Disposition Date:/";
-	protected static $OTNSearch = "/OTN:\s+(\D\d+)/";
+	protected static $mdjCountyAndDispositionDateSearch = "/County:\s+(.*)\s+Disposition Date:\s+(.*)/";
+	protected static $OTNSearch = "/OTN:\s+(\D(\s)?\d+(\-\d)?)/";
 	protected static $DCSearch = "/District Control Number\s+(\d+)/";
 	protected static $docketSearch = "/Docket Number:\s+((MC|CP)\-\d{2}\-(\D{2})\-\d*\-\d{4})/";
 	protected static $mdjDocketSearch = "/Docket Number:\s+(MJ\-\d{5}\-(\D{2})\-\d*\-\d{4})/";
 	protected static $arrestingAgencyAndOfficerSearch = "/Arresting Agency:\s+(.*)\s+Arresting Officer: (\D+)/";
-	protected static $mdjArrestingAgencySearch = "/Arresting Agency:\s+(.*)\s+ArrestDate:/";
+	protected static $mdjArrestingOfficerSearch = "/^\s*Arresting Officer (\D+)\s*$/";
+	protected static $mdjArrestingAgencyAndArrestDateSearch = "/Arresting Agency:\s+(.*)\s+Arrest Date:\s+(\d{1,2}\/\d{1,2}\/\d{4})/";
 	protected static $arrestDateSearch = "/Arrest Date:\s+(\d{1,2}\/\d{1,2}\/\d{4})/";
 	protected static $complaintDateSearch = "/Complaint Date:\s+(\d{1,2}\/\d{1,2}\/\d{4})/";
 	protected static $mdjComplaintDateSearch = "/Issue Date:\s+(\d{1,2}\/\d{1,2}\/\d{4})/";
 	protected static $judgeSearch = "/Final Issuing Authority:\s+(.*)/";
-	protected static $judgeAssignedSearch = "/Judge Assigned:\s+(.*)\s+Date Filed:/";
+	protected static $judgeAssignedSearch = "/Judge Assigned:\s+(.*)\s+(Date Filed|Issue Date):/";
+	
+	// there are two special judge situations that need to be covered.  The first is that MDJ dockets sometimes say
+	// "magisterial district judge xxx".  In that case, there could be overflow to the next line.  We want to capture that
+	// overflow.  The second is that sometimes the judge assigned says "migrated judge".  We want to make sure we catch that.
+	protected static $magisterialDistrictJudgeSearch = "/Magisterial District Judge (.*)/";
+	protected static $judgeSearchOverflow = "/^\s+(\w+\s*\w*)\s*$/";
 	protected static $migratedJudgeSearch = "/migrated/i";
 	protected static $DOBSearch = "/Date Of Birth:?\s+(\d{1,2}\/\d{1,2}\/\d{4})/i";
 	protected static $nameSearch = "/^Defendant\s+(.*), (.*)/";
 
 	// ($1 = charge, $2 = disposition, $3 = grade, $4 = code section
-	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Guilty|Not Guilty|Nolle Prossed|Guilty Plea|Guilty Plea - Negotiated|Withdrawn|Charge Changed|Held for Court|Dismissed - Rule 1013 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Judgment of Acquittal \(Prior to)\s+(\w{0,2})\s+(\w{1,2}\247\d+(\-|\247|\w+)*)/"; // removed "Replacement by Information"
+	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Not Guilty|Guilty|Nolle Prossed|Guilty Plea|Guilty Plea - Negotiated|Withdrawn|Charge Changed|Held for Court|Dismissed - Rule 1013 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed|ARD - County Open|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Judgment of Acquittal \(Prior to)\s+(\w{0,2})\s+(\w{1,2}\247\d+(\-|\247|\w+)*)/"; // removed "Replacement by Information"
 	
 	// $1 = code section, $3 = grade, $4 = charge, $5 = offense date, $6 = disposition
-	protected static mdjChargesSearch = "/\d\s+(\w{1,2}\s+\247\s+(\-|\247|\w+|\s))*\s+(\w{0,2})\s+(\D+)\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+(\D+)/";
+	protected static $mdjChargesSearch = "/\d\s+((\w|\d|\s(?!\s)|\-|\247|\*)+)\s{2,}(\w{0,2})\s{2,}([\d|\D]+)\s{2,}(\d{1,2}\/\d{1,2}\/\d{4})\s{2,}(\D{2,})/";
 	
 	protected static $chargesSearchOverflow = "/^\s+(\w+\s*\w*)\s*$/";
 	// disposition date can appear in two different ways (that I have found) and a third for MDJ cases:
@@ -98,11 +106,8 @@ class Arrest
 	//    Migrated Dispositional Event   mm/dd/yyyy    Final  Disposition
 	// 2) on the line after the charge disp
 	// 3) for MDJ cases, disposition date appears on a line by itself, so it is easier to find
-	protected static $dispDateSearch = "/(Status|Status of Restitution|Status - Community Court|Status Listing|Migrated Dispositional Event|Trial|Preliminary Hearing)\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+Final Disposition/";
-	protected static $dispDateSearch2 = "/(.*)\s(\d{1,2}\/\d{1,2}\/\d{4})/";
-	
-	protected static $mdjDispDateSearch = "/Disposition Date:\s+(.*)/";
-	
+	protected static $dispDateSearch = "/(Status|Status of Restitution|Status - Community Court|Status Listing|Migrated Dispositional Event|Trial|Preliminary Hearing|Pre-Trial Conference)\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+Final Disposition/";
+	protected static $dispDateSearch2 = "/(.*)\s(\d{1,2}\/\d{1,2}\/\d{4})/";	
 	
 	// this is a crazy one.  Basically matching whitespace then $xx.xx then whitespace then 
 	// -$xx.xx, etc...  The fields show up as Assesment, Payment, Adjustments, Non-Monetary, Total
@@ -112,11 +117,12 @@ class Arrest
 	
 	
 	//getters
+	public function getMDJDistrictNumber() { return $this->mdjDistrictNumber; }
 	public function getCounty() { if (!isset($this->county)) $this->setCounty(self::$unknownInfo); return $this->county; }
 	public function getOTN() { if (!isset($this->OTN)) $this->setOTN(self::$unknownInfo); return $this->OTN; }
 	public function getDC() { if (!isset($this->DC)) $this->setDC(self::$unknownInfo); return $this->DC; }
 	public function getDocketNumber() { return $this->docketNumber; }
-	public function getArrestingOfficer() { return $this->arrestingOfficer; }
+	public function getArrestingOfficer() { if (!isset($this->arrestingOfficer)) $this->setArrestingOfficer(self::$unknownOfficer); return $this->arrestingOfficer; }
 	public function getArrestingAgency() { return $this->arrestingAgency; }
 	public function getArrestDate() { return $this->arrestDate; }
 	public function getComplaintDate() { return $this->complaintDate; }
@@ -148,8 +154,14 @@ class Arrest
 	public function getIsMDJ() { return $this->isMDJ; }
 		
 	//setters
+	public function setMDJDistrictNumber($mdjDistrictNumber) { $this->mdjDistrictNumber = $mdjDistrictNumber; }
 	public function setCounty($county) { $this->county = ucwords(strtolower($county)); }
-	public function setOTN($OTN) { $this->OTN = $OTN; }
+	public function setOTN($OTN) 
+	{ 
+		// OTN could have a "-" before the last digit.  It could also have unnecessary spaces.  
+		// We want to chop that off since it isn't important and messes up matching of OTNs
+		$this->OTN = str_replace(" ", "", str_replace("-", "", $OTN));
+	}
 	public function setDC($DC) { $this->DC = $DC; }
 	public function setDocketNumber($docketNumber) { $this->docketNumber = $docketNumber; }
 	public function setIsSummaryArrest($isSummaryArrest)  { $this->isSummaryArrest = $isSummaryArrest; } 
@@ -290,21 +302,28 @@ class Arrest
 	{
 		// check to see if this is an MDJ docket sheet.  If it is, we have to
 		// read it a bit differently in places
-		if ($this->isMDJDocketSheet($arrestRecrodFile[0]))
+		if ($this->isMDJDocketSheet($arrestRecordFile[0]))
+		{
 			$this->setIsMDJ(true);
+			if (preg_match(self::$mdjDistrictNumberSearch, $arrestRecordFile[0], $matches))
+				$this->setMDJDistrictNumber(trim($matches[1]));
+
+		}
 
 		foreach ($arrestRecordFile as $line_num => $line)
 		{
-			// print "$line_num: $line<br/>" . self::$countySearch;
+			// print "$line_num: $line<br/>";
 			
-			// first, do all of the searches that are common to the MDJ and CP/MC docket sheets
-			// then we will do the MDJ and CP/MC docket sheet searches separately
-						
+			// do all of the searches that are common to the MDJ and CP/MC docket sheets
+								
 			// figure out which county we are in
 			if (preg_match(self::$countySearch, $line, $matches))
 				$this->setCounty(trim($matches[1]));
-			elseif (preg_match(self::$mdjCountySearch, $line, $matches))
+			elseif (preg_match(self::$mdjCountyAndDispositionDateSearch, $line, $matches))
+			{
 				$this->setCounty(trim($matches[1]));
+				$this->setDispositionDate(trim(($matches[2])));
+			}
 				
 			// find the docket Number
 			else if (preg_match(self::$docketSearch, $line, $matches))
@@ -324,14 +343,24 @@ class Arrest
 				$this->setDocketNumber(array(trim($matches[1])));
 			}
 			
-			// find the arrest date
+			else if (preg_match(self::$OTNSearch, $line, $matches))
+				$this->setOTN(trim($matches[1]));
+
+			else if (preg_match(self::$DCSearch, $line, $matches))
+				$this->setDC(trim($matches[1]));
+			
+			// find the arrest date.  First check for agency and arrest date (mdj dockets).  Then check for arrest date alone
+			else if (preg_match(self::$mdjArrestingAgencyAndArrestDateSearch, $line, $matches))
+			{
+				$this->setArrestingAgency(trim($matches[1]));
+				$this->setArrestDate(trim($matches[2]));
+			}
+				
 			else if (preg_match(self::$arrestDateSearch, $line, $matches))
 				$this->setArrestDate(trim($matches[1]));
 
 			// find the complaint date
 			else if (preg_match(self::$complaintDateSearch, $line, $matches))
-				$this->setComplaintDate(trim($matches[1]));
-			else if (preg_match(self::$mdjComplaintDateSearch, $line, $matches))
 				$this->setComplaintDate(trim($matches[1]));
 
 			// for non-mdj, aresting agency and officer are on the same line, so we have to find
@@ -347,20 +376,50 @@ class Arrest
 				// if there is no listed affiant or the affiant is "Affiant" then set arresting 
 				// officer to "Unknown Officer"
 				if ($ao == "" || !(stripos("Affiant", $ao)===FALSE))
-					$ao = "Unknown Officer";
+					$ao = NULL;
 				$this->setArrestingOfficer($ao);
 			}	
-			else if (preg_match(self::$mdjArrestingAgencySearch, $line, $matches))
-				$this->setArrestingAgency(trim($matches[1]));
 
+			// mdj dockets have the arresting office on a line by himself, as last name, first
+			else if (preg_match(self::$mdjArrestingOfficerSearch, $line, $matches))
+			{
+				$officer = trim($matches[1]);
+				// find the comma and switch the order of the names
+				$officerArray = explode(",", $officer, 2);
+				if (sizeof($officerArray) > 0)
+					$officer = trim($officerArray[1]) . " " . trim($officerArray[0]);
+				
+				$this->setArrestingOfficer($officer);				
+			}
+				
+			
 			// the judge name can appear in multiple places.  Start by checking to see if the
 			// judge's name appears in the Judge Assigned field.  If it does, then set it.
 			// Later on, we'll check in the "Final Issuing Authority" field.  If it appears there
 			// and doesn't show up as "migrated," we'll reassign the judge name.
 			else if (preg_match(self::$judgeAssignedSearch, $line, $matches))
 			{
-				if (!preg_match(self::$migratedJudgeSearch, $matches[1], $junk))
-					$this->setJudge(trim($matches[1]));
+				$judge = trim($matches[1]);
+				
+				// check to see if this line has "magisterial district judge" in it.  If it does, 
+				// lop off that phrase and then check the next line to see if anything important is on it
+				if (preg_match(self::$magisterialDistrictJudgeSearch, $judge, $judgeMatch))
+				{
+					// first catch the judge
+					$judge = trim($judgeMatch[1]);
+					
+					// then check the next line to see if there is anything of interest
+					$i = $line_num+1;
+					if (preg_match(self::$judgeSearchOverflow, $arrestRecordFile[$i], $judgeOverflowMatch))
+						$judge .= " " . trim($judgeOverflowMatch[1]);					
+				}
+			
+				if (!preg_match(self::$migratedJudgeSearch, $judge, $junk))
+					$this->setJudge($judge);
+					
+				// if this is an mdj docket, the complaint date will also be on this same line, so we want to search for that as well
+				if (preg_match(self::$mdjComplaintDateSearch, $line, $matches))
+				$this->setComplaintDate(trim($matches[1]));
 			}
 			
 			else if (preg_match(self::$judgeSearch, $line, $matches))
@@ -382,12 +441,11 @@ class Arrest
 
 			else if (preg_match(self::$dispDateSearch, $line, $matches))
 				$this->setDispositionDate($matches[2]);
-			else if (preg_match(self::$mdjDispDateSearch, $line, $matches))
-				$this->setDispositionDate($matches[1]);
 				
 			// charges can be spread over two lines sometimes; we need to watch out for that
 			else if (preg_match(self::$chargesSearch, $line, $matches))
 			{
+				
 				$charge = trim($matches[1]);
 				// we need to check to see if the next line has overflow from the charge.
 				// this happens on long charges, like possession of controlled substance
@@ -414,16 +472,27 @@ class Arrest
 			}
 			
 			// match a charge for MDJ
-			else if (preg_match(self::$mdjChargesSearch, $line, $matches))
+			else if ($this->getIsMDJ() && preg_match(self::$mdjChargesSearch, $line, $matches))
 			{
-				$charge = trim($matches[3]);
-			
+				$charge = trim($matches[4]);
+
+				// we need to check to see if the next line has overflow from the charge.
+				// this happens on long charges, like possession of controlled substance
+				$i = $line_num+1;
+				
+				if (preg_match(self::$chargesSearchOverflow, $arrestRecordFile[$i], $chargeMatch))
+				{
+					$charge .= " " . trim($chargeMatch[1]);
+					$i++;
+				}
+
+				
 				// add the charge to the charge array
 				if (isset($this->dispositionDate))
 					$dispositionDate = $this->getDispositionDate();
 				else
 					$dispositionDate = NULL;
-				$charge = new Charge($charge, $matches[6], trim($matches[1]), trim($dispositionDate), trim($matches[3]));
+				$charge = new Charge($charge, trim($matches[6]), trim($matches[1]), trim($dispositionDate), trim($matches[3]));
 				$this->addCharge($charge);
 			}			
 			
@@ -522,7 +591,7 @@ class Arrest
 		// This is a possible future thing to change.  Perhaps held for court should be put on
 		// And something should be "expungeable" regardless of whether "held for court"
 		// charges are on there.
-		$heldForCourtMatch = "/Held for Court/";
+		$heldForCourtMatch = "/[Held for Court|Waived for Court]/";
 		$thatChargesNoHeldForCourt = array();
 		foreach ($that->charges as $charge)
 		{
@@ -838,7 +907,7 @@ class Arrest
 				return  $this->getIsHeldForCourt();
 		else
 		{
-			$heldForCourtMatch = "/Held for Court/";
+			$heldForCourtMatch = "/[Held for Court|Waived for Court]/";
 			foreach ($this->getCharges() as $num=>$charge)
 			{
 				// if we match Held for court, setheldforcourt = true
@@ -858,15 +927,28 @@ class Arrest
 	// @returns an associative array with court information based on the county name
 	public function getCourtInformation($db)
 	{
-		// sql statements are case insensitive by default
-		$query = "SELECT * FROM court WHERE court.county='" . $this->getCounty() . "'";
+		// $sql is going to be different based on whether this is an mdj case or a regular case
+		$table = "court";
+		$column = "county";
+		$value = $this->getCounty();
+		
+		if ($this->getIsMDJ())
+		{
+			$table = "mdjcourt";
+			$column = "district";
+			$value = $this->getMDJDistrictNumber();
+		}
+
+		// sql statements are case insensitive by default		
+		$query = "SELECT * FROM $table WHERE $table.$column='$value'";
 		$result = mysql_query($query, $db);
+
 		if (!$result) 
 		{
 			if ($GLOBALS['debug'])
-				die('Could not get the county information from the DB:' . mysql_error());
+				die('Could not get the court information from the DB:' . mysql_error());
 			else
-				die('Could not get the county Information from the DB');
+				die('Could not get the court Information from the DB');
 		}
 		$row = mysql_fetch_assoc($result);
 		return $row;
@@ -1049,8 +1131,14 @@ class Arrest
 		}
 		
 		//$odf->setVars("DISPOSITION_DATE", $this->getDispositionDate());
+		// note - we have two name fields - first/last and "real" first/last.  This is because in many cases
+		// the petitioner's name does not appear correctly on the docket sheet.  attorneys complained that they were
+		// being required to assert the incorrect name for their client in the petition.  the caption gets 
+		// the name on the docket; the petition body gets the real first name of the individual
 		$odf->setVars("FIRST_NAME", $this->getFirstName());
 		$odf->setVars("LAST_NAME", $this->getLastName());
+		$odf->setVars("REAL_FIRST_NAME", $person->getFirst());
+		$odf->setVars("REAL_LAST_NAME", $person->getLast());
 		$odf->setVars("STREET", $person->getStreet());
 		$odf->setVars("CITY", $person->getCity());
 		$odf->setVars("STATE", $person->getState());
@@ -1086,6 +1174,13 @@ class Arrest
 			$odf->setVars("ARRESTING_AGENCY", $this->getArrestingAgency());
 			$odf->setVars("COMPLAINT_DATE", $this->getComplaintDate());		
 
+			$mdjNumberForTemplate = "";
+			if ($this->getIsMDJ())
+				// if this is an mdj, set the below var so that it inputs onto the shset the district number
+				// if this isn't an mdj, then we set nothing and this field will be blanked out on the petition.
+				$mdjNumberForTemplate = "Magisterial District Number: {$this->getMDJDistrictNumber()}";
+			$odf->setVars("MDJ_DISTRICT_NUMBER", $mdjNumberForTemplate);
+
 			$courtInformation = $this->getCourtInformation($db);
 			
 			$odf->setVars("COURT_NAME", $courtInformation['courtName']);
@@ -1100,7 +1195,7 @@ class Arrest
 			
 			// if this is a summary arrest and we aren't in philadelphia, this is a 490 petition
 			// otherwise it is a 790 petition
-			if ($this->isArrestSummaryExpungement)
+			if ($this->isArrestSummaryExpungement || $this->getIsMDJ())
 				$odf->setVars("490_OR_790", "490");
 			else
 				$odf->setVars("490_OR_790", "790");

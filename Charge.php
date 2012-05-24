@@ -42,7 +42,9 @@ class Charge
 	{
 		if (isset($this->isRedactable)) { return $this->getIsRedactable(); }
 		$disp = $this->getDisposition();
-		if ($disp== "Guilty" || $disp== "Guilty Plea" || $disp== "Guilty Plea - Negotiated" || $disp == "Held for Court")
+		
+		// "waived for court" appears on some MDJ cases.  It means the same as held for court.
+		if ($disp== "Guilty" || $disp== "Guilty Plea" || $disp== "Guilty Plea - Negotiated" || $disp == "Held for Court" || $disp == "Waived for Court")
 			$this->setIsRedactable(FALSE);
 		else
 			$this->setIsRedactable(TRUE);
@@ -64,7 +66,7 @@ class Charge
 	{
 		if (isset($this->isARD)) { return $this->getIsARD(); }
 		$disp = $this->getDisposition();
-		if ($disp== "ARD" || $disp== "ARD - County")
+		if ($disp == "ARD" || $disp == "ARD - County" || $disp == "ARD - County Open")
 			$this->setIsARD(TRUE);
 		else
 			$this->setIsARD(FALSE);
