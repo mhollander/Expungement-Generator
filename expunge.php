@@ -149,7 +149,6 @@ else
 		}
 		// reindex the arrests array now that some entries have been removed
 		$arrests = array_values($arrests);
-		
 		return $arrests;
 	}
 	
