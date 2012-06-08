@@ -75,7 +75,7 @@ class Arrest
 	protected static $mdjDocketSearch = "/Docket Number:\s+(MJ\-\d{5}\-(\D{2})\-\d*\-\d{4})/";
 	protected static $arrestingAgencyAndOfficerSearch = "/Arresting Agency:\s+(.*)\s+Arresting Officer: (\D+)/";
 	protected static $mdjArrestingOfficerSearch = "/^\s*Arresting Officer (\D+)\s*$/";
-	protected static $mdjArrestingAgencyAndArrestDateSearch = "/Arresting Agency:\s+(.*)\s+Arrest Date:\s+(\d{1,2}\/\d{1,2}\/\d{4})/";
+	protected static $mdjArrestingAgencyAndArrestDateSearch = "/Arresting Agency:\s+(.*)\s+Arrest Date:\s+(\d{1,2}\/\d{1,2}\/\d{4})?/";
 	protected static $arrestDateSearch = "/Arrest Date:\s+(\d{1,2}\/\d{1,2}\/\d{4})/";
 	protected static $complaintDateSearch = "/Complaint Date:\s+(\d{1,2}\/\d{1,2}\/\d{4})/";
 	protected static $mdjComplaintDateSearch = "/Issue Date:\s+(\d{1,2}\/\d{1,2}\/\d{4})/";
@@ -353,7 +353,8 @@ class Arrest
 			else if (preg_match(self::$mdjArrestingAgencyAndArrestDateSearch, $line, $matches))
 			{
 				$this->setArrestingAgency(trim($matches[1]));
-				$this->setArrestDate(trim($matches[2]));
+				if (isset($matches[2]))
+					$this->setArrestDate(trim($matches[2]));
 			}
 				
 			else if (preg_match(self::$arrestDateSearch, $line, $matches))
@@ -709,7 +710,7 @@ class Arrest
 			return  $this->getIsCriminal();
 		else
 		{
-			$criminalMatch = "/CR|SU/";
+			$criminalMatch = "/CR|SU|MJ/";
 			if (preg_match($criminalMatch, $this->getFirstDocketNumber()))
 			{
 					$this->setIsCriminal(TRUE);
