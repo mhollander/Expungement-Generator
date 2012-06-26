@@ -1,7 +1,8 @@
 <?php
 	// @@@@@@@@ TODO - Add extra columns to the arrest column to see if expungement, summary, ard, etc...
-	// @todo pick up judge and case number from MC case and put on petition and order
 	// @todo make aliases work
+	// @todo Combine CP and MDJ case so that isMDJ still is true in some way.  Maybe make it not bool, but a three part
+	//			test - something like: 0 = not MDJ, 1 = MDJ, 2 = was MDJ, but now CP
 	// @todo think about whether I want to have the charges array check to see if a duplicate
 	//		 charge is being added and prevent duplicate charges.  A good example of this is if
 	//       a charge is "replaced by information" and then later there is a disposition. 
@@ -51,7 +52,9 @@ class Arrest
 	private $isHeldForCourt;
 	private $isSummaryArrest = FALSE;
 	private $isArrestSummaryExpungement;
-	private $isMDJ = FALSE;
+	
+	// isMDJ = 0 if this is not an mdj case at all, 1 if this is an mdj case and 2 if this is a CP case that decended from MDJ
+	private $isMDJ = 0;
 	
 	public static $redactionTemplate = "redactionTemplate.odt";
 	public static $expungementTemplate = "expungementTemplate.odt";
@@ -304,7 +307,7 @@ class Arrest
 		// read it a bit differently in places
 		if ($this->isMDJDocketSheet($arrestRecordFile[0]))
 		{
-			$this->setIsMDJ(true);
+			$this->setIsMDJ(1);
 			if (preg_match(self::$mdjDistrictNumberSearch, $arrestRecordFile[0], $matches))
 				$this->setMDJDistrictNumber(trim($matches[1]));
 
@@ -604,6 +607,7 @@ class Arrest
 		// some charges were disposed of at the lower court level.  In that case, we need to
 		// add the lower court judges in as well on the expungement sheet.
 		// @todo add judges here
+		$this->setCharges(array_merge($this->getCharges(),$thatChargesNoHeldForCourt));
 		
 		// combine bail amounts.  This isn't used for the petitions, but it is helpful for later
 		// when we print out the overview of bail.  
@@ -612,12 +616,18 @@ class Arrest
 		// and then later appeared, were sent to CP court, and were tried there.
 		// generally speaking, there are not fines on an MC case that is ultimately combined with
 		// a CP case.
-		$this->setCharges(array_merge($this->getCharges(),$thatChargesNoHeldForCourt));
 		$this->setBailChargedTotal($this->getBailChargedTotal()+$that->getBailChargedTotal());
 		$this->setBailTotalTotal($this->getBailTotalTotal()+$that->getBailTotalTotal());
 		$this->setBailAdjustedTotal($this->getBailAdjustedTotal()+$that->getBailAdjustedTotal());
 		$this->setBailPaidTotal($this->getBailPaidTotal()+$that->getBailPaidTotal());
-		
+
+		// set MDJ as "2" if that is an an mdj.  "2" means that this is a case descending from MDJ
+		// also set the mdj number
+		if ($that->getIsMDJ())
+		{
+			$this->setIsMDJ(2);
+			$this->setMDJDistrictNumber($that->getMDJDistrictNumber());
+		}
 		return TRUE;
 	}
 
@@ -933,7 +943,7 @@ class Arrest
 		$column = "county";
 		$value = $this->getCounty();
 		
-		if ($this->getIsMDJ())
+		if ($this->getIsMDJ() == 1)
 		{
 			$table = "mdjcourt";
 			$column = "district";
@@ -1171,17 +1181,38 @@ class Arrest
 		// set some of the vars that only appear in the new template
 		if ($newTemplate)
 		{
-			$odf->setVars("COUNTY", $this->getCounty());
+			$odf->setVars("COUNTY", $this->getCounty());						
 			$odf->setVars("ARRESTING_AGENCY", $this->getArrestingAgency());
 			$odf->setVars("COMPLAINT_DATE", $this->getComplaintDate());		
 
 			$mdjNumberForTemplate = "";
-			if ($this->getIsMDJ())
+			if ($this->getIsMDJ() == 1)
 				// if this is an mdj, set the below var so that it inputs onto the shset the district number
 				// if this isn't an mdj, then we set nothing and this field will be blanked out on the petition.
 				$mdjNumberForTemplate = "Magisterial District Number: {$this->getMDJDistrictNumber()}";
 			$odf->setVars("MDJ_DISTRICT_NUMBER", $mdjNumberForTemplate);
 
+			// set the agencies for receiving orders.  As silly as this is, I need to do this through
+			// php since there are different agencies that are notified if this is an mdj case.
+			$agencies = array(	"The Clerk of Courts of {$this->getCounty()} County, Criminal Division",
+								"The {$this->getCounty()} County District Attorney`s Office",
+								"The Pennsylvania State Police, Central Records",
+								"A.O.P.C. Expungement Unit",
+								$this->getArrestingAgency(),
+								"{$this->getCounty()} County Department of Adult Probation and Parole");
+			if ($this->getIsMDJ())
+				// if this is an mdj case, put the MDJ court in the list, right after the clerk of courts
+				array_splice($agencies,1,0,"Magisterial District Court {$this->getMDJDistrictNumber()}");
+
+			$theAgencies=$odf->setSegment("AGENCY");
+			foreach ($agencies as $key=>$value)
+			{
+				$a = $key+1;
+				$theAgencies->AGENCY_NAME("{$a}. {$value}");
+				$theAgencies->merge();
+			}
+			$odf->mergeSegment($theAgencies);
+			
 			$courtInformation = $this->getCourtInformation($db);
 			
 			$odf->setVars("COURT_NAME", $courtInformation['courtName']);
@@ -1196,7 +1227,7 @@ class Arrest
 			
 			// if this is a summary arrest and we aren't in philadelphia, this is a 490 petition
 			// otherwise it is a 790 petition
-			if ($this->isArrestSummaryExpungement || $this->getIsMDJ())
+			if ($this->isArrestSummaryExpungement || $this->getIsMDJ() == 1)
 				$odf->setVars("490_OR_790", "490");
 			else
 				$odf->setVars("490_OR_790", "790");
@@ -1217,8 +1248,8 @@ class Arrest
 			$dispDate = $charge->getDispDate();
 			if ($dispDate == null || $dispDate == "")
 				$dispDate = $this->getDispositionDate();
-				
-			$theCharges->CHARGE($charge->getChargeName());
+
+				$theCharges->CHARGE($charge->getChargeName());
 			$theCharges->CODE_SEC($charge->getCodeSection());
 			if ($newTemplate)
 				$theCharges->GRADE($charge->getGrade());

@@ -45,11 +45,6 @@ else
 			<div class="description">Street Name, Number</div>
 			<div class="space-line"></div>
 			<div class="form-sub-item">
-				<input type="text" name="personStreet2" class="form-text" value="<?php printIfSet('personStreet2');?>" />
-				<div class="description">Apartment</div>
-			</div> 
-			<div class="space-line"></div>
-			<div class="form-sub-item">
 				<div class="form-item-column">
 					<input type="text" name="personCity" class="form-text" value="<?php printIfSet('personCity');?>" />
 				</div>
