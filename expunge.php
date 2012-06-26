@@ -31,7 +31,7 @@ else
 
 	// get information about the person from the POST vars passed in
 	$urlPerson = getPersonFromGetVars();
-	$person = new Person($urlPerson['First'], $urlPerson['Last'], $urlPerson['PP'], $urlPerson['SID'], $urlPerson['SSN'], $urlPerson['Street'], $urlPerson['Street2'], $urlPerson['City'], $urlPerson['State'], $urlPerson['Zip'], $urlPerson['Alias']);
+	$person = new Person($urlPerson['First'], $urlPerson['Last'], $urlPerson['PP'], $urlPerson['SID'], $urlPerson['SSN'], $urlPerson['Street'], $urlPerson['City'], $urlPerson['State'], $urlPerson['Zip'], $urlPerson['Alias']);
 
 	// make sure to change this in the future to prevent hacking!
 	$attorney = new Attorney($_SESSION["loginUserID"], $db);
