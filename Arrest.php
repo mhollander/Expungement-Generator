@@ -12,6 +12,7 @@ require_once("Charge.php");
 require_once("Person.php");
 require_once("Attorney.php");
 require_once("utils.php");
+require_once("config.php");
 
 class Arrest
 {
@@ -52,6 +53,7 @@ class Arrest
 	private $isSummaryArrest = FALSE;
 	private $isArrestSummaryExpungement;
 	private $isMDJ = FALSE;
+	private $pdfFile;
 	
 	public static $redactionTemplate = "redactionTemplate.odt";
 	public static $expungementTemplate = "expungementTemplate.odt";
@@ -152,6 +154,7 @@ class Arrest
 	public function getIsHeldForCourt()  { return $this->isHeldForCourt; }
 	public function getIsSummaryArrest()  { return $this->isSummaryArrest; }
 	public function getIsMDJ() { return $this->isMDJ; }
+	public function getPDFFile() { return $this->pdfFile;}
 		
 	//setters
 	public function setMDJDistrictNumber($mdjDistrictNumber) { $this->mdjDistrictNumber = $mdjDistrictNumber; }
@@ -198,6 +201,7 @@ class Arrest
 	public function setIsArrestSummaryExpungement($isSummaryExpungement) { $this->isArrestSummaryExpungement = $isSummaryExpungement; }
 	public function setIsHeldForCourt($isHeldForCourt)  {  $this->isHeldForCourt = $isHeldForCourt; }
 	public function setIsMDJ($isMDJ)  {  $this->isMDJ = $isMDJ; }
+	public function setPDFFile($pdfFile) { $this->pdfFile = $pdfFile; }
 
 	// add a Bail amount to an already created bail figure
 	public function addBailTotal($bailTotal) 
@@ -1321,6 +1325,10 @@ class Arrest
 		
 		$this->updateExpungementWithNumCharges($expungementID, $numRedactableCharges, $db);
 		
+		// finally, save the PDF to the database, if there was a pdf file to save
+		$this->writePDFToDatabase($expungementID, $db);
+		
+		
 	}
 	
 	// @return the id of the arrest just inserted into the database
@@ -1407,6 +1415,34 @@ class Arrest
 		}
 		return;
 	}
+	
+	// @return none
+	// @function writePDFToDatabase - writes the PDF docket sheet to the database 
+	// @param $arrestID -  The id of the particular arrest that we are uploading a pdf for.
+	// @param $db - the database handle
+	public function writePDFToDatabase($expungementID, $db)
+	{
+		$file = $this->getPDFFile();
+		
+		if (isset($file))
+		{
+		/*
+			$sql = "INSERT INTO arrestPDFDocketSheet (arrestID, size, data) VALUES ('$arrestID', '" .  filesize($file) . "', '" . mysql_real_escape_string (file_get_contents ($file)) . "')";
+			$result = mysql_query($sql, $db);
+			if (!$result) 
+			{
+				if ($GLOBALS['debug'])
+					die('Could not insert the pdf into the DB:' . mysql_error());
+				else
+					die('Could not insert the PDF into the DB.');
+			}
+		*/
+			$destination = $GLOBALS['docketSheetsDir'] . $expungementID;
+			copy($file, $destination);
+		}
+		return;
+	}
+
 	
 }  // end class arrest
 

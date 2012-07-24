@@ -48,7 +48,7 @@ else
 		
 		print <<<END
 		<table>
-		<th>Docket Number</th><th>Defendant Name</th><th>Attorney Name</th><th>Date Prepared</th><th>Charges Redacted</th><th>Type</th><th>Costs Owed</th><th>Bail Owed</th>
+		<th>Docket Number</th><th>PDF</th><th>Defendant Name</th><th>Attorney Name</th><th>Date Prepared</th><th>Charges Redacted</th><th>Type</th><th>Costs Owed</th><th>Bail Owed</th>
 END;
 		while ($row = mysql_fetch_assoc($result))
 		{
@@ -56,6 +56,13 @@ END;
 			
 			print "<tr>";
 			print "<td><a href='showCase.php?id={$row['expungementID']}'>{$row['docketNumRelated']}</a></td>";
+
+			// only show the pdf link if one exists
+			if (doesPDFExistForCaseId($row['expungementID']))
+				print "<td><a href='displayPDF.php?id={$row['expungementID']}'><img src='images/pdf_icon.png'></a></td>";
+			else
+				print "<td>&nbsp;</td>";
+
 			print "<td>{$row['dFirst']} {$row['dLast']} </td>";
 			print "<td>{$row['firstName']}  {$row['lastName']} </td>";
 			print "<td>{$row['timestamp']}</td>";

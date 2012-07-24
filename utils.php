@@ -127,3 +127,14 @@ function dateConvert($docketDate)
 	else
 		return ("0000-00-00");
 }
+
+// @return bool True if a file with the case id passed in exists in the pdf file dir, false if not
+// @param id - the ID of the expungement that we are looking for a PDF for
+function doesPDFExistForCaseId($id)
+{
+	$filename = $GLOBALS['docketSheetsDir']	. $id;
+	if(file_exists($filename))
+		return TRUE;
+	else
+		return FALSE;
+}

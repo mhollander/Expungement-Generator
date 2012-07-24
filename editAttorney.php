@@ -47,8 +47,14 @@ else
 ?>
 		<div class="titleMessage">Edit <?php print(getLoggedInUserName());?>'s Profile</div>
 		<div>Use the form below to edit your profile.</div>
-		<div><a href="attorneyExpInfo.php">Click to view your expungement history.</a></div>
 		
+<?php
+	// only certain users can see this page
+	// we're being overly restrictive right now - only letting CLS lawyers see it
+	if ($attorney->getProgramId() == 1)
+		print "<div><a href='attorneyExpInfo.php'>Click to view your expungement history.</a></div>";
+?>
+	
 		<div>&nbsp;</div>
 		<form action="editAttorney.php" method="post">
 		<div>
