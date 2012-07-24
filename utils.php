@@ -52,7 +52,6 @@ function getPersonFromGetVars()
 	$urlPerson['First'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personFirst"])));
 	$urlPerson['Last'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personLast"])));
 	$urlPerson['Street'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personStreet"])));
-	$urlPerson['Street2'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personStreet2"])));
 	$urlPerson['City'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personCity"]))); $personState = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personState"])));
 	$urlPerson['State'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personState"]))); $personState = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personState"])));
 	$urlPerson['Zip'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personZip"])));
