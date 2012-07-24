@@ -71,7 +71,9 @@ END;
 			print "</tr>";
 		}
 		print "</table>";
-		print "<br /><a href='displayPDF.php?id={$_GET['id']}'>Show stored PDF docket sheet for this case</a><br />";
+
+		if (doesPDFExistForCaseId($_GET['id']))
+			print "<br /><a href='displayPDF.php?id={$_GET['id']}'>Show stored PDF docket sheet for this case</a><br />";
 	
 		// now, query all of the charges associated with this expungement
 		$query = "SELECT expungement.*, arrest.*, defendant.*, charge.* from expungement LEFT JOIN arrest on (expungement.arrestID = arrest.arrestID) LEFT JOIN defendant on (arrest.defendantID = defendant.defendantID) LEFT JOIN charge on (arrest.arrestID = charge.arrestID) WHERE expungement.expungementID = {$_GET['id']}";
