@@ -25,7 +25,6 @@ if (!isLoggedIn())
 else
 {
 
-	
 	$arrests = array();
 	$arrestSummary = new ArrestSummary();
 
@@ -90,7 +89,7 @@ else
 	{
 		$arrests = array();
 		// loop over all of the files that we uploaded and read them in to see if they are expungeable
-		foreach($files["userFile"]["tmp_name"] as $file)
+		foreach($files["userFile"]["tmp_name"] as $key => $file)
 		{
 			$command = $toolsDir . $pdftotext . " -layout \"" . $file . "\" \"" . $tempFile . "\"";
 			system($command, $ret);
@@ -113,6 +112,10 @@ else
 					// but don't include arrests that were summary traffic tickets or something
 					if ($arrest->isArrestCriminal())
 						$arrests[] = $arrest;
+						
+					// associate the PDF with the file for later saving to the DB
+					if ($files["userFile"]["size"][$key] > 0)
+						$arrest->setPDFFile($file);
 				}
 				elseif (ArrestSummary::isArrestSummary($thisRecord))
 				{
