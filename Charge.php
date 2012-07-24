@@ -44,7 +44,7 @@ class Charge
 		$disp = $this->getDisposition();
 		
 		// "waived for court" appears on some MDJ cases.  It means the same as held for court.
-		if ($disp== "Guilty" || $disp== "Guilty Plea" || $disp== "Guilty Plea - Negotiated" || $disp == "Held for Court" || $disp == "Waived for Court")
+		if ($disp== "Guilty" || $disp== "Guilty Plea" || $disp== "Guilty Plea - Negotiated" || $disp== "Guilty Plea - Non-Negotiated"|| $disp == "Held for Court" || $disp == "Waived for Court")
 			$this->setIsRedactable(FALSE);
 		else
 			$this->setIsRedactable(TRUE);

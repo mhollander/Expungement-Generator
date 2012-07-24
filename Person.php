@@ -8,7 +8,6 @@ class Person
 	private $SID;
 	private $SSN;
 	private $street;
-	private $street2;
 	private $city;
 	private $state;
 	private $zip;
@@ -16,7 +15,7 @@ class Person
 	private $personID;
 	private $DOB;
 	
-	public function __construct($first, $last, $PP, $SID, $SSN, $street, $street2, $city, $state, $zip, $alias) 
+	public function __construct($first, $last, $PP, $SID, $SSN, $street, $city, $state, $zip, $alias) 
 	{
 		$this->setFirst($first);
 		$this->setLast($last);
@@ -24,7 +23,6 @@ class Person
 		$this->setSID($SID);
 		$this->setSSN($SSN);
 		$this->setStreet($street);
-		$this->setStreet2($street2);
 		$this->setCity($city);
 		$this->setState($state);
 		$this->setZip($zip);
@@ -37,7 +35,6 @@ class Person
 	public function setSID($SID) { $this->SID = $SID; }
 	public function setSSN($SSN) { $this->SSN = $SSN; }
 	public function setStreet($street) { $this->street = $street; }
-	public function setStreet2($street2) { $this->street2 = $street2; }
 	public function setCity($city) { $this->city = $city; }
 	public function setState($state) { $this->state = $state; }
 	public function setZip($zip) { $this->zip = $zip; }	
@@ -52,7 +49,6 @@ class Person
 	public function getSID() { return $this->SID; }
 	public function getSSN() { return $this->SSN; }
 	public function getStreet() { return $this->street; }
-	public function getStreet2() { return $this->street2; }
 	public function getCity() { return $this->city; }
 	public function getState() { return $this->state; }
 	public function getZip() { return $this->zip; }	
@@ -69,7 +65,7 @@ class Person
 		if ($this->checkInDB($db))
 			return;
 		
-		$sql = "INSERT INTO defendant (firstName, lastName, PP, SID, SSN, DOB, street, street2, city, state, zip, alias) VALUES ('" . $this->getFirst() . "', '" . $this->getLast() . "', '" . $this->getPP() . "', '" . $this->getSID() . "', '" . $this->getSSN() . "', '" . dateConvert($this->getDOB()) . "', '" . $this->getStreet() . "', '" . $this->getStreet2() . "', '" . $this->getCity() . "', '" . $this->getState() . "', '" . $this->getZip() . "', '" . $this->getAliasCommaList() . "')";
+		$sql = "INSERT INTO defendant (firstName, lastName, PP, SID, SSN, DOB, street, city, state, zip, alias) VALUES ('" . $this->getFirst() . "', '" . $this->getLast() . "', '" . $this->getPP() . "', '" . $this->getSID() . "', '" . $this->getSSN() . "', '" . dateConvert($this->getDOB()) . "', '" . $this->getStreet() . "', '" . $this->getCity() . "', '" . $this->getState() . "', '" . $this->getZip() . "', '" . $this->getAliasCommaList() . "')";
 		
 		$result = mysql_query($sql, $db);
 		if (!$result) 
