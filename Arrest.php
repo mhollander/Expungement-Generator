@@ -1298,6 +1298,7 @@ class Arrest
 		$odf->setVars("ATTORNEY_HEADER", $attorney->getPetitionHeader());
 		$odf->setVars("ATTORNEY_FIRST", $attorney->getFirstName());
 		$odf->setVars("ATTORNEY_LAST", $attorney->getLastName());
+		$odf->setVars("PROGRAM_NAME", $attorney->getProgramName());
 		$odf->setVars("PETITION_DATE", date("F j, Y"));
 		$odf->setVars("FIRST_NAME", $this->getFirstName());
 		$odf->setVars("LAST_NAME", $this->getLastName());
