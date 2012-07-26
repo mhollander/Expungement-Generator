@@ -212,6 +212,12 @@ else
 			if ($arrest->isArrestExpungement() || $arrest->isArrestRedaction() || $arrest->isArrestSummaryExpungement($arrests))
 			{
 				$files[] = $arrest->writeExpungement($templateDir, $dataDir, $person, $attorney, $newPetition, $db);
+				
+				// if this isn't a philly arrest and this is an agency that has IFP status, then add in 
+				// an IFP notice.
+				if ($arrest->getCounty()!="Philadelphia" && $attorney->getIFP())
+					$files[] = $arrest->writeIFP($person, $attorney, $db);
+				
 				print "<li><span class='boldLabel'>Performing ";
 				print (($arrest->isArrestExpungement() || $arrest->isArrestSummaryExpungement($arrests))?("expungement"):("redaction"));
 				print " on case: </span> " . $arrest->getFirstDocketNumber() . "</li>";

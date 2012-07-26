@@ -1011,7 +1011,6 @@ class Arrest
 		if ($attorney->getIFP())
 			$odf->setVars("IFP_MESSAGE", $attorney->getIFPMessage());
 		
-		
 		// setting docket number involves looping through all docket numbers and setting
 		// each on on there as a line.
 		// Because ODFPHP doesn't like having the same segment reproduced within a document
@@ -1285,6 +1284,50 @@ class Arrest
 		return $outputFile . ".odt";
 
 	}
+
+
+	// @var newTemplate - A boolean.  True if we are to use the newstyle of template
+	public function writeIFP($person, $attorney, $db)
+	{
+		$odf = new odf($GLOBALS["templateDir"] . "IFPTemplate.odt");
+		
+		if ($GLOBALS['debug'])
+			print "Writing IFP Template.";
+		
+		// set attorney and client vars 
+		$odf->setVars("ATTORNEY_HEADER", $attorney->getPetitionHeader());
+		$odf->setVars("ATTORNEY_FIRST", $attorney->getFirstName());
+		$odf->setVars("ATTORNEY_LAST", $attorney->getLastName());
+		$odf->setVars("PETITION_DATE", date("F j, Y"));
+		$odf->setVars("FIRST_NAME", $this->getFirstName());
+		$odf->setVars("LAST_NAME", $this->getLastName());
+		$odf->setVars("STREET", $person->getStreet());
+		$odf->setVars("CITY", $person->getCity());
+		$odf->setVars("STATE", $person->getState());
+		$odf->setVars("ZIP", $person->getZip());
+		$odf->setVars("OTN", $this->getOTN());
+		$odf->setVars("SSN", $person->getSSN());
+		$odf->setVars("DOB", $this->getDOB());
+		$odf->setVars("SID", $person->getSID());
+		$odf->setVars("COUNTY", $this->getCounty());						
+		$today = new DateTime();
+		$odf->setVars("ORDER_YEAR", $today->format('Y'));
+		
+		// set the docket numbers
+		$theDocketNum = $odf->setSegment("docketnumber");
+		foreach ($this->getDocketNumber() as $value)
+		{
+			$theDocketNum->setVars("CP", $value);
+			$theDocketNum->merge();
+		}
+		$odf->mergeSegment($theDocketNum);
+		
+		// output the file for later pickup
+		$outputFile = $GLOBALS["dataDir"] . $this->getFirstName() . $this->getLastName() . $this->getFirstDocketNumber() . "IFP.odt";
+		$odf->saveToDisk($outputFile);
+		return $outputFile;
+	}
+	
 	
 	public function simplePrint()
 	{
