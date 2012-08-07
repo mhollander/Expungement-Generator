@@ -1,8 +1,6 @@
 <?php
 	// @@@@@@@@ TODO - Add extra columns to the arrest column to see if expungement, summary, ard, etc...
-	// @todo make aliases work
-	// @todo Combine CP and MDJ case so that isMDJ still is true in some way.  Maybe make it not bool, but a three part
-	//			test - something like: 0 = not MDJ, 1 = MDJ, 2 = was MDJ, but now CP
+	// @todo make aliases work automatically - they should be able to be read off of the case summary
 	// @todo think about whether I want to have the charges array check to see if a duplicate
 	//		 charge is being added and prevent duplicate charges.  A good example of this is if
 	//       a charge is "replaced by information" and then later there is a disposition. 
@@ -97,7 +95,7 @@ class Arrest
 	protected static $nameSearch = "/^Defendant\s+(.*), (.*)/";
 
 	// ($1 = charge, $2 = disposition, $3 = grade, $4 = code section
-	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Not Guilty|Guilty|Nolle Prossed|Guilty Plea|Guilty Plea - Negotiated|Guilty Plea - Non-Negotiated|Withdrawn|Withdrawn - Administrative|Charge Changed|Held for Court|Dismissed - Rule 1013 \(Speedy|Dismissed - Rule 600 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed|ARD - County Open|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Judgment of Acquittal \(Prior to)\s+(\w{0,2})\s+(\w{1,2}\247\d+(\-|\247|\w+)*)/"; // removed "Replacement by Information"
+	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Not Guilty|Guilty|Nolle Prossed|Guilty Plea|Guilty Plea - Negotiated|Guilty Plea - Non-Negotiated|Withdrawn|Withdrawn - Administrative|Charge Changed|Held for Court|Proceed to Court|Dismissed - Rule 1013 \(Speedy|Dismissed - Rule 600 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed|ARD - County Open|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Judgment of Acquittal \(Prior to)\s+(\w{0,2})\s+(\w{1,2}\247\d+(\-|\247|\w+)*)/"; // removed "Replacement by Information"
 	
 	// $1 = code section, $3 = grade, $4 = charge, $5 = offense date, $6 = disposition
 	protected static $mdjChargesSearch = "/\d\s+((\w|\d|\s(?!\s)|\-|\247|\*)+)\s{2,}(\w{0,2})\s{2,}([\d|\D]+)\s{2,}(\d{1,2}\/\d{1,2}\/\d{4})\s{2,}(\D{2,})/";
@@ -783,6 +781,13 @@ class Arrest
 			$this->setIsArrestSummaryExpungement(FALSE);
 			return FALSE;
 		} 	
+
+		// also return false right away if there aren't any charges to actually look at
+		if (count($this->getCharges())==0)
+		{
+			$this->setIsArrestSummaryExpungement(FALSE);
+			return FALSE;
+		} 	
 		
 		// loop through all of the charges; only do a summary exp if none are redactible
 		// NOTE: THis may be a problem for HELD FOR COURT charges; keep this in mind
@@ -843,6 +848,7 @@ class Arrest
 	{
 		if (isset($this->isExpungement))
 			return  $this->getIsExpungement();
+
 		else
 		{
 			foreach ($this->getCharges() as $num=>$charge)
@@ -897,6 +903,7 @@ class Arrest
 	{
 		if (isset($this->isRedaction))
 			return  $this->getIsRedaction();
+
 		else
 		{
 			foreach ($this->getCharges() as $charge)
