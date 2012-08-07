@@ -40,11 +40,13 @@ class Charge
 	
 	public function isRedactable()
 	{
+		
 		if (isset($this->isRedactable)) { return $this->getIsRedactable(); }
 		$disp = $this->getDisposition();
 		
 		// "waived for court" appears on some MDJ cases.  It means the same as held for court.
-		if ($disp== "Guilty" || $disp== "Guilty Plea" || $disp== "Guilty Plea - Negotiated" || $disp== "Guilty Plea - Non-Negotiated"|| $disp == "Held for Court" || $disp == "Waived for Court")
+		$nonRedactableDisps = array("Guilty" , "Guilty Plea", "Guilty Plea - Negotiated", "Guilty Plea - Non-Negotiated", "Held for Court", "Waived for Court", "Proceed to Court");
+		if (in_array($disp, $nonRedactableDisps))
 			$this->setIsRedactable(FALSE);
 		else
 			$this->setIsRedactable(TRUE);
@@ -55,7 +57,9 @@ class Charge
 	{
 		if (isset($this->isSummaryRedactable)) { return $this->getIsSummaryRedactable(); }
 		$disp = $this->getDisposition();
-		if ($disp== "Guilty" || $disp== "Guilty Plea" || $disp== "Guilty Plea - Negotiated")
+		
+		$redactableDisps = array("Guilty" , "Guilty Plea", "Guilty Plea - Negotiated");
+		if (in_array($disp, $redactableDisps))
 			$this->setIsSummaryRedactable(TRUE);
 		else
 			$this->setIsSummaryRedactable(FALSE);
@@ -66,7 +70,8 @@ class Charge
 	{
 		if (isset($this->isARD)) { return $this->getIsARD(); }
 		$disp = $this->getDisposition();
-		if ($disp == "ARD" || $disp == "ARD - County" || $disp == "ARD - County Open")
+		$ardRedactableDisps = array("ARD" , "ARD - County", "ARD - County Open");
+		if (in_array($disp, $ardRedactableDisps))
 			$this->setIsARD(TRUE);
 		else
 			$this->setIsARD(FALSE);
