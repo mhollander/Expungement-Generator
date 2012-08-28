@@ -597,11 +597,15 @@ class Arrest
 		// This is a possible future thing to change.  Perhaps held for court should be put on
 		// And something should be "expungeable" regardless of whether "held for court"
 		// charges are on there.
-		$heldForCourtMatch = "/[Held for Court|Waived for Court]/";
 		$thatChargesNoHeldForCourt = array();
 		foreach ($that->charges as $charge)
 		{
-			if (!preg_match($heldForCourtMatch, $charge->getDisposition()))
+			$thatDisp = $charge->getDisposition();
+
+			// note strange use of strpos.  strpos returns the location of the first occurrence of the string
+			// or boolean false.  you have to check with === FALSE b/c the first occurence of the strong could
+			// be position 0 or 1, which would otherwise evaluate to true and false!
+			if (strpos($thatDisp, "Held for Court")===FALSE && strpos($thatDisp, "Waived for Court")===FALSE)
 				$thatChargesNoHeldForCourt[] = $charge;
 		}
 		
