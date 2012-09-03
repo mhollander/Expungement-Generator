@@ -18,7 +18,7 @@
 	// the page header, including the menu bar, etc...
 	include("header.php");
 ?>
-
+<!--
 <div class="main">
 	<div class="content-left">&nbsp;</div>
 	<div class="content-center">
@@ -63,7 +63,7 @@
 	</div>
 	<div class="content-right">&nbsp;</div>
 </div>
-
+-->
 <?php 
 	include("foot.php");
 ?>

@@ -149,6 +149,11 @@ hr.guideStepDesc {
 	margin-top: 20px;
 }
 
+.guideStepCounter {
+	font-size:1.1em;
+	margin-top: 5px;
+}
+
 .guideStep:hover{
 	color: #104ba9;
 	background-color: #8f989f;
