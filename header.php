@@ -16,7 +16,7 @@ if (isLoggedIn())
 	
 	$attorney = new Attorney($_SESSION["loginUserID"], $db);
 	if ($attorney->getUserLevel() == 1)
-		print " | <a href='report.php'>Reporting</a>";
+		print " | <a href='report.php'>Reporting</a> | <a href='manage.php'>Manage Users</a>";
 }
 else
 	print "<a href='login.php'>Login</a> | <a href='login.php?register'>Register</a>"

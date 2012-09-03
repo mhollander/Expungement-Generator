@@ -40,7 +40,14 @@ if (!isLoggedIn())
 else
 {
 // get the attorney info from the database
+// if there is an id in the URL and this user is a superuser, then let them view the user with that ID
+// if there isn't an ID in the URL or this isn't a superuser, then they can only view themselves
 	$attorney = new Attorney($_SESSION["loginUserID"], $db);
+	if ((isset($_REQUEST['id']) && $_REQUEST['id'] !=""))
+	{
+		if ($attorney->getUserLevel() == 1)
+			$attorney = new Attorney($_REQUEST['id'], $db);
+	}
 
 
 // display registration form
@@ -103,6 +110,7 @@ else
 		</div>
 
 		<div class="form-item">
+		<?php if (isset($_REQUEST['id']) && $_REQUEST['id'] != "") { print "<input type='hidden' name='id' value='".$_REQUEST['id']."'/>";} ?>
 			<input type="hidden" name="edit" value="1" />
 			<input type="submit" value="Edit Profile" />
 		</div>
