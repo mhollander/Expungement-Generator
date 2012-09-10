@@ -98,7 +98,7 @@ class Arrest
 	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Not Guilty|Guilty|Nolle Prossed|Guilty Plea|Guilty Plea - Negotiated|Guilty Plea - Non-Negotiated|Withdrawn|Withdrawn - Administrative|Charge Changed|Held for Court|Dismissed - Rule 1013 \(Speedy|Dismissed - Rule 600 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed|Demurrer Sustained|ARD - County Open|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Judgment of Acquittal \(Prior to)\s+(\w{0,2})\s+(\w{1,2}\247\d+(\-|\247|\w+)*)/"; // removed "Replacement by Information"
 	
 	// $1 = code section, $3 = grade, $4 = charge, $5 = offense date, $6 = disposition
-	protected static $mdjChargesSearch = "/\d\s+((\w|\d|\s(?!\s)|\-|\247|\*)+)\s{2,}(\w{0,2})\s{2,}([\d|\D]+)\s{2,}(\d{1,2}\/\d{1,2}\/\d{4})\s{2,}(\D{2,})/";
+	protected static $mdjChargesSearch = "/^\s*\d\s+((\w|\d|\s(?!\s)|\-|\247|\*)+)\s{2,}(\w{0,2})\s{2,}([\d|\D]+)\s{2,}(\d{1,2}\/\d{1,2}\/\d{4})\s{2,}(\D{2,})/";
 	
 	protected static $chargesSearchOverflow = "/^\s+(\w+\s*\w*)\s*$/";
 	// disposition date can appear in two different ways (that I have found) and a third for MDJ cases:
