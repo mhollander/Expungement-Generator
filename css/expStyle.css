@@ -104,6 +104,18 @@ padding-top: 4px;
 padding-bottom: 2px;	
 }
 
+div.footer {
+display: block;
+float: none;
+clear: both;
+padding-left: 5px;
+padding-top: 4px;
+padding-bottom: 2px;	
+text-align: right;
+font-size: 60%;
+}
+
+
 .headerLine {
 border-bottom: 2px solid darkGrey;
 clear: both;

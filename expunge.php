@@ -277,18 +277,27 @@ function createOverview($arrests, $templateDir, $dataDir, $person)
 // @return none
 function writeExpungementsToDatabase($arrests, $person, $attorney, $db)
 {
-	// if this isn't a CLS lawyer, then just return
-	if ($attorney->getProgramID() != 1)
-		return;
+
+	// if this isn't a CLS lawyer, we only update the number of total petitions generated and return
+	if ($attorney->getProgramID() == 1)
+		// otherwise, write the defendant into the db if he doesn't already exist
+		$person->writePersonToDB($db);
 	
-	// otherwise, write the defendant into the db if he doesn't already exist
-	$person->writePersonToDB($db);
-	
+	$total = 0;
 	// and then for each arrest, write the arrest into the database as well
 	foreach ($arrests as $arrest)
 	{
-		$arrest->writeExpungementToDatabase($person, $attorney, $db);
+		// count the number of petitions prepared
+		if ($arrest->isArrestExpungement() || $arrest->isArrestRedaction() || $arrest->isArrestSummaryExpungement($arrests))
+			$total++;
+	
+		// only add this to the db for certain programs
+		if ($attorney->getProgramID() == 1)
+			$arrest->writeExpungementToDatabase($person, $attorney, $db);
 	}
+	
+	$attorney->updateTotalPetitions($total, $db);
+	
 	return;
 }
 

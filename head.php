@@ -1,12 +1,12 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
 <html xmlns="http://www.w3.org/1999/xhtml">
-
 	<head>
 		<meta http-equiv="content-type" content="text/html;charset=utf-8" />
 		<link rel="stylesheet" href="css/expStyle.css?reload" type="text/css" media="all" /> 
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
 		<script src="js/eg.js"></script>
 		<title>Expungement Generator</title>
+		<!-- All information, code, css, and otherwise copyright Community Legal Services, Philadelphia.  The expungement generator was made by Michael Hollander, staff attorney at CLS.  -->
 	</head>
 	<body>
