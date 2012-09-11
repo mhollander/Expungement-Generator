@@ -277,7 +277,7 @@ class Attorney
 	public static function checkIfBarIDExists($barID, $db)
 	{
 		// check to see that this bar idis NOT already in the database
-		$query = "SELECT COUNT(userid) FROM userinfo WHERE pabarid=".mysql_escape_string($barID)."";
+		$query = "SELECT COUNT(userid) FROM userinfo WHERE pabarid=".mysql_escape_string($barID);
 		$result = mysql_query($query, $db);
 		if (!$result) 
 		{
@@ -289,5 +289,21 @@ class Attorney
 		$total = mysql_fetch_array($result); 
 		return $total[0];
 	}
+	
+	// goes into the DB and updates the userinfo table to increase the total number of petitions created by this attorney
+	public function updateTotalPetitions($add, $db)
+	{
+		$query = "UPDATE userinfo SET totalPetitions = totalPetitions + $add WHERE userID = " . $this->getUserID();
+		$result = mysql_query($query, $db);
+		if (!$result) 
+		{
+			if ($GLOBALS['debug'])
+				die('Could not query the DB for a bar ID during registration:' . mysql_error());
+			else
+				die('Could not check the DB for your bar ID while registering you, for some strange reason.');
+		}
+		return;
+	}
+	
 }
 ?>
