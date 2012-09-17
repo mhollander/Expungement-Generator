@@ -139,7 +139,7 @@ Identification No.: <barid>
 function displayAllUsers() 
 {
 	// first, do a query of all expungements
-	$query = "SELECT user.userid as userid, user.email as email, userinfo.firstName as firstName, userinfo.lastName as lastName, userinfo.userlevel as userLevel, program.programName as programName, program.ifp as ifp, userinfo.pabarid as pabarid FROM user, userinfo, program WHERE user.userid=userinfo.userid AND program.programid=userinfo.programid";
+	$query = "SELECT user.userid as userid, user.email as email, userinfo.firstName as firstName, userinfo.lastName as lastName, userinfo.userlevel as userLevel, program.programName as programName, program.ifp as ifp, userinfo.pabarid as pabarid, userinfo.totalPetitions as ptotal FROM user, userinfo, program WHERE user.userid=userinfo.userid AND program.programid=userinfo.programid";
 	
 	$result = mysql_query($query, $GLOBALS['db']);
 	if (!$result) 
@@ -152,7 +152,7 @@ function displayAllUsers()
 	
 	print <<<END
 	<table>
-	<th>Name</th><th>email</th><th>Userlevel</th><th>Program</th><th>Is IFP?</th><th>Bar ID</th>
+	<tr><th>Name</th><th>email</th><th>Userlevel</th><th>Program</th><th>Is IFP?</th><th>Bar ID</th><th>Petitions Prepped</th></tr>
 END;
 	while ($row = mysql_fetch_assoc($result))
 	{
@@ -166,6 +166,7 @@ END;
 		else
 			print "<td>No</td>";
 		print "<td>{$row['pabarid']}</td>";
+		print "<td>{$row['ptotal']}</td>";
 		print "</tr>";
 	}
 
