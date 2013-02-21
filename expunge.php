@@ -201,18 +201,12 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $d
 {
 	$files = array();
 
-	//temporary - for testing of new petitions
-	$newPetition = FALSE;
-	if (isset($_POST["newStylePetition"]) && $_POST["newStylePetition"] == "TRUE")
-		$newPetition = TRUE;
-	// end temporary
-	
 	print "<ul class='no-indent'>";
 	foreach ($arrests as $arrest)
 	{
 		if ($arrest->isArrestExpungement() || $arrest->isArrestRedaction() || $arrest->isArrestSummaryExpungement($arrests))
 		{
-			$files[] = $arrest->writeExpungement($templateDir, $dataDir, $person, $attorney, $newPetition, $db);
+			$files[] = $arrest->writeExpungement($templateDir, $dataDir, $person, $attorney, $db);
 			
 			// if this isn't a philly arrest and this is an agency that has IFP status, then add in 
 			// an IFP notice.

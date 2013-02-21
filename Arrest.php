@@ -95,7 +95,7 @@ class Arrest
 	protected static $nameSearch = "/^Defendant\s+(.*), (.*)/";
 
 	// ($1 = charge, $2 = disposition, $3 = grade, $4 = code section
-	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Not Guilty|Guilty|Nolle Prossed|Nolle Prossed \(Case Dismissed\)|Guilty Plea|Guilty Plea - Negotiated|Guilty Plea - Non-Negotiated|Withdrawn|Withdrawn - Administrative|Charge Changed|Held for Court|Dismissed - Rule 1013 \(Speedy|Dismissed - Rule 600 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed|Demurrer Sustained|ARD - County Open|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Summary Diversion Completed|Judgment of Acquittal \(Prior to)\s+(\w{0,2})\s+(\w{1,2}\247\d+(\-|\247|\w+)*)/"; // removed "Replacement by Information"
+	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Not Guilty|Guilty|Nolle Prossed|Nolle Prossed \(Case Dismissed\)|Nolle Prosequi - Administrative|Guilty Plea|Guilty Plea - Negotiated|Guilty Plea - Non-Negotiated|Withdrawn|Withdrawn - Administrative|Charge Changed|Held for Court|Dismissed - Rule 1013 \(Speedy|Dismissed - Rule 600 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed|Demurrer Sustained|ARD - County Open|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Summary Diversion Completed|Judgment of Acquittal \(Prior to)\s+(\w{0,2})\s+(\w{1,2}\s?\247\s?\d+(\-|\247|\w+)*)/"; // removed "Replacement by Information"
 	
 	// $1 = code section, $3 = grade, $4 = charge, $5 = offense date, $6 = disposition
 	protected static $mdjChargesSearch = "/^\s*\d\s+((\w|\d|\s(?!\s)|\-|\247|\*)+)\s{2,}(\w{0,2})\s{2,}([\d|\D]+)\s{2,}(\d{1,2}\/\d{1,2}\/\d{4})\s{2,}(\D{2,})/";
@@ -981,14 +981,9 @@ class Arrest
 	}
 	
 	
-	// @var newTemplate - A boolean.  True if we are to use the newstyle of template
-	public function writeExpungement($inputDir, $outputDir, $person, $attorney, $newTemplate, $db)
+	public function writeExpungement($inputDir, $outputDir, $person, $attorney, $db)
 	{
-		$odf;
-		if ($newTemplate)
-			$odf = new odf($inputDir . "790ExpungementTemplate.odt");
-		else
-			$odf = new odf($inputDir . $this->getTemplateName($attorney->getIFP()));
+		$odf = new odf($inputDir . "790ExpungementTemplate.odt");
 		if ($GLOBALS['debug'])
 			print $this->getTemplateName($attorney->getIFP());
 		
@@ -1005,18 +1000,15 @@ class Arrest
 		// set the date.  Format = Month[word] Day[number], Year[4 digit number]
 		$odf->setVars("PETITION_DATE", date("F j, Y"));
 		// set the type of petition
-		if ($newTemplate)
+		if ($this->isArrestRedaction() && !$this->isArrestExpungement())
 		{
-			if ($this->isArrestRedaction() && !$this->isArrestExpungement())
-			{
-				$odf->setVars("EXPUNGEMENT_OR_REDACTION","Redaction");
-				$odf->setVars("EXPUNGED_OR_REDACTED", "Redacted");
-			}
-			else if ($this->isArrestExpungement() || $this->isArrestSummaryExpungement)
-			{
-				$odf->setVars("EXPUNGEMENT_OR_REDACTION", "Expungement");
-				$odf->setVars("EXPUNGED_OR_REDACTED", "Expunged");
-			}
+			$odf->setVars("EXPUNGEMENT_OR_REDACTION","Redaction");
+			$odf->setVars("EXPUNGED_OR_REDACTED", "Redacted");
+		}
+		else if ($this->isArrestExpungement() || $this->isArrestSummaryExpungement)
+		{
+			$odf->setVars("EXPUNGEMENT_OR_REDACTION", "Expungement");
+			$odf->setVars("EXPUNGED_OR_REDACTED", "Expunged");
 		}
 		
 		if ($attorney->getIFP())
@@ -1029,91 +1021,30 @@ class Arrest
 		// something different.  hence docketnumber, docketnumber1, and docketnumber2.  
 		$theDocketNum = $odf->setSegment("docketnumber");
 		$theDocketNum1 = $odf->setSegment("docketnumber1");
-		if ($newTemplate)
-		{
-			$theDocketNum2 = $odf->setSegment("docketnumber2");
-			$theDocketNum3 = $odf->setSegment("docketnumber3");
-		}
-		else
-		{
-			if ($attorney->getIFP())
-				$theDocketNum2 = $odf->setSegment("docketnumber2");
-		}
+		$theDocketNum2 = $odf->setSegment("docketnumber2");
+		$theDocketNum3 = $odf->setSegment("docketnumber3");
 		
 		foreach ($this->getDocketNumber() as $value)
 		{
 			$theDocketNum->setVars("CP", $value);
 			$theDocketNum1->setVars("CP", $value);
-			if ($newTemplate)
-			{
-				$theDocketNum2->setVars("CP", $value);
-				$theDocketNum3->setVars("CP", $value);
-			}
-			else
-			{
-				if ($attorney->getIFP())
-					$theDocketNum2->setVars("CP", $value);
-			}
+			$theDocketNum2->setVars("CP", $value);
+			$theDocketNum3->setVars("CP", $value);
+			
 			$theDocketNum->merge();
 			$theDocketNum1->merge();
-			if ($newTemplate)
-			{
-				$theDocketNum2->merge();
-				$theDocketNum3->merge();
-			}
-			else 
-			{
-				if ($attorney->getIFP())
-					$theDocketNum2->merge();
-			}
+			$theDocketNum2->merge();
+			$theDocketNum3->merge();
 		}
+
 		$odf->mergeSegment($theDocketNum);
 		$odf->mergeSegment($theDocketNum1);
-		if ($newTemplate)
-		{
-			$odf->mergeSegment($theDocketNum2);
-			$odf->mergeSegment($theDocketNum3);
+		$odf->mergeSegment($theDocketNum2);
+		$odf->mergeSegment($theDocketNum3);
 			
-		}
-		else
-		{
-			if ($attorney->getIFP())
-				$odf->mergeSegment($theDocketNum2);
-		}
 		
-		/// do the same for aliases
-		if ($newTemplate)
-		{
-			$odf->setVars("ALIASES", $person->getAliasCommaList());
-		}
-		else
-		{
-			$theAlias = $odf->setSegment("alias");
-			$theAlias1 = $odf->setSegment("alias1");
-			if ($attorney->getIFP())
-				$theAlias2 = $odf->setSegment("alias2");
-			foreach ($person->getAlias() as $value)
-			{
-				if ($value=="" || $value==null)
-					continue;
-				$aliasValue = "aka: " . $value;
-				$theAlias->setVars("ALIASES", $aliasValue);
-				$theAlias1->setVars("ALIASES", $aliasValue);
-				if ($attorney->getIFP())
-					$theAlias2->setVars("ALIASES", $aliasValue);
-				$theAlias->merge();
-				$theAlias1->merge();
-				if ($attorney->getIFP())
-					$theAlias2->merge();
-			}
-			$odf->mergeSegment($theAlias);
-			$odf->mergeSegment($theAlias1);
-			if ($attorney->getIFP())
-				$odf->mergeSegment($theAlias2);
-		}
+		$odf->setVars("ALIASES", $person->getAliasCommaList());
 				
-		if (!$newTemplate)
-			$odf->setVars("FIRST_DOCKET_NUM", $this->getFirstDocketNumber());
 		$odf->setVars("OTN", $this->getOTN());
 		$odf->setVars("DC", $this->getDC());
 		$odf->setVars("PP", $person->getPP());
@@ -1124,35 +1055,25 @@ class Arrest
 		// setting the disposition list is different dependingo on what type of expungement
 		// this is.  An ARD will say that the ard was completed; a summary might say something else
 		// and a regular expungement/redaction will say the actual dispositions
-		if ($newTemplate)
-		{
-			// if this is an ard expungement
-			
-			$odf->setVars("DISPOSITION_LIST", $this->getDispList());
-			if ($this->isArrestARDExpungement())
-			{
-				$odf->setVars("ARD_EXTRA", " and the petitioner successfully completed ARD. The ARD completion letter is attached to this petition");
-				$odf->setVars("SUMMARY_EXTRA", "");
-			}
-			else if ($this->isArrestSummaryExpungement)
-			{
-				$odf->setVars("DISPOSITION_LIST", "summary convictions");
-				$odf->setVars("ARD_EXTRA", "");
-				$odf->setVars("SUMMARY_EXTRA", " summary convictions. The petitioner has been arrest free for more than five years since this summary conviction");
-			}
-			else
-			{
-				$odf->setVars("DISPOSITION_LIST", $this->getDispList());
-				$odf->setVars("ARD_EXTRA", "");
-				$odf->setVars("SUMMARY_EXTRA", "");
-			}
-		}
+		// if this is an ard expungement
 		
-		// if this is not the new 490 or 790 template, then we have to do things differently
+		$odf->setVars("DISPOSITION_LIST", $this->getDispList());
+		if ($this->isArrestARDExpungement())
+		{
+			$odf->setVars("ARD_EXTRA", " and the petitioner successfully completed ARD. The ARD completion letter is attached to this petition");
+			$odf->setVars("SUMMARY_EXTRA", "");
+		}
+		else if ($this->isArrestSummaryExpungement)
+		{
+			$odf->setVars("DISPOSITION_LIST", "summary convictions");
+			$odf->setVars("ARD_EXTRA", "");
+			$odf->setVars("SUMMARY_EXTRA", " summary convictions. The petitioner has been arrest free for more than five years since this summary conviction");
+		}
 		else
 		{
-			if (!$this->isArrestSummaryExpungement)
-				$odf->setVars("DISPOSITION_LIST", $this->getDispList());
+			$odf->setVars("DISPOSITION_LIST", $this->getDispList());
+			$odf->setVars("ARD_EXTRA", "");
+			$odf->setVars("SUMMARY_EXTRA", "");
 		}
 		
 		//$odf->setVars("DISPOSITION_DATE", $this->getDispositionDate());
@@ -1183,70 +1104,61 @@ class Arrest
 		$odf->setVars("ARREST_DATE", $this->getArrestDate());
 		$odf->setVars("AFFIANT", $this->getArrestingOfficer());
 
-		if (!$newTemplate)
-		{
-			$odf->setVars("AGE", $this->getAge());
-			$odf->setVars("CHARGE_LIST", $this->getChargeList());
-		}
 //		if ($this->isArrestRedaction() && !$this->isArrestExpungement())
 //			$odf->setVars("EXPUNGEABLE_CHARGE_LIST", $this->getChargeList(TRUE));
 		
 		
-		// set some of the vars that only appear in the new template
-		if ($newTemplate)
+		$odf->setVars("COUNTY", $this->getCounty());						
+		$odf->setVars("ARRESTING_AGENCY", $this->getArrestingAgency());
+		$odf->setVars("COMPLAINT_DATE", $this->getComplaintDate());		
+
+		$mdjNumberForTemplate = "";
+		if ($this->getIsMDJ() == 1)
+			// if this is an mdj, set the below var so that it inputs onto the shset the district number
+			// if this isn't an mdj, then we set nothing and this field will be blanked out on the petition.
+			$mdjNumberForTemplate = "Magisterial District Number: {$this->getMDJDistrictNumber()}";
+		$odf->setVars("MDJ_DISTRICT_NUMBER", $mdjNumberForTemplate);
+
+		// set the agencies for receiving orders.  As silly as this is, I need to do this through
+		// php since there are different agencies that are notified if this is an mdj case.
+		$agencies = array(	"The Clerk of Courts of {$this->getCounty()} County, Criminal Division",
+							"The {$this->getCounty()} County District Attorney`s Office",
+							"The Pennsylvania State Police, Central Records",
+							"A.O.P.C. Expungement Unit",
+							$this->getArrestingAgency(),
+							"{$this->getCounty()} County Department of Adult Probation and Parole");
+		if ($this->getIsMDJ())
+			// if this is an mdj case, put the MDJ court in the list, right after the clerk of courts
+			array_splice($agencies,1,0,"Magisterial District Court {$this->getMDJDistrictNumber()}");
+
+		$theAgencies=$odf->setSegment("AGENCY");
+		foreach ($agencies as $key=>$value)
 		{
-			$odf->setVars("COUNTY", $this->getCounty());						
-			$odf->setVars("ARRESTING_AGENCY", $this->getArrestingAgency());
-			$odf->setVars("COMPLAINT_DATE", $this->getComplaintDate());		
-
-			$mdjNumberForTemplate = "";
-			if ($this->getIsMDJ() == 1)
-				// if this is an mdj, set the below var so that it inputs onto the shset the district number
-				// if this isn't an mdj, then we set nothing and this field will be blanked out on the petition.
-				$mdjNumberForTemplate = "Magisterial District Number: {$this->getMDJDistrictNumber()}";
-			$odf->setVars("MDJ_DISTRICT_NUMBER", $mdjNumberForTemplate);
-
-			// set the agencies for receiving orders.  As silly as this is, I need to do this through
-			// php since there are different agencies that are notified if this is an mdj case.
-			$agencies = array(	"The Clerk of Courts of {$this->getCounty()} County, Criminal Division",
-								"The {$this->getCounty()} County District Attorney`s Office",
-								"The Pennsylvania State Police, Central Records",
-								"A.O.P.C. Expungement Unit",
-								$this->getArrestingAgency(),
-								"{$this->getCounty()} County Department of Adult Probation and Parole");
-			if ($this->getIsMDJ())
-				// if this is an mdj case, put the MDJ court in the list, right after the clerk of courts
-				array_splice($agencies,1,0,"Magisterial District Court {$this->getMDJDistrictNumber()}");
-
-			$theAgencies=$odf->setSegment("AGENCY");
-			foreach ($agencies as $key=>$value)
-			{
-				$a = $key+1;
-				$theAgencies->AGENCY_NAME("{$a}. {$value}");
-				$theAgencies->merge();
-			}
-			$odf->mergeSegment($theAgencies);
-			
-			$courtInformation = $this->getCourtInformation($db);
-			
-			$odf->setVars("COURT_NAME", $courtInformation['courtName']);
-			$odf->setVars("COURT_STREET", $courtInformation['address']) . ' ' . $courtInformation['address2'];
-			$odf->setVars("COURT_CITY_STATE_ZIP", $courtInformation['city'] . ", " . $courtInformation['state'] . " " . $courtInformation['zip']);
-			
-			// if this isn't philadelphia, say that the CHR is attached
-			if ($this->getCounty()!="Philadelphia")
-				$odf->setVars("INCLUDE_CHR", "I have attached a copy of my Pennsylvania State Police Criminal History which I have obtained within 60 days before filing this petition.");
-			else
-				$odf->setVars("INCLUDE_CHR", "");
-			
-			// if this is a summary arrest and we aren't in philadelphia, this is a 490 petition
-			// otherwise it is a 790 petition
-			if ($this->isArrestSummaryExpungement || $this->getIsMDJ() == 1)
-				$odf->setVars("490_OR_790", "490");
-			else
-				$odf->setVars("490_OR_790", "790");
-
+			$a = $key+1;
+			$theAgencies->AGENCY_NAME("{$a}. {$value}");
+			$theAgencies->merge();
 		}
+		$odf->mergeSegment($theAgencies);
+		
+		$courtInformation = $this->getCourtInformation($db);
+		
+		$odf->setVars("COURT_NAME", $courtInformation['courtName']);
+		$odf->setVars("COURT_STREET", $courtInformation['address']) . ' ' . $courtInformation['address2'];
+		$odf->setVars("COURT_CITY_STATE_ZIP", $courtInformation['city'] . ", " . $courtInformation['state'] . " " . $courtInformation['zip']);
+		
+		// if this isn't philadelphia, say that the CHR is attached
+		if ($this->getCounty()!="Philadelphia")
+			$odf->setVars("INCLUDE_CHR", "I have attached a copy of my Pennsylvania State Police Criminal History which I have obtained within 60 days before filing this petition.");
+		else
+			$odf->setVars("INCLUDE_CHR", "");
+		
+		// if this is a summary arrest and we aren't in philadelphia, this is a 490 petition
+		// otherwise it is a 790 petition
+		if ($this->isArrestSummaryExpungement || $this->getIsMDJ() == 1)
+			$odf->setVars("490_OR_790", "490");
+		else
+			$odf->setVars("490_OR_790", "790");
+
 		
 		$theCharges=$odf->setSegment("charges");
 		$theCharges1=$odf->setSegment("charges1");
@@ -1265,16 +1177,14 @@ class Arrest
 
 				$theCharges->CHARGE($charge->getChargeName());
 			$theCharges->CODE_SEC($charge->getCodeSection());
-			if ($newTemplate)
-				$theCharges->GRADE($charge->getGrade());
+			$theCharges->GRADE($charge->getGrade());
 			$theCharges->DISP($charge->getDisposition());
 			$theCharges->DISP_DATE($dispDate);
 			$theCharges->merge();
 
 			$theCharges1->CHARGE1($charge->getChargeName());
 			$theCharges1->CODE_SEC1($charge->getCodeSection());
-			if ($newTemplate)
-				$theCharges1->GRADE($charge->getGrade());
+			$theCharges1->GRADE($charge->getGrade());
 			$theCharges1->DISP1($charge->getDisposition());
 			$theCharges1->DISP_DATE1($dispDate);
 			$theCharges1->merge();
@@ -1297,7 +1207,6 @@ class Arrest
 	}
 
 
-	// @var newTemplate - A boolean.  True if we are to use the newstyle of template
 	public function writeIFP($person, $attorney, $db)
 	{
 		$odf = new odf($GLOBALS["templateDir"] . "IFPTemplate.odt");
