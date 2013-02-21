@@ -19,7 +19,7 @@ if (isLoggedIn())
 		print " | <a href='report.php'>Reporting</a> | <a href='manage.php'>Manage Users</a>";
 }
 else
-	print "<a href='login.php'>Login</a> | <a href='login.php?register'>Register</a>"
+	print "<a href='login.php'>Login</a>"
 ?>
 	</div>
 </div>

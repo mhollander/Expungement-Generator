@@ -93,10 +93,6 @@ else
 			<input name="userFile[]" type="file" multiple="true" name="userFile1"/>
 		</div>
 		<div class="form-item">
-		<label for="newStylePetition">Use 790/490 Statewide Petition?</label>
-			<input type="checkbox" name="newStylePetition" value="TRUE" checked="checked"/> 
-		</div> 
-		<div class="form-item">
 			<input type="submit" value="Send files" />
 		</div>
 		</form>
