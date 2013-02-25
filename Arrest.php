@@ -382,7 +382,7 @@ class Arrest
 				// if there is no listed affiant or the affiant is "Affiant" then set arresting 
 				// officer to "Unknown Officer"
 				if ($ao == "" || !(stripos("Affiant", $ao)===FALSE))
-					$ao = NULL;
+					$ao = self::$unknownOfficer;
 				$this->setArrestingOfficer($ao);
 			}	
 
@@ -1003,12 +1003,12 @@ class Arrest
 		if ($this->isArrestRedaction() && !$this->isArrestExpungement())
 		{
 			$odf->setVars("EXPUNGEMENT_OR_REDACTION","Redaction");
-			$odf->setVars("EXPUNGED_OR_REDACTED", "Redacted");
+			//$odf->setVars("EXPUNGED_OR_REDACTED", "Redacted");
 		}
 		else if ($this->isArrestExpungement() || $this->isArrestSummaryExpungement)
 		{
 			$odf->setVars("EXPUNGEMENT_OR_REDACTION", "Expungement");
-			$odf->setVars("EXPUNGED_OR_REDACTED", "Expunged");
+			//$odf->setVars("EXPUNGED_OR_REDACTED", "Expunged");
 		}
 		
 		if ($attorney->getIFP())
@@ -1091,7 +1091,7 @@ class Arrest
 		$odf->setVars("ZIP", $person->getZip());
 		
 		$today = new DateTime();
-		$odf->setVars("ORDER_YEAR", $today->format('Y'));
+		//$odf->setVars("ORDER_YEAR", $today->format('Y'));
 
 		// for costs, we have to subtract out any effect that bail may have had on the costs and fines.  The rules only require
 		// that we tell the court costs and fines accrued and paid off, not bail accrued and paid off
