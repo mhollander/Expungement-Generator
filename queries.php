@@ -48,17 +48,20 @@ else
 	include ('foot.php');
 
 
+// fucntion gatherQueries(): put together a list of queries to run on the server.  
+// @return queries an array containing an array of a description and a sql statement
 function gatherQueries()
 {
-	$sql = array();
-	$sql[] = "SELECT d.firstName as ClientFirst, d.lastName as ClientLast, e.timestamp, a.costsTotal, u.firstName as AttnyFirst, u.lastName as AttnyLast FROM `expungement` as e LEFT JOIN arrest as a ON e.arrestID = a.arrestID LEFT JOIN defendant as d ON e.defendantID = d.defendantID LEFT JOIN userinfo as u ON e.userid = u.userid WHERE e.isExpungement = 1 and a.costsTotal > 0 ORDER BY e.timestamp DESC";
-	return $sql;
+	
+	$queries = array();
+	$queries[] = array("Show all petitions prepared where the petition is an expungement (not redaction) and there are costs owed.","SELECT d.firstName as ClientFirst, d.lastName as ClientLast, e.timestamp, a.costsTotal, u.firstName as AttnyFirst, u.lastName as AttnyLast FROM `expungement` as e LEFT JOIN arrest as a ON e.arrestID = a.arrestID LEFT JOIN defendant as d ON e.defendantID = d.defendantID LEFT JOIN userinfo as u ON e.userid = u.userid WHERE e.isExpungement = 1 and a.costsTotal > 0 ORDER BY e.timestamp DESC");
+	return $queries;
 }
 
 function displayQuery($query)
 {
-	$result = mysql_query($query, $GLOBALS['db']);
-	print "<p>" . $query . "</p>";
+	$result = mysql_query($query[1], $GLOBALS['db']);
+	print "<p><b>" . $query[0] . "</b><br/>" . $query[1] . "</p>";
 	
 	if (!$result) 
 	{
