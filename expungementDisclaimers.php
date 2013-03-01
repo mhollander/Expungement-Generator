@@ -18,8 +18,7 @@
 <li class='disclaimer item'>ARD Expungements do not check for ARD completion</li>
 <li class='disclaimer item'>You must attached an ARD completion letter with ARD expungements</li>
 <li class='disclaimer item'>Expungements are prepared even when fines/costs owed</li>
-<li class='disclaimer item'>Section 17/PWOV</li>
+<li class='disclaimer item'>Section 17/PWOV cases are not seen as expungements</li>
 <li class='disclaimer item'>Cases where an individual was found guilty and then later had that disposition reversed and the whole case appears on one docket sheet (rare).</li>
-<li class='disclaimer item'>Rule 490 Peitions do not properly name the magistrate judge and address. This is only important if you live outside of Philadelphia.</li>
 </ul>
 <div class="disclaimer">The expungement generator is only a machine.  It makes mistakes!  Please check through the petitions that you prepare.</div>
