@@ -51,6 +51,7 @@ class Arrest
 	private $isHeldForCourt;
 	private $isSummaryArrest = FALSE;
 	private $isArrestSummaryExpungement;
+	private $isArrestOver70Expungement;
 	private $pdfFile;
 	
 	// isMDJ = 0 if this is not an mdj case at all, 1 if this is an mdj case and 2 if this is a CP case that decended from MDJ
@@ -200,6 +201,7 @@ class Arrest
 	public function setIsExpungement($isExpungement)  {  $this->isExpungement = $isExpungement; }
 	public function setIsRedaction($isRedaction)  {  $this->isRedaction = $isRedaction; }
 	public function setIsArrestSummaryExpungement($isSummaryExpungement) { $this->isArrestSummaryExpungement = $isSummaryExpungement; }
+	public function setIsArrestOver70Expungement($isOver70Expungement) { $this->isArrestOver70Expungement = $isOver70Expungement; }
 	public function setIsHeldForCourt($isHeldForCourt)  {  $this->isHeldForCourt = $isHeldForCourt; }
 	public function setIsMDJ($isMDJ)  {  $this->isMDJ = $isMDJ; }
 	public function setPDFFile($pdfFile) { $this->pdfFile = $pdfFile; }
@@ -757,6 +759,69 @@ class Arrest
 		}
 	}
 	
+	// @function isArrestOver70Expungement() - returns true if the petition is > 70yo and they have been arrest
+	// free for at least the last 10 years.
+	// @param arrests - an array of all of the other arrests that we are comparing this to to see if they are 
+	// 10 years arrest free
+	//@ return TRUE if the conditions above are me; FALSE if not
+	public function isArrestOver70Expungement($arrests, $person)
+	{
+		// if already set, then just return the member variable
+		if (isset($this->isArrestOver70Expungement))
+			return $this->isArrestOver70Expungement;
+			
+		// return false right away if the petition is younger than 70
+		if ($person->getAge() < 70)
+		{
+			$this->setIsArrestOver70Expungement(FALSE);
+			return FALSE;
+		} 	
+
+		// also return false right away if there aren't any charges to actually look at
+		if (count($this->getCharges())==0)
+		{
+			$this->setIsArrestOver70Expungement(FALSE);
+			return FALSE;
+		} 	
+		
+		// do an over 70 exp if at least one is not redactible; if this is a regular exp, just do a regular exp
+		// NOTE: THis may be a problem for HELD FOR COURT charges; keep this in mind
+		if ($this->isArrestExpungement())
+		{
+			$this->setIsArrestOver70Expungement(FALSE);
+			return FALSE;
+		}
+		
+		// at this point we know two things: we are over 70 and we need to get non-redactable charges off of 
+		// the record
+		// Loop through all of the arrests passed in to get the disposition dates or the 
+		// arrest dates if the disposition dates don't exist.  
+		// return false if any of them are within 10 years of today
+
+		$dispDates = array();
+		$dispDates[] = new DateTime($this->getBestDispositionDate());
+		foreach ($arrests as $arrest)
+		{
+			$dispDates[] = new DateTime($arrest->getBestDispositionDate());
+		}
+
+		// look at each dispDate in the array and make sure it was more than 10 years ago
+		$today = new DateTime();
+		foreach ($dispDates as $dispDate)
+		{
+			if (abs(dateDifference($dispDate, $today)) < 10)
+			{
+				$this->setIsArrestOver70Expungement(FALSE);
+				return FALSE;
+			}
+		}
+		
+		// if we got here, it means there are no five year periods of freedom
+		$this->setIsArrestOver70Expungement(TRUE);
+		return TRUE;
+			
+	}
+	
 	// @function isArrestSummaryExpungement - returns true if this is an expungeable summary 
 	// arrest.  
 	// This is true in a slightly more complicated sitaution than the others.  To be a 
@@ -1002,7 +1067,7 @@ class Arrest
 		// set the type of petition
 		if ($this->isArrestRedaction() && !$this->isArrestExpungement())
 			$odf->setVars("EXPUNGEMENT_OR_REDACTION","Redaction");
-		else if ($this->isArrestExpungement() || $this->isArrestSummaryExpungement)
+		else if ($this->isArrestExpungement() || $this->isArrestSummaryExpungement || $this->isArrestOver70Expungement)
 			$odf->setVars("EXPUNGEMENT_OR_REDACTION", "Expungement");
 		
 		if ($attorney->getIFP())
@@ -1051,12 +1116,20 @@ class Arrest
 		// and a regular expungement/redaction will say the actual dispositions
 		// if this is an ard expungement
 		
-		$odf->setVars("DISPOSITION_LIST", $this->getDispList());
 		if ($this->isArrestARDExpungement())
 		{
+			$odf->setVars("DISPOSITION_LIST", $this->getDispList());
 			$odf->setVars("ARD_EXTRA", " and the petitioner successfully completed ARD. The ARD completion letter is attached to this petition");
 			$odf->setVars("SUMMARY_EXTRA", "");
 		}
+		else if ($this->isArrestOver70Expungement)
+		{
+			// print the disposition list with all offenses, not just redactable ones
+			$odf->setVars("DISPOSITION_LIST", $this->getDispList(FALSE));
+			$odf->setVars("ARD_EXTRA", "");
+			$odf->setVars("SUMMARY_EXTRA", " and the Petitioner is over 70 years old has been free of arrest or prosecution for ten years following from completion the sentence");
+		}
+	
 		else if ($this->isArrestSummaryExpungement)
 		{
 			$odf->setVars("DISPOSITION_LIST", "summary convictions");
@@ -1154,10 +1227,13 @@ class Arrest
 		$theCharges1=$odf->setSegment("charges1");
 		foreach ($this->getCharges() as $charge)
 		{
-			if (!$this->isArrestSummaryExpungement && !$charge->isRedactable())
-				continue;
-			if ($this->isArrestSummaryExpungement && !$charge->isSummaryRedactable()) 
-				continue;
+			if (!$this->isArrestOver70Expungement)
+			{
+				if (!$this->isArrestSummaryExpungement && !$charge->isRedactable())
+					continue;
+				if ($this->isArrestSummaryExpungement && !$charge->isSummaryRedactable()) 
+					continue;
+			}
 			
 			// sometimes disp date isn't associated with a charge.  If not, just use the disposition
 			// date of the whole shebang.  It is a good guess, at the very least.
@@ -1301,7 +1377,7 @@ class Arrest
 			// through the loop.
 			// If we are a redactable charge, increment the counter.
 			$tempExpungementID = $expungementID;
-			if (!$charge->isRedactable() && !$this->isArrestSummaryExpungement)
+			if (!$charge->isRedactable() && (!$this->isArrestSummaryExpungement && !$this->isArrestOver70Expungement)
 				$tempExpungementID = "NULL";
 			else
 				$numRedactableCharges++;
