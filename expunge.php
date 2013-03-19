@@ -259,7 +259,7 @@ function createOverview($arrests, $templateDir, $dataDir, $person)
 			if ($arrest->isArrestSummaryExpungement($arrests))
 				$expType = "Summary Expungement";
 			if ($arrest->isArrestOver70Expungement($arrests, $person))
-				$exptType = "Expungement (over 70)";
+				$expType = "Expungement (over 70)";
 			$theArrest->setVars("DOCKET", implode(", ", $arrest->getDocketNumber()));
 			$theArrest->setVars("OTN", $arrest->getOTN());
 			$theArrest->setVars("EXPUNGEMENT_TYPE", $expType);
