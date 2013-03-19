@@ -1377,7 +1377,7 @@ class Arrest
 			// through the loop.
 			// If we are a redactable charge, increment the counter.
 			$tempExpungementID = $expungementID;
-			if (!$charge->isRedactable() && (!$this->isArrestSummaryExpungement && !$this->isArrestOver70Expungement)
+			if (!$charge->isRedactable() && (!$this->isArrestSummaryExpungement && !$this->isArrestOver70Expungement))
 				$tempExpungementID = "NULL";
 			else
 				$numRedactableCharges++;
