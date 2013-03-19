@@ -204,7 +204,7 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $d
 	print "<ul class='no-indent'>";
 	foreach ($arrests as $arrest)
 	{
-		if ($arrest->isArrestExpungement() || $arrest->isArrestRedaction() || $arrest->isArrestSummaryExpungement($arrests))
+		if ($arrest->isArrestExpungement() || $arrest->isArrestRedaction() || $arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestOver70Expungement($arrests, $person))
 		{
 			$files[] = $arrest->writeExpungement($templateDir, $dataDir, $person, $attorney, $db);
 			
@@ -214,7 +214,14 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $d
 				$files[] = $arrest->writeIFP($person, $attorney, $db);
 			
 			print "<li><span class='boldLabel'>Performing ";
-			print (($arrest->isArrestExpungement() || $arrest->isArrestSummaryExpungement($arrests))?("expungement"):("redaction"));
+			
+			if ($arrest->isArrestExpungement() || $arrest->isArrestSummaryExpungement($arrests))
+				print "expungement";
+			else if ($arrest->isArrestOver70Expungement($arrests, $person))
+				print "expungement (over 70)";
+			else 
+				print "redaction";
+
 			print " on case: </span> " . $arrest->getFirstDocketNumber() . "</li>";
 		}
 		else 
@@ -251,6 +258,8 @@ function createOverview($arrests, $templateDir, $dataDir, $person)
 				$expType = "ARD Expungement***";
 			if ($arrest->isArrestSummaryExpungement($arrests))
 				$expType = "Summary Expungement";
+			if ($arrest->isArrestOver70Expungement())
+				$exptType = "Expungement (over 70)";
 			$theArrest->setVars("DOCKET", implode(", ", $arrest->getDocketNumber()));
 			$theArrest->setVars("OTN", $arrest->getOTN());
 			$theArrest->setVars("EXPUNGEMENT_TYPE", $expType);
