@@ -1101,8 +1101,10 @@ class Arrest
 		$odf->mergeSegment($theDocketNum2);
 		$odf->mergeSegment($theDocketNum3);
 			
-		
-		$odf->setVars("ALIASES", $person->getAliasCommaList());
+		$aliases = $person->getAliasCommaList();
+		if (trim($aliases) == FALSE)
+			$aliases = "None";
+		$odf->setVars("ALIASES", $aliases);
 				
 		$odf->setVars("OTN", $this->getOTN());
 		$odf->setVars("DC", $this->getDC());
@@ -1265,7 +1267,9 @@ class Arrest
 			$outputFile .= "ARDExpungement";
 		else if ($this->isArrestExpungement())
 			$outputFile .= "Expungement";
-		else 
+		else  if ($this->isArrestOver70Expungement)
+			$outputFile .= "ExpungementOver70";
+		else
 			$outputFile .= "Redaction";
 		$odf->saveToDisk($outputFile . ".odt");
 		return $outputFile . ".odt";
