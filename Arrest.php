@@ -1224,7 +1224,14 @@ class Arrest
 		else
 			$odf->setVars("490_OR_790", "790");
 
-		
+
+		// add in extra order information for CREP
+		if ($attorney->getProgramId() == 2)
+		{
+			$crepOrderLanguage = "All criminal justice agencies upon whom this order is served also are enjoined from disseminating to any non-criminal justice agency any and all criminal history record information ordered to be expunged/redacted pursuant to this Order unless otherwise permitted to do so pursuant to the Criminal History Information Records Act.  ";
+			$odf->setVars("CREP_EXTRA_ORDER_LANGUAGE", $crepOrderLanguage);
+		}
+			
 		$theCharges=$odf->setSegment("charges");
 		$theCharges1=$odf->setSegment("charges1");
 		foreach ($this->getCharges() as $charge)
