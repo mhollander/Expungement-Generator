@@ -1231,6 +1231,8 @@ class Arrest
 			$crepOrderLanguage = "All criminal justice agencies upon whom this order is served also are enjoined from disseminating to any non-criminal justice agency any and all criminal history record information ordered to be expunged/redacted pursuant to this Order unless otherwise permitted to do so pursuant to the Criminal History Information Records Act.  ";
 			$odf->setVars("CREP_EXTRA_ORDER_LANGUAGE", $crepOrderLanguage);
 		}
+		else
+			$odf->setVars("CREP_EXTRA_ORDER_LANGUAGE", "");
 			
 		$theCharges=$odf->setSegment("charges");
 		$theCharges1=$odf->setSegment("charges1");
