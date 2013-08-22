@@ -83,11 +83,6 @@ else
 			<input type="text" name="personSID" value="<?php printIfSet('personSID');?>" />
 		</div> 
 		<div class="form-item">
-		<label for="edit-name">Aliases</label>
-			<input type="text" name="personAlias" value="<?php printIfSet('personAlias');?>" /> 
-			<div class="description">(comma separated list--eg: Bill Smith, Billy Smith, William Smith)</div>
-		</div> 
-		<div class="form-item">
 			<label for="userFile1">Send these files (contrl click to select multiple files)</label>
 			<input type="hidden" name="MAX_FILE_SIZE" value="300000" />
 			<input name="userFile[]" type="file" multiple="true" name="userFile1"/>

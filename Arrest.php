@@ -53,6 +53,8 @@ class Arrest
 	private $isArrestSummaryExpungement;
 	private $isArrestOver70Expungement;
 	private $pdfFile;
+	private $aliases = array();
+	private $pastAliases = FALSE; // used to stop checking for aliases once we have reached a certain point in the docket sheet	
 	
 	// isMDJ = 0 if this is not an mdj case at all, 1 if this is an mdj case and 2 if this is a CP case that decended from MDJ
 	private $isMDJ = 0;
@@ -85,7 +87,21 @@ class Arrest
 	protected static $mdjComplaintDateSearch = "/Issue Date:\s+(\d{1,2}\/\d{1,2}\/\d{4})/";
 	protected static $judgeSearch = "/Final Issuing Authority:\s+(.*)/";
 	protected static $judgeAssignedSearch = "/Judge Assigned:\s+(.*)\s+(Date Filed|Issue Date):/";
+
+	#note that the alias name search only captures a maximum of six aliases.  
+	# This is because if you do this: /^Alias Name\r?\n(?:(^.+)\r?\n)*/m, only the last alias will be stored in $1.  
+	# What a crock!  I can't figure out a way around this
+	protected static $aliasNameStartSearch = "/^Alias Name/"; // \r?\n(?:(^.+)\r?\n)(?:(^.+)\r?\n)?(?:(^.+)\r?\n)?(?:(^.+)\r?\n)?(?:(^.+)\r?\n)?(?:(^.+)\r?\n)?/m"; 
+	protected static $aliasNameEndSearch = "/CASE PARTICIPANTS/";
+	protected static $endOfPageSearch = "/(CPCMS|AOPC)\s\d{4}/";
+
 	
+
+
+
+
+
+
 	// there are two special judge situations that need to be covered.  The first is that MDJ dockets sometimes say
 	// "magisterial district judge xxx".  In that case, there could be overflow to the next line.  We want to capture that
 	// overflow.  The second is that sometimes the judge assigned says "migrated judge".  We want to make sure we catch that.
@@ -97,6 +113,9 @@ class Arrest
 
 	// ($1 = charge, $2 = disposition, $3 = grade, $4 = code section
 	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Not Guilty|Guilty|Nolle Prossed|Nolle Prossed \(Case Dismissed\)|Nolle Prosequi - Administrative|Guilty Plea|Guilty Plea - Negotiated|Guilty Plea - Non-Negotiated|Withdrawn|Withdrawn - Administrative|Charge Changed|Held for Court|Community Court Program|Dismissed - Rule 1013 \(Speedy|Dismissed - Rule 600 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed - Rule 546|Dismissed|Demurrer Sustained|ARD - County Open|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Summary Diversion Completed|Judgment of Acquittal \(Prior to)\s+(\w{0,2})\s+(\w{1,2}\s?\247\s?\d+(\-|\247|\w+)*)/"; // removed "Replacement by Information"
+	// explanation: .+? - the "?" means to do a lazy match of .+, so it isn't greedy.  THe match of 12+ spaces handles the large space after the charges and after the disposition before the next line.  The final part is to match the code section that is violated.	
+	protected static $chargesSearch2 = "/\d\s+\/\s+(.+)\s{12,}(\w.+?)(?=\s\s)\s{12,}(\w{0,2})\s+(\w{1,2}\s?\247\s?\d+(\-|\247|\w+)*)/";
+	
 	
 	// $1 = code section, $3 = grade, $4 = charge, $5 = offense date, $6 = disposition
 	protected static $mdjChargesSearch = "/^\s*\d\s+((\w|\d|\s(?!\s)|\-|\247|\*)+)\s{2,}(\w{0,2})\s{2,}([\d|\D]+)\s{2,}(\d{1,2}\/\d{1,2}\/\d{4})\s{2,}(\D{2,})/";
@@ -110,7 +129,7 @@ class Arrest
 	//    Migrated Dispositional Event   mm/dd/yyyy    Final  Disposition
 	// 2) on the line after the charge disp
 	// 3) for MDJ cases, disposition date appears on a line by itself, so it is easier to find
-	protected static $dispDateSearch = "/(Status|Status of Restitution|Status - Community Court|Status Listing|Migrated Dispositional Event|Trial|Preliminary Hearing|Pre-Trial Conference)\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+Final Disposition/";
+	protected static $dispDateSearch = "/(?:Plea|Status|Status of Restitution|Status - Community Court|Status Listing|Migrated Dispositional Event|Trial|Preliminary Hearing|Pre-Trial Conference)\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+Final Disposition/";
 	protected static $dispDateSearch2 = "/(.*)\s(\d{1,2}\/\d{1,2}\/\d{4})/";	
 	
 	// this is a crazy one.  Basically matching whitespace then $xx.xx then whitespace then 
@@ -157,6 +176,7 @@ class Arrest
 	public function getIsSummaryArrest()  { return $this->isSummaryArrest; }
 	public function getIsMDJ() { return $this->isMDJ; }
 	public function getPDFFile() { return $this->pdfFile;}
+	public function getAliases() { return $this->aliases; }
 		
 	//setters
 	public function setMDJDistrictNumber($mdjDistrictNumber) { $this->mdjDistrictNumber = $mdjDistrictNumber; }
@@ -205,7 +225,8 @@ class Arrest
 	public function setIsHeldForCourt($isHeldForCourt)  {  $this->isHeldForCourt = $isHeldForCourt; }
 	public function setIsMDJ($isMDJ)  {  $this->isMDJ = $isMDJ; }
 	public function setPDFFile($pdfFile) { $this->pdfFile = $pdfFile; }
-
+	public function addAlias($a) { $this->aliases[] = $a; }
+	
 	// add a Bail amount to an already created bail figure
 	public function addBailTotal($bailTotal) 
 	{  
@@ -230,44 +251,6 @@ class Arrest
 	
 	// push a single chage onto the charge array
 	public function addCharge($charge) {  $this->charges[] = $charge; }
-	
-	// @returns the proper template depending on whether this is an expungment, redaction, and ifp or not
-	// @param redaction - true if this is a redaction, false if an expungement
-	// @param ifp - true if this is an ifp petition
-	public function getTemplateName($ifp)
-	{
-		// ARD Expungement check has to go first, b/c isArrestExpungement includes ARD offenses
-		if ($this->isArrestARDExpungement())
-		{
-			if ($ifp)
-				return self::$ARDexpungementTemplateIFP;
-			else
-				return self::$ARDexpungementTemplate;
-		}
-		if ($this->isArrestExpungement())
-		{
-			if ($ifp)
-				return self::$expungementTemplateIFP;
-			else
-				return self::$expungementTemplate;
-		}
-		else if($this->isArrestSummaryExpungement)
-		{
-			if ($ifp)
-				return self::$summaryExpungementTemplateIFP;
-			else
-				return self::$summaryExpungementTemplate;
-		}
-		
-		else
-		{
-			if ($ifp)
-				return self::$redactionTemplateIFP;
-			else
-				return self::$redactionTemplate;
-		
-		}
-	}
 	
 	// @return the first docket number on the array, which should be the CP or lead docket num
 	public function getFirstDocketNumber() 
@@ -305,7 +288,7 @@ class Arrest
 	// assumes that the record is an array of lines, read through the "file" function.
 	// the file should be created by running pdftotext.exe on a pdf of the defendant's arrest.
 	// this does not read the summary.
-	public function readArrestRecord($arrestRecordFile)
+	public function readArrestRecord($arrestRecordFile, $person)
 	{
 		// check to see if this is an MDJ docket sheet.  If it is, we have to
 		// read it a bit differently in places
@@ -445,13 +428,41 @@ class Arrest
 			{
 				$this->setFirstName(trim($matches[2]));
 				$this->setLastName(trim($matches[1]));
+				
+				// we also want to add all of the names that are on the docket sheets to the alias list. 
+				$person->addAliases(array($this->getLastName() . ", " . $this->getFirstName()));
 			}
 
 			else if (preg_match(self::$dispDateSearch, $line, $matches))
-				$this->setDispositionDate($matches[2]);
+				$this->setDispositionDate($matches[1]);
 				
+			// find aliases.  Only try to do so if we haven't looked for aliases previously.
+			else if (!$this->pastAliases && preg_match(self::$aliasNameStartSearch, $line))
+
+			{
+				
+				$i = $line_num+1;
+				while (!preg_match(self::$aliasNameEndSearch, $arrestRecordFile[$i]))
+				{
+					// once in a while, the aliases are at the end of a page, which means we get to the footer information
+					// before we get to the regular marker of the end of the aliases.  We have to watch out for this
+					// and break if we find it
+					if (preg_match(self::$endOfPageSearch, $arrestRecordFile[$i]))
+						break;
+						
+					//push the alias onto the array of aliases
+					if (preg_match("/\w/", $arrestRecordFile[$i]))
+						$this->addAlias(trim($arrestRecordFile[$i]));
+					$i++;
+				}
+				
+				// once we match the CASE PARTICIPANTS line, we know we are done with this iteration
+				$this->pastAliases = TRUE;				
+				// set the aliases on the person object
+				$person->addAliases($this->getAliases());
+			}			
 			// charges can be spread over two lines sometimes; we need to watch out for that
-			else if (preg_match(self::$chargesSearch, $line, $matches))
+			else if (preg_match(self::$chargesSearch2, $line, $matches))
 			{
 				
 				$charge = trim($matches[1]);
@@ -465,6 +476,8 @@ class Arrest
 					$i++;
 				}
 	
+				// also, knock out any strange multiple space situations in the charge, which comes up sometimes.
+				$charge = preg_replace("/\s{2,}/", " ", $charge);
 			
 				// need to grab the disposition date as well, which is on the next line
 				if (isset($this->dispositionDate))
@@ -474,7 +487,6 @@ class Arrest
 					$dispositionDate = $dispMatch[2];
 				else
 					$dispositionDate = NULL;
-					
 				$charge = new Charge($charge, $matches[2], trim($matches[4]), trim($dispositionDate), trim($matches[3]));
 				$this->addCharge($charge);
 			}
@@ -1049,9 +1061,6 @@ class Arrest
 	public function writeExpungement($inputDir, $outputDir, $person, $attorney, $db)
 	{
 		$odf = new odf($inputDir . "790ExpungementTemplate.odt");
-		if ($GLOBALS['debug'])
-			print $this->getTemplateName($attorney->getIFP());
-		
 		if ($GLOBALS['debug'])
 			print ($this->isArrestExpungement() || $this->isArrestSummaryExpungement)?("Performing Expungement"):("Performing Redaction");
 		
