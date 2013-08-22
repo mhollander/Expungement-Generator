@@ -30,7 +30,7 @@ else
 
 	// get information about the person from the POST vars passed in
 	$urlPerson = getPersonFromGetVars();
-	$person = new Person($urlPerson['First'], $urlPerson['Last'], $urlPerson['PP'], $urlPerson['SID'], $urlPerson['SSN'], $urlPerson['Street'], $urlPerson['City'], $urlPerson['State'], $urlPerson['Zip'], $urlPerson['Alias']);
+	$person = new Person($urlPerson['First'], $urlPerson['Last'], $urlPerson['PP'], $urlPerson['SID'], $urlPerson['SSN'], $urlPerson['Street'], $urlPerson['City'], $urlPerson['State'], $urlPerson['Zip']);
 
 	// make sure to change this in the future to prevent hacking!
 	$attorney = new Attorney($_SESSION["loginUserID"], $db);
@@ -38,7 +38,7 @@ else
 		$attorney->printAttorneyInfo();
 	
 	// parse the uploaded files will lead to expungements or redactions
-	$arrests = parseDockets($_FILES, $toolsDir, $tempFile, $pdftotext, $arrestSummary);
+	$arrests = parseDockets($_FILES, $toolsDir, $tempFile, $pdftotext, $arrestSummary, $person);
 	
 	// integrate the summary information in with the arrests 
 	integrateSummaryInformation($arrests, $person, $arrestSummary);
@@ -86,7 +86,7 @@ include ('foot.php');
 
 // parse the docket sheets into Arrest objects and place them all into an array
 // @return an array of Arrest objects containing each docket sheet parsed
-function parseDockets($files, $toolsDir, $tempFile, $pdftotext, $arrestSummary)
+function parseDockets($files, $toolsDir, $tempFile, $pdftotext, $arrestSummary, $person)
 {
 	$arrests = array();
 	// loop over all of the files that we uploaded and read them in to see if they are expungeable
@@ -107,7 +107,7 @@ function parseDockets($files, $toolsDir, $tempFile, $pdftotext, $arrestSummary)
 			if ($arrest->isDocketSheet($thisRecord[1]))
 			{
 				// if this is a regular docket sheet, use the regular parsing function
-				$arrest->readArrestRecord($thisRecord);
+				$arrest->readArrestRecord($thisRecord, $person);
 				
 				// now add the arrest to the arrests array
 				// but don't include arrests that were summary traffic tickets or something

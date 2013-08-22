@@ -15,7 +15,7 @@ class Person
 	private $personID;
 	private $DOB;
 	
-	public function __construct($first, $last, $PP, $SID, $SSN, $street, $city, $state, $zip, $alias) 
+	public function __construct($first, $last, $PP, $SID, $SSN, $street, $city, $state, $zip) 
 	{
 		$this->setFirst($first);
 		$this->setLast($last);
@@ -26,7 +26,6 @@ class Person
 		$this->setCity($city);
 		$this->setState($state);
 		$this->setZip($zip);
-		$this->setAlias($alias);
 	}
 	// setters
 	public function setFirst($first) { $this->first = $first; }
@@ -53,10 +52,17 @@ class Person
 	public function getState() { return $this->state; }
 	public function getZip() { return $this->zip; }	
 	public function getAlias() { return $this->alias; }	
-	public function getAliasCommaList() { return implode(", ", $this->alias); }
+	public function getAliasCommaList() { return implode("; ", $this->alias); }
 	public function getPersonID() { return $this->personID; }
 	public function getDOB() { return $this->DOB; }
 	
+	
+	public function addAliases($aliases)
+	{
+		// merge the current alias array with the new alias array, but cut out duplicate entries
+		// This could be done more quickly if I wrong my own function for array_unique, but there are so few aliases generally, I don't think it matters
+		$this->setAlias(array_unique(array_merge($this->getAlias(), $aliases)));
+	}
 	
 	// writes a person to the database, if there
 	public function writePersonToDB($db)
