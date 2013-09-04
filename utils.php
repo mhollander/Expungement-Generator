@@ -58,7 +58,6 @@ function getPersonFromGetVars()
 	$urlPerson['SID'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personSID"])));
 	$urlPerson['PP'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personPP"])));
 	$urlPerson['SSN'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personSSN"])));
-	$urlPerson['Alias'] = explode(",", mysql_escape_string(htmlspecialchars(stripslashes($_POST["personAlias"]))));
 	
 	return $urlPerson;
 }

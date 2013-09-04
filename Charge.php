@@ -50,6 +50,7 @@ class Charge
 			$this->setIsRedactable(FALSE);
 		else
 			$this->setIsRedactable(TRUE);
+			
 		return $this->getIsRedactable();
 	}
 
