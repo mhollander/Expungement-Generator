@@ -6,6 +6,7 @@
 		<link rel="stylesheet" href="css/expStyle.css?reload" type="text/css" media="all" /> 
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
 		<script src="js/eg.js"></script>
+		<script src="./path/to/dropzone.js"></script>
 		<title>Expungement Generator</title>
 		<!-- All information, code, css, and otherwise copyright Community Legal Services, Philadelphia.  The expungement generator was made by Michael Hollander, staff attorney at CLS.  -->
 	</head>
