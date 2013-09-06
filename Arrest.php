@@ -115,7 +115,7 @@ class Arrest
 	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Not Guilty|Guilty|Nolle Prossed|Nolle Prossed \(Case Dismissed\)|Nolle Prosequi - Administrative|Guilty Plea|Guilty Plea - Negotiated|Guilty Plea - Non-Negotiated|Withdrawn|Withdrawn - Administrative|Charge Changed|Held for Court|Community Court Program|Dismissed - Rule 1013 \(Speedy|Dismissed - Rule 600 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed - Rule 546|Dismissed|Demurrer Sustained|ARD - County Open|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Summary Diversion Completed|Judgment of Acquittal \(Prior to)\s+(\w{0,2})\s+(\w{1,2}\s?\247\s?\d+(\-|\247|\w+)*)/"; // removed "Replacement by Information"
 	// explanation: .+? - the "?" means to do a lazy match of .+, so it isn't greedy.  THe match of 12+ spaces handles the large space after the charges and after the disposition before the next line.  The final part is to match the code section that is violated.	
 	protected static $chargesSearch2 = "/\d\s+\/\s+(.+)\s{12,}(\w.+?)(?=\s\s)\s{12,}(\w{0,2})\s+(\w{1,2}\s?\247\s?\d+(\-|\247|\w+)*)/";
-	protected static $ignoreDisps = array("Held for Court", "Held for Court (Lower Court)", "Waived for Court", "Proceed to Court");	
+	// protected static $ignoreDisps = array("Held for Court", "Held for Court (Lower Court)", "Waived for Court", "Proceed to Court", "Proceed to Court (Complaint", "Proceed to Court (Complaint Refiled)");	
 	
 	// $1 = code section, $3 = grade, $4 = charge, $5 = offense date, $6 = disposition
 	protected static $mdjChargesSearch = "/^\s*\d\s+((\w|\d|\s(?!\s)|\-|\247|\*)+)\s{2,}(\w{0,2})\s{2,}([\d|\D]+)\s{2,}(\d{1,2}\/\d{1,2}\/\d{4})\s{2,}(\D{2,})/";
@@ -366,8 +366,11 @@ class Arrest
 				
 				// if there is no listed affiant or the affiant is "Affiant" then set arresting 
 				// officer to "Unknown Officer"
+				// CHANGED 9/5/2013 to be the arresting agency if no known officer
 				if ($ao == "" || !(stripos("Affiant", $ao)===FALSE))
-					$ao = self::$unknownOfficer;
+					// $ao = self::$unknownOfficer;
+					$ao = $this->getArrestingAgency();
+					
 				$this->setArrestingOfficer($ao);
 			}	
 
@@ -474,8 +477,8 @@ class Arrest
 			{
 				
 				// ignore this charge if it is in the exclusion array
-				if (in_array(trim($matches[2]), self::$ignoreDisps))
-					continue;
+				// if (in_array(trim($matches[2]), self::$ignoreDisps))
+					// continue;
 					
 				$charge = trim($matches[1]);
 				// we need to check to see if the next line has overflow from the charge.
@@ -937,6 +940,16 @@ class Arrest
 
 	// returns true if this is an expungeable arrest.  this is true if no charges are guilty
 	// or guilty plea or held for court.
+	// TODO: There is a problem here, although it rarely comes up.  On MC-51-CR-0040172-2012, which sharon is expunging
+	// right now, there are charges listed twice on the MC: once in an "arraignment"  where the charges are "proceed to court" 
+	// and then again under a prelim hearing where the charges are dismissed.  This function sees the proceed
+	// to court charges and believes that this is a redaction even though it is an expungement.  The question is:
+	// how do I fix this?  This is a rare case, so maybe I don't need to.  I want to be careful of doing something like
+	// ignoring "Proceed to court/held for court" on an MC, b/c then it makes any MC that goes to CP court look like an 
+	// expungement (b/c the EG will ignore the MC's charges that are going up to CP court).  What this does is force the 
+	// EG to keep the MC case separate from the CP rather than combine them.  If MC and CP aren't combined, should I do a 
+	// different check for expungement that ignores held for court like charges?  I don't know, but this is a question
+	// for another day.  What I really need to do is rewrite ALL of the logic for the EG expungement engine.
 	public function isArrestExpungement()
 	{
 
