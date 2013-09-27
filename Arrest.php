@@ -323,8 +323,10 @@ class Arrest
 				// we want to set this to be a summary offense if there is an "SU" in the 
 				// docket number.  The normal docket number looks like this:
 				// CP-##-CR-########-YYYY or CP-##-SU-#######-YYYYYY; the latter is a summary
-				if (trim($matches[3]) == "SU")
+				// so is CP-##-SU-#######-YYYYYY, a summary appeal of a traffic offense
+				if (preg_match("(SU|SA)", trim($matches[3]), $dummy))
 					$this->setIsSummaryArrest(TRUE);
+
 				else
 					$this->setIsSummaryArrest(FALSE);
 			}
@@ -755,7 +757,7 @@ class Arrest
 			return  $this->getIsCriminal();
 		else
 		{
-			$criminalMatch = "/CR|SU|MJ/";
+			$criminalMatch = "/CR|SU|SA|MJ/";
 			if (preg_match($criminalMatch, $this->getFirstDocketNumber()))
 			{
 					$this->setIsCriminal(TRUE);
@@ -888,6 +890,13 @@ class Arrest
 		// loop through all of the charges; only do a summary exp if none are redactible
 		// NOTE: THis may be a problem for HELD FOR COURT charges; keep this in mind
 		// NOTE: Is it possible that someone has some not guilty and some guilty for summary charges?
+		// NOTE: 9/25/13: The answer is YES: you can have cases where there are some summary expungements
+		// under 9122(b)(3) and some expungements b/c there are summary not guilties, all mixed
+		// together on the same petition.  I am going to leave the section below in, because to do 
+		// otherwise would be a pain in the ass.  If I remove the below, I have to 
+		// make sure that even if there is not a 5 year arrest free period, we are still doing expungements
+		// where possible.
+		/*
 		foreach ($this->getCharges() as $num=>$charge)
 		{
 			if($charge->isRedactable())
@@ -896,7 +905,7 @@ class Arrest
 				return FALSE;
 			}
 		}
-			
+			*/
 		// at this point we know two things: summary arrest and the charges are all guilties.
 		// now we need to check to see if they are arrest free for five years.	
 		// Loop through all of the arrests passed in to get the disposition dates or the 
@@ -1172,7 +1181,7 @@ class Arrest
 		{
 			$odf->setVars("DISPOSITION_LIST", "summary convictions");
 			$odf->setVars("ARD_EXTRA", "");
-			$odf->setVars("SUMMARY_EXTRA", " summary convictions. The petitioner has been arrest free for more than five years since this summary conviction");
+			$odf->setVars("SUMMARY_EXTRA", ".  The petitioner has been arrest free for more than five years since this summary conviction");
 		}
 		else
 		{
@@ -1278,8 +1287,10 @@ class Arrest
 			{
 				if (!$this->isArrestSummaryExpungement && !$charge->isRedactable())
 					continue;
-				if ($this->isArrestSummaryExpungement && !$charge->isSummaryRedactable()) 
-					continue;
+				// removed 9/25/2013 to make it so summary expungements can have summary redactable and 
+				// regular redactable charges on them.
+				//if ($this->isArrestSummaryExpungement && !$charge->isSummaryRedactable()) 
+				//	continue;
 			}
 			
 			// sometimes disp date isn't associated with a charge.  If not, just use the disposition
