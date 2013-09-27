@@ -202,9 +202,9 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $d
 	$files = array();
 
 	print "<ul class='no-indent'>";
-	foreach ($arrests as $arrest)
+	foreach ($arrests as $arrest)	
 	{
-		if ($arrest->isArrestExpungement() || $arrest->isArrestRedaction() || $arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestOver70Expungement($arrests, $person))
+		if ($arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestExpungement() || $arrest->isArrestRedaction() ||  $arrest->isArrestOver70Expungement($arrests, $person))
 		{
 			$files[] = $arrest->writeExpungement($templateDir, $dataDir, $person, $attorney, $db);
 			
