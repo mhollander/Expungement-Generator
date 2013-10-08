@@ -1110,7 +1110,9 @@ class Arrest
 		// set the date.  Format = Month[word] Day[number], Year[4 digit number]
 		$odf->setVars("PETITION_DATE", date("F j, Y"));
 		// set the type of petition
-		if ($this->isArrestRedaction() && !$this->isArrestExpungement())
+		// NOTE: Should I just keep the "else clause" and get rid of the if clause?  I think this handles every case for redaction or expungement.  Why not just test
+		// the expungements and then move on to redaction?  Or test the redaction and write "Expungement" otherwise.
+		if (($this->isArrestRedaction() && !$this->isArrestExpungement()) && !$this->isArrestOver70Expungement)
 			$odf->setVars("EXPUNGEMENT_OR_REDACTION","Redaction");
 		else if ($this->isArrestExpungement() || $this->isArrestSummaryExpungement || $this->isArrestOver70Expungement)
 			$odf->setVars("EXPUNGEMENT_OR_REDACTION", "Expungement");
