@@ -53,6 +53,7 @@ class Arrest
 	private $isArrestSummaryExpungement;
 	private $isArrestOver70Expungement;
 	private $pdfFile;
+	private $pdfFileName;
 	private $aliases = array();
 	private $pastAliases = FALSE; // used to stop checking for aliases once we have reached a certain point in the docket sheet	
 	
@@ -176,6 +177,7 @@ class Arrest
 	public function getIsSummaryArrest()  { return $this->isSummaryArrest; }
 	public function getIsMDJ() { return $this->isMDJ; }
 	public function getPDFFile() { return $this->pdfFile;}
+	public function getPDFFileName() { return $this->pdfFileName;}
 	public function getAliases() { return $this->aliases; }
 		
 	//setters
@@ -225,6 +227,7 @@ class Arrest
 	public function setIsHeldForCourt($isHeldForCourt)  {  $this->isHeldForCourt = $isHeldForCourt; }
 	public function setIsMDJ($isMDJ)  {  $this->isMDJ = $isMDJ; }
 	public function setPDFFile($pdfFile) { $this->pdfFile = $pdfFile; }
+	public function setPDFFileName($pdfFileName) { $this->pdfFileName = $pdfFileName; }
 	public function addAlias($a) { $this->aliases[] = $a; }
 	
 	// add a Bail amount to an already created bail figure
