@@ -38,7 +38,7 @@ else
 		$attorney->printAttorneyInfo();
 	
 	// parse the uploaded files will lead to expungements or redactions
-	$arrests = parseDockets($_FILES, $toolsDir, $tempFile, $pdftotext, $arrestSummary, $person);
+	$arrests = parseDockets($toolsDir, $tempFile, $pdftotext, $arrestSummary, $person);
 	
 	// integrate the summary information in with the arrests 
 	integrateSummaryInformation($arrests, $person, $arrestSummary);
@@ -86,11 +86,11 @@ include ('foot.php');
 
 // parse the docket sheets into Arrest objects and place them all into an array
 // @return an array of Arrest objects containing each docket sheet parsed
-function parseDockets($files, $toolsDir, $tempFile, $pdftotext, $arrestSummary, $person)
+function parseDockets($toolsDir, $tempFile, $pdftotext, $arrestSummary, $person)
 {
 	$arrests = array();
 	// loop over all of the files that we uploaded and read them in to see if they are expungeable
-	foreach($files["userFile"]["tmp_name"] as $key => $file)
+	foreach($_FILES["userFile"]["tmp_name"] as $key => $file)
 	{
 		$command = $toolsDir . $pdftotext . " -layout \"" . $file . "\" \"" . $tempFile . "\"";
 		system($command, $ret);
@@ -114,9 +114,13 @@ function parseDockets($files, $toolsDir, $tempFile, $pdftotext, $arrestSummary, 
 				if ($arrest->isArrestCriminal())
 					$arrests[] = $arrest;
 					
-				// associate the PDF with the file for later saving to the DB
-				if ($files["userFile"]["size"][$key] > 0)
+				// associate the PDF with the arrest for later saving to the DB
+				// associate the real PDF file name with the arrest as well for use in the overview
+				if ($_FILES["userFile"]["size"][$key] > 0)
+				{
 					$arrest->setPDFFile($file);
+					$arrest->setPDFFileName($_FILES["userFile"]["name"][$key]);
+				}
 			}
 			elseif (ArrestSummary::isArrestSummary($thisRecord))
 			{
@@ -261,6 +265,7 @@ function createOverview($arrests, $templateDir, $dataDir, $person)
 			if ($arrest->isArrestOver70Expungement($arrests, $person))
 				$expType = "Expungement (over 70)";
 			$theArrest->setVars("DOCKET", implode(", ", $arrest->getDocketNumber()));
+			$theArrest->setVars("PDFNAME", $arrest->getPDFFileName());
 			$theArrest->setVars("OTN", $arrest->getOTN());
 			$theArrest->setVars("EXPUNGEMENT_TYPE", $expType);
 			$theArrest->setVars("UNPAID_COSTS", number_format($arrest->getCostsTotal() - $arrest->getBailTotal(),2));
