@@ -59,7 +59,7 @@ class Charge
 		if (isset($this->isSummaryRedactable)) { return $this->getIsSummaryRedactable(); }
 		$disp = $this->getDisposition();
 		
-		$redactableDisps = array("Guilty" , "Guilty Plea", "Guilty Plea - Negotiated");
+		$redactableDisps = array("Guilty" , "Guilty Plea", "Guilty Plea - Negotiated", "Guilty Plea - Non-Negotiated", "Nolo Contendere");
 		if (in_array($disp, $redactableDisps))
 			$this->setIsSummaryRedactable(TRUE);
 		else
