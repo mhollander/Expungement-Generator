@@ -899,16 +899,36 @@ class Arrest
 		// otherwise would be a pain in the ass.  If I remove the below, I have to 
 		// make sure that even if there is not a 5 year arrest free period, we are still doing expungements
 		// where possible.
-		/*
+		
+		
+		$anyConviction = FALSE;
+		// Here is the situation we need to deal with: multiple summary charges, some convictions, some non convictions
+		// In that situation, we still want to call this a summary expungement.  
+		// In another situation, all charges are expungeable.  THis is not a summary expungement.
+		// In another situation, all of the charges are convictions.  This is potentially a summary expungement.
+		// So we track whether there is any conviction at all.  If there is not, 
 		foreach ($this->getCharges() as $num=>$charge)
 		{
-			if($charge->isRedactable())
+		
+			if ($charge->isSummaryRedactable())
+				$anyConviction = TRUE;
+/*				
+			if(!$anyConviction && $charge->isSummaryRedactable() )
 			{
 				$this->setIsArrestSummaryExpungement(FALSE);
 				return FALSE;
 			}
+			else 
+				$anyConviction = TRUE;
+*/
 		}
-			*/
+		
+		if (!$anyConviction)
+		{
+			$this->setIsArrestSummaryExpungement(FALSE);
+			return FALSE;
+		}
+			
 		// at this point we know two things: summary arrest and the charges are all guilties.
 		// now we need to check to see if they are arrest free for five years.	
 		// Loop through all of the arrests passed in to get the disposition dates or the 
