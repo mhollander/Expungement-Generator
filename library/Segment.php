@@ -137,7 +137,6 @@ class Segment implements IteratorAggregate, Countable
             throw new SegmentException("var $key not found in {$this->getName()}");
         }
 		$value = $encode ? htmlspecialchars($value, ENT_COMPAT,'ISO-8859-1', true) : $value;
-		print "$key - $value <br/>";
 		$value = ($charset == 'ISO-8859') ? utf8_encode($value) : $value;
         $this->vars[$this->odf->getConfig('DELIMITER_LEFT') . $key . $this->odf->getConfig('DELIMITER_RIGHT')] = str_replace("\n", "<text:line-break/>", $value);
         return $this;
