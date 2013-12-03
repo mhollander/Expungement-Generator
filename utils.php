@@ -49,15 +49,15 @@ function getPersonFromGetVars()
 	}
 	
 	$urlPerson = array();
-	$urlPerson['First'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personFirst"])));
-	$urlPerson['Last'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personLast"])));
-	$urlPerson['Street'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personStreet"])));
-	$urlPerson['City'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personCity"]))); $personState = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personState"])));
-	$urlPerson['State'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personState"]))); $personState = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personState"])));
-	$urlPerson['Zip'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personZip"])));
-	$urlPerson['SID'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personSID"])));
-	$urlPerson['PP'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personPP"])));
-	$urlPerson['SSN'] = mysql_escape_string(htmlspecialchars(stripslashes($_POST["personSSN"])));
+	$urlPerson['First'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personFirst"])));
+	$urlPerson['Last'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personLast"])));
+	$urlPerson['Street'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personStreet"])));
+	$urlPerson['City'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personCity"])));
+	$urlPerson['State'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personState"])));
+	$urlPerson['Zip'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personZip"])));
+	$urlPerson['SID'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personSID"])));
+	$urlPerson['PP'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personPP"])));
+	$urlPerson['SSN'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personSSN"])));
 	
 	return $urlPerson;
 }

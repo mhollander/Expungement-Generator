@@ -37,11 +37,11 @@ else
 		// first, do a query of all expungements
 		$query = "SELECT expungement.*, userinfo.*, arrest.*, defendant.firstName as dFirst, defendant.lastName as dLast from expungement LEFT JOIN userinfo on (expungement.userid = userinfo.userid) LEFT JOIN arrest on (expungement.arrestID = arrest.arrestID) LEFT JOIN defendant on (arrest.defendantID = defendant.defendantID)";
 		
-		$result = mysql_query($query, $db);
+		$result = $db->query($query);
 		if (!$result) 
 		{
 			if ($GLOBALS['debug'])
-				die('Could not get the Expungement Information from the DB:' . mysql_error());
+				die('Could not get the Expungement Information from the DB:' . $db->error);
 			else
 				die('Could not get the Expungement Information from the DB');
 		}
@@ -50,7 +50,7 @@ else
 		<table>
 		<th>Docket Number</th><th>PDF</th><th>Defendant Name</th><th>Attorney Name</th><th>Date Prepared</th><th>Charges Redacted</th><th>Type</th><th>Costs Owed</th><th>Bail Owed</th>
 END;
-		while ($row = mysql_fetch_assoc($result))
+		while ($row = $result->fetch_assoc())
 		{
 			$redactionType = getRedactionType($row['isExpungement'],$row['isRedaction'],$row['isSummaryExpungement']);
 		
@@ -73,7 +73,7 @@ END;
 			print "</tr>";
 		}
 	
-		
+		$result->close();
 	}
 }
 ?>	

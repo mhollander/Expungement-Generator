@@ -480,7 +480,6 @@ class Arrest
 			// charges can be spread over two lines sometimes; we need to watch out for that
 			else if (preg_match(self::$chargesSearch2, $line, $matches))
 			{
-				
 				// ignore this charge if it is in the exclusion array
 				if (in_array(trim($matches[2]), self::$ignoreDisps))
 					continue;
@@ -1103,16 +1102,17 @@ class Arrest
 
 		// sql statements are case insensitive by default		
 		$query = "SELECT * FROM $table WHERE $table.$column='$value'";
-		$result = mysql_query($query, $db);
+		$result = $db->query($query);
 
 		if (!$result) 
 		{
 			if ($GLOBALS['debug'])
-				die('Could not get the court information from the DB:' . mysql_error());
+				die('Could not get the court information from the DB:' . $db->error);
 			else
 				die('Could not get the court Information from the DB');
 		}
-		$row = mysql_fetch_assoc($result);
+		$row = $result->fetch_assoc();
+		$result->close();
 		return $row;
 	}
 	
@@ -1325,8 +1325,8 @@ class Arrest
 				$dispDate = $this->getDispositionDate();
 
 				$theCharges->CHARGE($charge->getChargeName());
-			$theCharges->CODE_SEC($charge->getCodeSection());
 			$theCharges->GRADE($charge->getGrade());
+			$theCharges->CODE_SEC($charge->getCodeSection());
 			$theCharges->DISP($charge->getDisposition());
 			$theCharges->DISP_DATE($dispDate);
 			$theCharges->merge();
@@ -1483,19 +1483,33 @@ class Arrest
 	// @param $db - the database handle
 	public function writeArrestToDatabase($defendantID, $db)
 	{
-		$sql = "INSERT INTO arrest (`defendantID`, `OTN` ,`DC` ,`docketNumPrimary` ,`docketNumRelated` ,`arrestingOfficer` ,`arrestDate` ,`dispositionDate` ,`judge` ,`costsTotal` ,`costsPaid` ,`costsCharged` ,`costsAdjusted` ,`bailTotal` ,`bailCharged` ,`bailPaid` ,`bailAdjusted` ,`bailTotalToal` ,`bailChargedTotal` ,`bailPaidTotal` ,`bailAdjustedTotal` ,`isARD` ,`isSummary` ,`county` ,`policeLocality`) VALUES ('$defendantID', '" . $this->getOTN() . "', '" . $this->getDC() . "', '" . $this->getFirstDocketNumber() . "', '" . implode("|", $this->getDocketNumber()) . "', '" . mysql_real_escape_string($this->getArrestingOfficer()) . "', '" . dateConvert($this->getArrestDate()) . "', '" . dateConvert($this->getDispositionDate()) . "', '" . mysql_real_escape_string($this->getJudge()) . "', '" . $this->getCostsTotal() . "', '" . $this->getCostsPaid() . "', '" . $this->getCostsCharged() . "', '" . $this->getCostsAdjusted() . "', '" . $this->getBailTotal() . "', '" . $this->getBailCharged() . "', '" . $this->getBailPaid() . "', '" . $this->getBailAdjusted() . "', '" . $this->getBailTotalTotal() . "', '" . $this->getBailChargedTotal() . "', '" . $this->getBailPaidTotal() . "', '" . $this->getBailAdjustedTotal() . "', '" . $this->getIsARDExpungement() . "', '" . $this->getIsSummaryArrest() . "', '" . $this->getCounty() . "', '" . mysql_real_escape_string($this->getArrestingAgency()) . "')";
+		$sql = "INSERT INTO arrest (`defendantID`, `OTN` ,`DC` ,`docketNumPrimary` ,`docketNumRelated`,
+			`arrestingOfficer` ,`arrestDate` ,`dispositionDate` ,`judge` ,`costsTotal` ,`costsPaid` ,
+			`costsCharged` ,`costsAdjusted` ,`bailTotal` ,`bailCharged` ,`bailPaid` ,`bailAdjusted` ,
+			`bailTotalToal` ,`bailChargedTotal` ,`bailPaidTotal` ,`bailAdjustedTotal` ,`isARD` ,`isSummary`,
+			`county` ,`policeLocality`) VALUES ('$defendantID', '" . $this->getOTN() . 
+			"', '" . $this->getDC() . "', '" . $this->getFirstDocketNumber() . "', 
+			'" . implode("|", $this->getDocketNumber()) . "', '" . $db->real_escape_string($this->getArrestingOfficer()) . 
+			"', '" . dateConvert($this->getArrestDate()) . "', '" . dateConvert($this->getDispositionDate()) . 
+			"', '" . $db->real_escape_string($this->getJudge()) . "', '" . $this->getCostsTotal() . "', '" 
+			. $this->getCostsPaid() . "', '" . $this->getCostsCharged() . "', '" . $this->getCostsAdjusted() . 
+			"', '" . $this->getBailTotal() . "', '" . $this->getBailCharged() . "', '" . $this->getBailPaid() . 
+			"', '" . $this->getBailAdjusted() . "', '" . $this->getBailTotalTotal() . "', '" .
+			$this->getBailChargedTotal() . "', '" . $this->getBailPaidTotal() . "', '" .
+			$this->getBailAdjustedTotal() . "', '" . $this->getIsARDExpungement() . "', '" .
+			$this->getIsSummaryArrest() . "', '" . $this->getCounty() . "', '" . 
+			$db->real_escape_string($this->getArrestingAgency()) . "')";
 
 		if ($GLOBALS['debug'])
 			print $sql;
-		$result = mysql_query($sql, $db);
-		if (!$result) 
+		if (!$db->query($sql))
 		{
 			if ($GLOBALS['debug'])
-				die('Could not add the arrest to the DB:' . mysql_error());
+				die('Could not add the arrest to the DB:' . $db->error);
 			else
 				die('Could not add the arrest to the DB');
 		}
-		return mysql_insert_id();
+		return $db->insert_id;
 	}
 	
 	// @return the id of the charge just inserted into the database
@@ -1505,17 +1519,16 @@ class Arrest
 	// @param $arrestID - the id of the arrest that we are innserting
 	public function writeChargeToDatabase($charge, $arrestID, $defendantID, $expungementID, $db)
 	{
-		$sql = "INSERT INTO charge (`arrestID`, `defendantID`, `expungementID`, `chargeName`, `disposition`, `codeSection`, `dispDate`, `isARD`, `isExpungeableNow`, `grade`, `arrestDate`) VALUES ('$arrestID', '$defendantID', $expungementID, '" . mysql_real_escape_string($charge->getChargeName()) . "', '" . mysql_real_escape_string($charge->getDisposition()) . "', '" . $charge->getCodeSection() . "', '" . dateConvert($charge->getDispDate()) . "', '" . $charge->getIsARD() . "', '" . $charge->getIsRedactable() . "', '" . $charge->getGrade() . "', '" . dateConvert($this->getArrestDate()) . "')";
+		$sql = "INSERT INTO charge (`arrestID`, `defendantID`, `expungementID`, `chargeName`, `disposition`, `codeSection`, `dispDate`, `isARD`, `isExpungeableNow`, `grade`, `arrestDate`) VALUES ('$arrestID', '$defendantID', $expungementID, '" . $db->real_escape_string($charge->getChargeName())  . "', '" . $db->real_escape_string($charge->getDisposition()) . "', '" . $charge->getCodeSection() . "', '" . dateConvert($charge->getDispDate()) . "', '" . $charge->getIsARD() . "', '" . $charge->getIsRedactable() . "', '" . $charge->getGrade() . "', '" . dateConvert($this->getArrestDate()) . "')";
 		
-		$result = mysql_query($sql, $db);
-		if (!$result) 
+		if (!$db->query($sql))
 		{
 			if ($GLOBALS['debug'])
-				die('Could not add the arrest to the DB:' . mysql_error());
+				die('Could not add the charge to the DB:' . $db->error);
 			else
-				die('Could not add the arrest to the DB');
+				die('Could not add the charge to the DB');
 		}
-		return mysql_insert_id();
+		return $db->insert_id;
 	}
 	
 	// @return the expungementID
@@ -1527,15 +1540,14 @@ class Arrest
 	{
 		$sql  = "INSERT INTO  expungement (`arrestID`, `defendantID`, `userid`, `isExpungement`, `isRedaction`, `isSummaryExpungement`, `timestamp`) VALUES ('$arrestID',  '$defendantID', '$attorneyID', '" . $this->isArrestExpungement() . "', '" . $this->isArrestRedaction() . "', '" . $this->isArrestSummaryExpungement ."', CURRENT_TIMESTAMP)";
 
-		$result = mysql_query($sql, $db);
-		if (!$result) 
+		if (!$db->query($sql))
 		{
 			if ($GLOBALS['debug'])
-				die('Could not add the expungement to the DB:' . mysql_error());
+				die('Could not add the expungement to the DB:' . $db->error);
 			else
 				die('Could not add the expungement to the DB');
 		}
-		return mysql_insert_id();
+		return $db->insert_id;
 	
 	}
 
@@ -1551,13 +1563,12 @@ class Arrest
 		{		
 			$sql  = "UPDATE expungement SET numRedactableCharges=$numRedactableCharges WHERE expungementID=$expungementID";
 			
-			$result = mysql_query($sql, $db);
-			if (!$result) 
+			if (!$db->query($sql))
 			{
 				if ($GLOBALS['debug'])
-					die('Could not update the expungement with the number of arrests:' . mysql_error());
+					die('Could not update the expungement with the number of charges:' . $db->error);
 				else
-					die('Could not update the expungement with the number of arrests.');
+					die('Could not update the expungement with the number of charges');
 			}
 		}
 		return;

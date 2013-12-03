@@ -73,16 +73,15 @@ class Person
 		
 		$sql = "INSERT INTO defendant (firstName, lastName, PP, SID, SSN, DOB, street, city, state, zip, alias) VALUES ('" . $this->getFirst() . "', '" . $this->getLast() . "', '" . $this->getPP() . "', '" . $this->getSID() . "', '" . $this->getSSN() . "', '" . dateConvert($this->getDOB()) . "', '" . $this->getStreet() . "', '" . $this->getCity() . "', '" . $this->getState() . "', '" . $this->getZip() . "', '" . $this->getAliasCommaList() . "')";
 		
-		$result = mysql_query($sql, $db);
-		if (!$result) 
+		if (!$db->query($sql));
 		{
 			if ($GLOBALS['debug'])
-				die('Could not add the Defendant to the DB:' . mysql_error());
+				die('Could not add the Defendant to the DB:' . $db->error);
 			else
 				die('Could not add the Defendant to the DB');
 		}
 
-		$this->setPersonID(mysql_insert_id($db));
+		$this->setPersonID($db->insert_id);
 		return;
 	}
 	
@@ -92,24 +91,28 @@ class Person
 		$sql = "SELECT defendantID FROM defendant WHERE SSN='" . $this->getSSN() . "'";
 		if ($GLOBALS['debug'])
 			print $sql;
-		$result = mysql_query($sql, $db);
+		$result = $db->query($sql);
 		if (!$result) 
 		{
 			if ($GLOBALS['debug'])
-				die('Could not check if the Defendant was in the DB:' . mysql_error());
+				die('Could not check if the Defendant was in the DB:' . $db->error);
 			else
 				die('Could not check if the Defendant was in the DB');
 		}
 		
 		// if there is a row already, then set the person ID, return true, and get out
-		if (mysql_num_rows($result)>0)
+		if ($result->num_rows>0)
 		{
-			$this->setPersonID(mysql_result($result,0));
+			$personID = $result->fetch_array();
+			$this->setPersonID($personID[0]);
+			$result->close();
 			return TRUE;
 		}
 		else
+		{
+			$result->close();
 			return FALSE;
-			
+		}
 	}
 	
 	public function getAge()

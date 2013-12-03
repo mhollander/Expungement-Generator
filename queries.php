@@ -60,22 +60,22 @@ function gatherQueries()
 
 function displayQuery($query)
 {
-	$result = mysql_query($query[1], $GLOBALS['db']);
+	$result = $GLOBALS['db']->query($query[1]);
 	print "<p><b>" . $query[0] . "</b><br/>" . $query[1] . "</p>";
 	
 	if (!$result) 
 	{
-		die('Could not run your query:' . mysql_error());
+		die('Could not run your query:' . $GLOBALS['db']->error);
 	}
 	
 	print "<table border='1'><tr>";
-	$numFields = mysql_num_fields($result);
+	$numFields = $result->field_count;
 	for ($i = 0; $i < $numFields; $i += 1) {
-        $field = mysql_fetch_field($result, $i);
+        $field = $result->fetch_field_direct($i);
         echo '<th>' . $field->name . '</th>';
     }
 	print "</tr>";
-	while ($row = mysql_fetch_array($result))
+	while ($row = $result->fetch_array())
 	{
 		print "<tr>";
 		for ($i=0; $i < $numFields; $i++)
@@ -83,4 +83,5 @@ function displayQuery($query)
 		print "</tr>";
 	}
 	print "</table>";
+	$result->close();
 }

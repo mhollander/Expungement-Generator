@@ -112,16 +112,17 @@ Identification No.: <barid>
 <?php
 	// get all of the programs from the database and list them
 	$sql = "SELECT * from program";
-	$result = mysql_query($sql, $GLOBALS['db']);
+	$result = $GLOBALS['db']->query($sql);
 	if (!$result) 
 	{
 		if ($GLOBALS['debug'])
-			die('Could not get the Expungement Information from the DB:' . mysql_error());
+			die('Could not get the Expungement Information from the DB:' . $GLOBALS['db']->error);
 		else
 			die('Could not get the Expungement Information from the DB');
 	}
-	while ($row = mysql_fetch_assoc($result))
+	while ($row = $result->fetch_assoc())
 		print "<option value='{$row['programID']}'>{$row['programName']}</option>";
+	$result->close();
 ?>
 			</select>
 		</div>
@@ -141,11 +142,11 @@ function displayAllUsers()
 	// first, do a query of all expungements
 	$query = "SELECT user.userid as userid, user.email as email, userinfo.firstName as firstName, userinfo.lastName as lastName, userinfo.userlevel as userLevel, program.programName as programName, program.ifp as ifp, userinfo.pabarid as pabarid, userinfo.totalPetitions as ptotal FROM user, userinfo, program WHERE user.userid=userinfo.userid AND program.programid=userinfo.programid";
 	
-	$result = mysql_query($query, $GLOBALS['db']);
+	$result = $GLOBALS['db']->query($query);
 	if (!$result) 
 	{
 		if ($GLOBALS['debug'])
-			die('Could not get the user information from the DB:' . mysql_error());
+			die('Could not get the user information from the DB:' . $GLOBALS['db']->error);
 		else
 			die('Could not get the user information from the DB');
 	}
@@ -154,7 +155,7 @@ function displayAllUsers()
 	<table>
 	<tr><th>Name</th><th>email</th><th>Userlevel</th><th>Program</th><th>Is IFP?</th><th>Bar ID</th><th>Petitions Prepped</th></tr>
 END;
-	while ($row = mysql_fetch_assoc($result))
+	while ($row = $result->fetch_assoc())
 	{
 		print "<tr>";
 		print "<td><a href='editAttorney.php?id={$row['userid']}'>{$row['firstName']} {$row['lastName']}</a></td>";
@@ -169,7 +170,7 @@ END;
 		print "<td>{$row['ptotal']}</td>";
 		print "</tr>";
 	}
-
+	$result->close();
 
 }
 ?>
