@@ -21,20 +21,20 @@ session_start();
 if (isset($_POST['username']))
 {
 	// this is a login attempt; run through the login stuff
-	$username = mysql_escape_string($_POST['username']);
-	$password = md5(mysql_escape_string($_POST['password']));
+	$username = $db->real_escape_string($_POST['username']);
+	$password = md5($db->real_escape_string($_POST['password']));
 	
 	$query = "SELECT userinfo.firstName, userinfo.lastName, user.userid FROM user, userinfo WHERE email='$username' AND password='$password' AND user.userid=userinfo.userid";
 
-	$result = mysql_query($query, $db);
+	$result = $db->query($query);
 	if (!$result) 
 	{
 		if ($GLOBALS['debug'])
-			die('Could not login:' . mysql_error());
+			die('Could not login:' . $db->error);
 		else
 			die('Could not login for some strange reason.');
 	}
-	$row = mysql_fetch_assoc($result);
+	$row = mysqli_fetch_assoc($result);
 	
 	if ($row['firstName'])
 	{
@@ -57,6 +57,7 @@ if (isset($_POST['username']))
 		session_destroy();
 		print "There was a problem logging you in.  Return to the login screen to try again: <a href='login.php'>Retry Login</a>";
 	}
+	$result->close();
 }
 
 // check to see if someone is trying to logout
@@ -111,20 +112,21 @@ else if (isset($_POST['edit']) && $_POST['edit']=="1")
 	$thisAttorney = $attorney = new Attorney($_SESSION["loginUserID"], $db);
 		
 	// if this is the superuser AND there is a field called "id" passed in, then we change the attorney to that attorney
-	// This allows superuser editting of other users
+	// This allows superuser editing of other users
 	if ($attorney->getUserLevel()==1 && (isset($_REQUEST['id']) && $_REQUEST['id'] != ""))
 		$attorney = new Attorney($_REQUEST['id'], $db);
 		
 	// check to see that they entered a valid password; if not, don't allow the edit.
 	if (isset($_POST['registerPassword']) && $_POST['registerPassword'] != '')
 	{
-		$password = md5(mysql_escape_string($_POST['registerPassword']));
+		$password = md5($db->real_escape_string($_POST['registerPassword']));
 	
 		$query = "SELECT * FROM user WHERE userid='" . $_SESSION["loginUserID"] . "' AND password='$password'";
 
-		$result = mysql_query($query, $db);
-		if (!$result || mysql_num_rows($result) == 0) 
+		$result = $db->query($query);
+		if (!$result || $result->num_rows == 0) 
 			$errorMessages->addMessage("Edit User Error", "The password you entered was incorrect.");
+		$result->close();
 	}
 	elseif ($thisAttorney->getUserLevel() != 1)
 		$errorMessages->addMessage("Edit User Error", "You didn't enter your password.  You have to enter your password to edit your profile.");

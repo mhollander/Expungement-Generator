@@ -42,11 +42,11 @@ else
 		if ($attorney->getUserLevel() != 1)
 			$query .= " AND expungement.userid = {$attorney->getUserID()}";
 		
-		$result = mysql_query($query, $db);
+		$result = $db->query($query);
 		if (!$result) 
 		{
 			if ($GLOBALS['debug'])
-				die('Could not get the Expungement Information from the DB:' . mysql_error());
+				die('Could not get the Expungement Information from the DB:' . $db->error);
 			else
 				die('Could not get the Expungement Information from the DB');
 		}
@@ -55,7 +55,7 @@ else
 		<table>
 		<th>Docket Number</th><th>Defendant Name</th><th>Attorney Name</th><th>Date Prepared</th><th>Charges Redacted</th><th>Type</th><th>Costs Owed</th><th>Bail Owed</th>
 END;
-		while ($row = mysql_fetch_assoc($result))
+		while ($row = $result->fetch_assoc())
 		{
 			$redactionType = getRedactionType($row['isExpungement'],$row['isRedaction'],$row['isSummaryExpungement']);
 			
@@ -71,7 +71,8 @@ END;
 			print "</tr>";
 		}
 		print "</table>";
-
+		$result->close();
+		
 		if (doesPDFExistForCaseId($_GET['id']))
 			print "<br /><a href='displayPDF.php?id={$_GET['id']}'>Show stored PDF docket sheet for this case</a><br />";
 	
@@ -81,11 +82,11 @@ END;
 		if ($attorney->getUserLevel() != 1)
 			$query .= " AND expungement.userid = {$attorney->getUserID()}";
 		
-		$result = mysql_query($query, $db);
+		$result = $db->query($query);
 		if (!$result) 
 		{
 			if ($GLOBALS['debug'])
-				die('Could not get the Expungement Information from the DB:' . mysql_error());
+				die('Could not get the Expungement Information from the DB:' . $db->error);
 			else
 				die('Could not get the Expungement Information from the DB');
 		}
@@ -94,7 +95,7 @@ END;
 		<table>
 		<th>Charge Name</th><th>Charge Disposition</th><th>Code Section</th><th>Disp Date</th><th>Is Charge Expungeable?</th>
 END;
-		while ($row = mysql_fetch_assoc($result))
+		while ($row = $result->fetch_assoc())
 		{
 			print "<tr>";
 			print "<td>{$row['chargeName']}</td>";
@@ -104,7 +105,7 @@ END;
 			print "<td>{$row['isExpungeableNow']}</td>";
 			print "</tr>";
 		}
-
+		$result->close();
 	}
 }
 ?>	

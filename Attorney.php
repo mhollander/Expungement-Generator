@@ -49,15 +49,15 @@ class Attorney
 		if (isset($this->userid))
 		{
 			$query = "SELECT * FROM user, userinfo, program WHERE user.userid='".$this->userid."' AND user.userid=userinfo.userid AND program.programID=userinfo.programID";
-			$result = mysql_query($query, $db);
+			$result = $db->query($query);
 			if (!$result) 
 			{
 				if ($GLOBALS['debug'])
-					die('Could not get the Attorney Information from the DB:' . mysql_error());
+					die('Could not get the Attorney Information from the DB:' . $db->error);
 				else
 					die('Could not get the Attorney Information from the DB');
 			}
-			$row = mysql_fetch_assoc($result);
+			$row = $result->fetch_assoc();
 			$this->setFirstName($row['firstName']);
 			$this->setLastName($row['lastName']);
 			$this->setPetitionHeader($row['petitionHeader']);
@@ -68,8 +68,8 @@ class Attorney
 			$this->setProgramName($row['programName']);
 			$this->setUserLevel($row['userLevel']);
 			
-			mysql_free_result($result);
-			}
+			$result->close();
+		}
 	}
 	
 	public function getIFPMessage()
@@ -142,24 +142,22 @@ class Attorney
 		if (!$errorMessages->hasMessages())
 		{
 			// if we get to here, then all is well; register the user
-			$query = "INSERT INTO user (email, password) VALUES('". mysql_escape_string($email) . "', '" . mysql_escape_string(md5($password)) . "')";
-			$result = mysql_query($query, $db);
-			if (!$result) 
+			$query = "INSERT INTO user (email, password) VALUES('". ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $email) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "', '" . ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], md5($password)) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "')";
+			if (!$db-query($query))
 			{
 				if ($GLOBALS['debug'])
-					die('There was a problem registering your email and password in the database:' . mysql_error());
+					die('There was a problem registering your email and password in the database:' . $db->error);
 				else
 					die('There was a problem registering your email and password in the database.');
 			}
-			$registerUserID = mysql_insert_id();
+			$registerUserID = $db->insert_id;
 			
 			// now insert information into userinfo
-			$query = "INSERT INTO userinfo (userid, firstName, lastName, petitionHeader, petitionSignature, pabarid, programID) VALUES($registerUserID, '" . mysql_escape_string($first) . "', '" . mysql_escape_string($last) . "', '" . mysql_escape_string($header) . "', '" . mysql_escape_string($signature) . "', '" . mysql_escape_string($barID) . "', '" . mysql_escape_string($program) . "')";
-			$result = mysql_query($query, $db);
-			if (!$result) 
+			$query = "INSERT INTO userinfo (userid, firstName, lastName, petitionHeader, petitionSignature, pabarid, programID) VALUES($registerUserID, '" . ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $first) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "', '" . ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $last) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "', '" . ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $header) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "', '" . ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $signature) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "', '" . ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $barID) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "', '" . ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $program) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "')";
+			if (!$db->query($query))
 			{
 				if ($GLOBALS['debug'])
-					die('There was a problem registering your user information in the database:' . mysql_error());
+					die('There was a problem registering your user information in the database:' . $db->error);
 				else
 					die('There was a problem registering your user information in the database.');
 			}
@@ -213,13 +211,11 @@ class Attorney
 		if (!$errorMessages->hasMessages())
 		{
 			// if we get to here, then all is well; update the user
-			$query = "UPDATE user SET email='". mysql_escape_string($email) . "' WHERE userid='" . $attorneyID . "'";
-			$result = mysql_query($query, $db);
-
-			if (!$result) 
+			$query = "UPDATE user SET email='".$db->real_escape_string($email) . "' WHERE userid='" . $attorneyID . "'";
+			if(!$db->query($query))
 			{
 				if ($GLOBALS['debug'])
-					die('There was a problem updating your email in the database:' . mysql_error());
+					die('There was a problem updating your email in the database:' . $db->error);
 				else
 					die('There was a problem updating your email in the database.');
 			}
@@ -227,29 +223,26 @@ class Attorney
 			//update the password only if they set a new password
 			if (isset($password) && $password != "")
 			{
-				$password = md5(mysql_escape_string($password));
+				$password = md5($db->real_escape_string($password));
 				$query = "UPDATE user SET password='". $password . "' WHERE userid='" . $attorneyID . "'";
 
-				$result = mysql_query($query, $db);
-				if (!$result) 
+				if(!$db->query($query))
 				{
 					if ($GLOBALS['debug'])
-						die('There was a problem updating your password in the database:' . mysql_error());
+						die('There was a problem updating your password in the database:' . $db->error);
 					else
 						die('There was a problem updating your password in the database.');
-				}	
+				}
 			}
-			
 			// now update information into userinfo
-			$query = "UPDATE userinfo SET firstName='" . mysql_escape_string($first) . "', lastName='" . mysql_escape_string($last) . "', petitionHeader='" . mysql_escape_string($header) . "', petitionSignature='" . mysql_escape_string($signature) . "' WHERE userid='" . $attorneyID ."'";
-			$result = mysql_query($query, $db);
-			if (!$result) 
+			$query = "UPDATE userinfo SET firstName='" . $db->real_escape_string($first)  . "', lastName='" . $db->real_escape_string($last) . "', petitionHeader='" . $db->real_escape_string($header) . "', petitionSignature='" . $db->real_escape_string($signature) . "' WHERE userid='" . $attorneyID ."'";
+			if(!$db->query($query))
 			{
 				if ($GLOBALS['debug'])
-					die('There was a problem updating your user information in the database:' . mysql_error());
+					die('There was a problem updating your user information in the database:' . $db->error);
 				else
 					die('There was a problem updating your user information in the database.');
-			}	
+			}
 		}
 	}
 	
@@ -257,36 +250,38 @@ class Attorney
 	public static function checkIfEmailExists($email, $id, $db)
 	{
 		// check to see that this email address is NOT already in the database
-		$query = "SELECT COUNT(email) FROM user WHERE email='".mysql_escape_string($email)."'";
+		$query = "SELECT COUNT(email) FROM user WHERE email='".$db->real_escape_string($email)."'";
 		
 		if ($id != "")
 			$query .= " AND userid != '".$id."'";
 			
-		$result = mysql_query($query, $db);
+		$result = $db->query($query);
 		if (!$result) 
 		{
 			if ($GLOBALS['debug'])
-				die('Could not query the DB for email address:' . mysql_error());
+				die('Could not query the DB for email address:' . $db->error);
 			else
 				die('Could not check the DB for an email address.');
 		}
-		$total = mysql_fetch_array($result); 
+		$total = $result->fetch_array(); 
+		$result->close();
 		return $total[0];
 	}
 	
 	public static function checkIfBarIDExists($barID, $db)
 	{
 		// check to see that this bar idis NOT already in the database
-		$query = "SELECT COUNT(userid) FROM userinfo WHERE pabarid=".mysql_escape_string($barID);
-		$result = mysql_query($query, $db);
+		$query = "SELECT COUNT(userid) FROM userinfo WHERE pabarid=".((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $barID) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : ""));
+		$result = $db->query($query);
 		if (!$result) 
 		{
 			if ($GLOBALS['debug'])
-				die('Could not query the DB for a bar ID during registration:' . mysql_error());
+				die('Could not query the DB for a bar ID during registration:' . $db->error);
 			else
 				die('Could not check the DB for your bar ID while registering you, for some strange reason.');
 		}
-		$total = mysql_fetch_array($result); 
+		$total = $result->fetch_array(); 
+		$result->close();
 		return $total[0];
 	}
 	
@@ -294,14 +289,14 @@ class Attorney
 	public function updateTotalPetitions($add, $db)
 	{
 		$query = "UPDATE userinfo SET totalPetitions = totalPetitions + $add WHERE userID = " . $this->getUserID();
-		$result = mysql_query($query, $db);
-		if (!$result) 
+		if(!$db->query($query))
 		{
 			if ($GLOBALS['debug'])
-				die('Could not query the DB for a bar ID during registration:' . mysql_error());
+				die('Could not query the DB for a bar ID during registration:' . $db->error);
 			else
 				die('Could not check the DB for your bar ID while registering you, for some strange reason.');
 		}
+		
 		return;
 	}
 	

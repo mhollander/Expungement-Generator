@@ -34,18 +34,18 @@ else
 		$outputFilename = ".pdf";
 
 		// get the docket number from the arrest ID
-		$sql = "SELECT docketNumPrimary as docketNum FROM arrest WHERE arrest.arrestID='" . mysql_real_escape_string($id) . "'";
-		$result = mysql_query($sql, $db);
+		$sql = "SELECT docketNumPrimary as docketNum FROM arrest WHERE arrest.arrestID='" . ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $id) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "'";
+		$result = $db->query($sql);
 		if (!$result) 
 		{
 			if ($GLOBALS['debug'])
-				die("Could not get the PDF from the databsae.  Perhaps it doesn't exist?:" . mysql_error());
+				die("Could not get the PDF from the databsae.  Perhaps it doesn't exist?:" . $db->error);
 			else
 				die("Could not get the PDF from the databsae.  Perhaps it doesn't exist?");
 		}
 
-		$row = mysql_fetch_assoc($result);
-		
+		$row = $result->fetch_assoc();
+		$result->close();		
 		
 		// set the filename to the docket number.  at some point we might want to change this
 		// so that we have a zip file with all of the docket numbers
@@ -61,7 +61,8 @@ else
 
 		// echo $row['data'];
 		readfile($docketFile);
-	
+		
+
 	}
 }
 
