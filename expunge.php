@@ -31,6 +31,10 @@ else
 	// get information about the person from the POST vars passed in
 	$urlPerson = getPersonFromGetVars();
 	$person = new Person($urlPerson['First'], $urlPerson['Last'], $urlPerson['PP'], $urlPerson['SID'], $urlPerson['SSN'], $urlPerson['Street'], $urlPerson['City'], $urlPerson['State'], $urlPerson['Zip']);
+	
+	// if this is true, then we do an expungement of every charge, even ones that normally aren't expungeable.
+	// This is for situations like pardons where someone needs an expungement of convictions.
+	$expungeRegardless = isset($_POST["expungeRegardless"]);
 
 	// make sure to change this in the future to prevent hacking!
 	$attorney = new Attorney($_SESSION["loginUserID"], $db);
@@ -47,7 +51,7 @@ else
 	$arrests = combineArrests($arrests);
 		
 	// do the expungements in PDF form
-	$files = doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $db);
+	$files = doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $expungeRegardless, $db);
 	
 	$files[] = createOverview($arrests, $templateDir, $dataDir, $person);  
 	
@@ -201,16 +205,16 @@ function integrateSummaryInformation($arrests, $person, $arrestSummary)
 
 // loops through all of the Arrests in $arrests and does a paper and to screen expungement
 // @return an array of the file names that were created during this process.
-function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $db)
+function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $expungeRegardless, $db)
 {
 	$files = array();
 
 	print "<ul class='no-indent'>";
 	foreach ($arrests as $arrest)	
 	{
-		if ($arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestExpungement() ||  $arrest->isArrestOver70Expungement($arrests, $person) || $arrest->isArrestRedaction() )
+		if ($arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestExpungement() ||  $arrest->isArrestOver70Expungement($arrests, $person) || $arrest->isArrestRedaction() || $expungeRegardless)
 		{
-			$files[] = $arrest->writeExpungement($templateDir, $dataDir, $person, $attorney, $db);
+			$files[] = $arrest->writeExpungement($templateDir, $dataDir, $person, $attorney, $expungeRegardless, $db);
 			
 			// if this isn't a philly arrest and this is an agency that has IFP status, then add in 
 			// an IFP notice.
@@ -219,7 +223,7 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $d
 			
 			print "<li><span class='boldLabel'>Performing ";
 			
-			if ($arrest->isArrestExpungement() || $arrest->isArrestSummaryExpungement($arrests))
+			if ($arrest->isArrestExpungement() || $arrest->isArrestSummaryExpungement($arrests) || $expungeRegardless)
 				print "expungement";
 			else if ($arrest->isArrestOver70Expungement($arrests, $person))
 				print "expungement (over 70)";

@@ -1117,7 +1117,7 @@ class Arrest
 	}
 	
 	
-	public function writeExpungement($inputDir, $outputDir, $person, $attorney, $db)
+	public function writeExpungement($inputDir, $outputDir, $person, $attorney, $expungeRegardless, $db)
 	{
 		$odf = new odf($inputDir . "790ExpungementTemplate.odt");
 		if ($GLOBALS['debug'])
@@ -1135,9 +1135,9 @@ class Arrest
 		// set the type of petition
 		// NOTE: Should I just keep the "else clause" and get rid of the if clause?  I think this handles every case for redaction or expungement.  Why not just test
 		// the expungements and then move on to redaction?  Or test the redaction and write "Expungement" otherwise.
-		if (($this->isArrestRedaction() && !$this->isArrestExpungement()) && !$this->isArrestOver70Expungement)
+		if (($this->isArrestRedaction() && !$this->isArrestExpungement()) && !$this->isArrestOver70Expungement && !$expungeRegardless)
 			$odf->setVars("EXPUNGEMENT_OR_REDACTION","Redaction");
-		else if ($this->isArrestExpungement() || $this->isArrestSummaryExpungement || $this->isArrestOver70Expungement)
+		else if ($this->isArrestExpungement() || $this->isArrestSummaryExpungement || $this->isArrestOver70Expungement || $expungeRegardless)
 			$odf->setVars("EXPUNGEMENT_OR_REDACTION", "Expungement");
 		
 		if ($attorney->getIFP())
@@ -1308,7 +1308,7 @@ class Arrest
 		$theCharges1=$odf->setSegment("charges1");
 		foreach ($this->getCharges() as $charge)
 		{
-			if (!$this->isArrestOver70Expungement)
+			if (!$this->isArrestOver70Expungement && !$expungeRegardless)
 			{
 				if (!$this->isArrestSummaryExpungement && !$charge->isRedactable())
 					continue;
@@ -1346,7 +1346,7 @@ class Arrest
 		$outputFile = $outputDir . $this->getFirstName() . $this->getLastName() . $this->getFirstDocketNumber();
 		if ($this->isArrestARDExpungement())
 			$outputFile .= "ARDExpungement";
-		else if ($this->isArrestExpungement())
+		else if ($this->isArrestExpungement() || $expungeRegardless)
 			$outputFile .= "Expungement";
 		else  if ($this->isArrestOver70Expungement)
 			$outputFile .= "ExpungementOver70";
