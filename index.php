@@ -90,6 +90,8 @@ else
 		<div class="form-item">
 			<input type="submit" value="Send files" />
 		</div>
+		<div class="form-item">
+			<input type="checkbox" name="expungeRegardless" /> Generate expungement regardless of whether expungement is proper (for Pardons, etc...)
 		</form>
 <?php 
 }  // else isloggedin()
