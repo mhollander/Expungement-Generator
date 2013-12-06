@@ -91,7 +91,8 @@ else
 			<input type="submit" value="Send files" />
 		</div>
 		<div class="form-item">
-			<input type="checkbox" name="expungeRegardless" /> Generate expungement regardless of whether expungement is proper (for Pardons, etc...)
+			<br />
+			<input type="checkbox" name="expungeRegardless" /> Generate expungement regardless of whether expungement is proper (for pardons, cases where the docket is wrong, etc...).  It is very rare that you will need this.  Please only check this box if you know what you are doing.
 		</form>
 <?php 
 }  // else isloggedin()
