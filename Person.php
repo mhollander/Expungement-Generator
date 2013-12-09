@@ -73,12 +73,12 @@ class Person
 		
 		$sql = "INSERT INTO defendant (firstName, lastName, PP, SID, SSN, DOB, street, city, state, zip, alias) VALUES ('" . $this->getFirst() . "', '" . $this->getLast() . "', '" . $this->getPP() . "', '" . $this->getSID() . "', '" . $this->getSSN() . "', '" . dateConvert($this->getDOB()) . "', '" . $this->getStreet() . "', '" . $this->getCity() . "', '" . $this->getState() . "', '" . $this->getZip() . "', '" . $this->getAliasCommaList() . "')";
 		
-		if (!$db->query($sql));
+		if (!$db->query($sql))
 		{
 			if ($GLOBALS['debug'])
 				die('Could not add the Defendant to the DB:' . $db->error);
 			else
-				die('Could not add the Defendant to the DB');
+				die('Could not add the Defendant to the DB';
 		}
 
 		$this->setPersonID($db->insert_id);
