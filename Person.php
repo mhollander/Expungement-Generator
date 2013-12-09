@@ -78,7 +78,7 @@ class Person
 			if ($GLOBALS['debug'])
 				die('Could not add the Defendant to the DB:' . $db->error);
 			else
-				die('Could not add the Defendant to the DB';
+				die('Could not add the Defendant to the DB');
 		}
 
 		$this->setPersonID($db->insert_id);
