@@ -1294,7 +1294,7 @@ class Arrest
 		// whether the 490 or 790 rule is the proper one under which to do expungements of summary offenses
 		// that are dropped, not convictions.  But the court wants 490 petitions in that case
 		// so now all SU cases are going to be summary expungements under 490.
-		if ($this->isSummaryArrest || $this->getIsMDJ() == 1)
+		if ($this->getIsSummaryArrest() || $this->getIsMDJ() == 1)
 			$odf->setVars("490_OR_790", "490");
 		else
 			$odf->setVars("490_OR_790", "790");
