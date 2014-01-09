@@ -142,8 +142,8 @@ class Attorney
 		if (!$errorMessages->hasMessages())
 		{
 			// if we get to here, then all is well; register the user
-			$query = "INSERT INTO user (email, password) VALUES('". ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $email) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "', '" . ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], md5($password)) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "')";
-			if (!$db-query($query))
+			$query = "INSERT INTO user (email, password) VALUES('" . $db->real_escape_string($email) . "', '" . $db->real_escape_string(md5($password)) . "')";
+			if (!$db->query($query))
 			{
 				if ($GLOBALS['debug'])
 					die('There was a problem registering your email and password in the database:' . $db->error);
@@ -153,7 +153,7 @@ class Attorney
 			$registerUserID = $db->insert_id;
 			
 			// now insert information into userinfo
-			$query = "INSERT INTO userinfo (userid, firstName, lastName, petitionHeader, petitionSignature, pabarid, programID) VALUES($registerUserID, '" . ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $first) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "', '" . ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $last) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "', '" . ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $header) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "', '" . ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $signature) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "', '" . ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $barID) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "', '" . ((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $program) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : "")) . "')";
+			$query = "INSERT INTO userinfo (userid, firstName, lastName, petitionHeader, petitionSignature, pabarid, programID) VALUES($registerUserID, '" . $db->real_escape_string($first) . "', '" . $db->real_escape_string($last) . "', '" . $db->real_escape_string($header) . "', '" . $db->real_escape_string($signature) . "', '" . $db->real_escape_string($barID) . "', '" . $db->real_escape_string($program) . "')";
 			if (!$db->query($query))
 			{
 				if ($GLOBALS['debug'])
@@ -271,7 +271,7 @@ class Attorney
 	public static function checkIfBarIDExists($barID, $db)
 	{
 		// check to see that this bar idis NOT already in the database
-		$query = "SELECT COUNT(userid) FROM userinfo WHERE pabarid=".((isset($GLOBALS["___mysqli_ston"]) && is_object($GLOBALS["___mysqli_ston"])) ? mysqli_real_escape_string($GLOBALS["___mysqli_ston"], $barID) : ((trigger_error("[MySQLConverterToo] Fix the mysql_escape_string() call! This code does not work.", E_USER_ERROR)) ? "" : ""));
+		$query = "SELECT COUNT(userid) FROM userinfo WHERE pabarid=" . $db->real_escape_string($barID);
 		$result = $db->query($query);
 		if (!$result) 
 		{
