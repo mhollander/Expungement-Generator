@@ -99,6 +99,7 @@ class ArrestSummary
 					$arrest->setOTN(trim($matches[4]));
 				if (preg_match(self::$arrestDateDispDateJudgeSearch,$arrestRecordFile[$line_num+1],$matches2))
 				{
+					// only set these if the variables are not empty (can't do empty(trim($matches) until PHP 5.5))
 					if (trim($matches2[1]) != false)
 						$arrest->setArrestDate(trim($matches2[1]));
 					if (trim($matches2[2]) != false)
