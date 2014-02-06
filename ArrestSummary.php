@@ -16,7 +16,7 @@ class ArrestSummary
 	protected static $docketDCNOTNSearch = "/((MC|CP)\-\d{2}\-\D{2}\-\d*\-\d{4}).+DC No:\s*(\d*).*OTN:\s*(\D\d+)*/";
 	
 	// matches the arrest Date, Disposition Date, and judge from the summary arrest record
-	protected static $arrestDateDispDateJudgeSearch = "/Arrest Dt:\s*(\d{1,2}\/\d{1,2}\/\d{4}).*Disp Date:\s*(\d{1,2}\/\d{1,2}\/\d{4})\s*Disp Judge:(.*)/";
+	protected static $arrestDateDispDateJudgeSearch = "/Arrest Dt:\s*(\d{1,2}\/\d{1,2}\/\d{4})?.*Disp Date:\s*(\d{1,2}\/\d{1,2}\/\d{4})?\s*Disp Judge:(.*)/";
 	protected static $migratedJudgeSearch = "/migrated/i";
 	
 	public function getSID() { return $this->SID; }
@@ -99,8 +99,11 @@ class ArrestSummary
 					$arrest->setOTN(trim($matches[4]));
 				if (preg_match(self::$arrestDateDispDateJudgeSearch,$arrestRecordFile[$line_num+1],$matches2))
 				{
-					$arrest->setArrestDate(trim($matches2[1]));
-					$arrest->setDispositionDate(trim($matches2[2]));
+					// only set these if the variables are not empty (can't do empty(trim($matches) until PHP 5.5))
+					if (trim($matches2[1]) != false)
+						$arrest->setArrestDate(trim($matches2[1]));
+					if (trim($matches2[2]) != false)
+						$arrest->setDispositionDate(trim($matches2[2]));
 
 					// we don't want to set the judge if the judge is "Migrated Judge" or there is 
 					// no judge listed.
