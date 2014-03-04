@@ -1363,7 +1363,7 @@ class Arrest
 	}
 
 
-	public function writeIFP($person, $attorney, $db)
+	public function writeIFP($person, $attorney)
 	{
 		$odf = new odf($GLOBALS["templateDir"] . "IFPTemplate.odt");
 		
@@ -1442,7 +1442,7 @@ class Arrest
 	}
 	
 					
-	public function writeExpungementToDatabase($person, $attorney, $db)
+	public function writeExpungementToDatabase($person, $attorney, $db, $saveDocketSheet)
 	{
 		// the defendant has already been inserted
 		// next insert the arrest, which includes the defendant ID
@@ -1471,14 +1471,15 @@ class Arrest
 				$tempExpungementID = "NULL";
 			else
 				$numRedactableCharges++;
-				
+			
 			$chargeID = $this->writeChargeToDatabase($charge, $arrestID, $defendantID, $tempExpungementID, $db);
 		}
 		
 		$this->updateExpungementWithNumCharges($expungementID, $numRedactableCharges, $db);
 		
 		// finally, save the PDF to the database, if there was a pdf file to save
-		$this->writePDFToDatabase($expungementID, $db);
+		if ($saveDocketSheet)
+			$this->writePDFToDatabase($expungementID, $db);
 		
 		
 	}
