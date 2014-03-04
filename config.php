@@ -7,26 +7,29 @@ $debug=false;
 
 
 /*
-require_once("/home/ronholla/tools/dbinfo.php");
-require_once("dbconnect.php");
-$dataDir = "/home/ronholla/www/crepdb/data/";
-$baseURL = "http://www.ronhollander.com/crepdb/";
-$templateDir = "templates/";
-$signatureDir = "/home/ronholla/www/crepdb/images/sigs/";
-$toolsDir = "/home/ronholla/tools/";
-$pdftotext = "pdftotext";
-$tempFile = tempnam($dataDir, "FOO");
+$basedir = join(DIRECTORY_SEPARATOR, array("home", "expungem");
+$toolsDir = join(DIRECTORY_SEPARATOR, array($basedir, "tools"));
+$wwwdir = join(DIRECTORY_SEPARATOR, array ($basedir, "www"));
+$baseURL = "https://expungementgenerator.org/";
+$pdftotext = $toolsDir . DIRECTORY_SEPARATOR . "pdftotext";
 
 */
-require_once("c:\wamp\\tools\dbinfo.php");
 
-$dataDir = "c:\wamp\www\Expungement-Generator\data\\";
-$templateDir = "c:\wamp\www\Expungement-Generator\\templates\\";
-$signatureDir = "./images/sigs/";
-$toolsDir = "c:\wamp\\tools\\";
-$baseURL = "http://localhost/Expungement-Generator/";
+$basedir = join(DIRECTORY_SEPARATOR, array("c:", "mikes program files", "wamp"));
+$toolsDir = join(DIRECTORY_SEPARATOR, array($basedir, "tools"));
+$wwwdir = join(DIRECTORY_SEPARATOR, array ($basedir, "www", "eg"));
+$baseURL = "http://localhost/eg/";
+$pdftotext = "\"" . $toolsDir . DIRECTORY_SEPARATOR . "pdftotext.exe\"";
+
+
+require_once($toolsDir . DIRECTORY_SEPARATOR . "dbinfo.php");
+
+$dataDir = join(DIRECTORY_SEPARATOR, array($wwwdir, "data")) . DIRECTORY_SEPARATOR;
+$templateDir = join(DIRECTORY_SEPARATOR, array($wwwdir, "templates")) . DIRECTORY_SEPARATOR;
+$docketSheetsDir = join(DIRECTORY_SEPARATOR, array($wwwdir, "docketsheets")) . DIRECTORY_SEPARATOR;
+
+
 $tempFile = tempnam($dataDir, "FOO");
-$pdftotext = "pdftotext.exe";
 
 
 // setup DB

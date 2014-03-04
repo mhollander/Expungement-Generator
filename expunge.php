@@ -42,7 +42,7 @@ else
 		$attorney->printAttorneyInfo();
 	
 	// parse the uploaded files will lead to expungements or redactions
-	$arrests = parseDockets($toolsDir, $tempFile, $pdftotext, $arrestSummary, $person);
+	$arrests = parseDockets($tempFile, $pdftotext, $arrestSummary, $person);
 	
 	// integrate the summary information in with the arrests 
 	integrateSummaryInformation($arrests, $person, $arrestSummary);
@@ -90,13 +90,14 @@ include ('foot.php');
 
 // parse the docket sheets into Arrest objects and place them all into an array
 // @return an array of Arrest objects containing each docket sheet parsed
-function parseDockets($toolsDir, $tempFile, $pdftotext, $arrestSummary, $person)
+function parseDockets($tempFile, $pdftotext, $arrestSummary, $person)
 {
 	$arrests = array();
 	// loop over all of the files that we uploaded and read them in to see if they are expungeable
 	foreach($_FILES["userFile"]["tmp_name"] as $key => $file)
 	{
-		$command = $toolsDir . $pdftotext . " -layout \"" . $file . "\" \"" . $tempFile . "\"";
+		$command = $pdftotext . " -layout \"" . $file . "\" \"" . $tempFile . "\"";
+		//print $command;
 		system($command, $ret);
 		if($GLOBALS['debug'])
 			print "<br>The pdftotext command: $command <BR />";
@@ -292,6 +293,8 @@ function writeExpungementsToDatabase($arrests, $person, $attorney, $db)
 	// setup a db connection for CREP users so that we can write remotely
 	$crepDB;
 	
+	
+	// if this is a crep lawyer, write this to the crep database
 	if ($attorney->getProgramID() == 2)
 	{
 		$crepDB = new mysqli($GLOBALS['crepDBHost'], $GLOBALS['crepDBUser'], $GLOBALS['crepDBPassword'], $GLOBALS['crepDBName']);
@@ -302,7 +305,7 @@ function writeExpungementsToDatabase($arrests, $person, $attorney, $db)
 	}
 	
 	// if this isn't a CLS lawyer, we only update the number of total petitions generated and return
-	if ($attorney->getProgramID() == 1)
+	else if ($attorney->getProgramID() == 1)
 		// otherwise, write the defendant into the db if he doesn't already exist
 		$person->writePersonToDB($db);
 	
@@ -319,7 +322,7 @@ function writeExpungementsToDatabase($arrests, $person, $attorney, $db)
 			$arrest->writeExpungementToDatabase($person, $attorney, $db, true);
 		
 		// if this is CREP, add this to a remote CREP database
-		if ($attorney->getProgramID() == 2)
+		else if ($attorney->getProgramID() == 2)
 			$arrest->writeExpungementToDatabase($person, $attorney, $crepDB, false);
 		
 	}
