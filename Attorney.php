@@ -29,6 +29,7 @@ class Attorney
 	public function setProgramID($programID) { $this->programID = $programID; }
 	public function setProgramName($programName) { $this->programName = $programName; }
 	public function setUserLevel($userLevel) { $this->userLevel = $userLevel; }
+	public function setIsAnon($anon) { $this->anon = $anon; }
 	
 	// getters
 	public function getFirstName() { return $this->firstName; }
@@ -41,6 +42,7 @@ class Attorney
 	public function getProgramID() { return $this->programID; }
 	public function getProgramName() { return $this->programName; }
 	public function getUserLevel() { return $this->userLevel; }
+	public function getIsAnon() { return $this->anon; }
 	
 	// Sets the attorney information by taking a userID, connecting to the database, and pulling
 	// the attorney information from the database.  Requires a db handle to be passed in.
@@ -58,16 +60,33 @@ class Attorney
 					die('Could not get the Attorney Information from the DB');
 			}
 			$row = $result->fetch_assoc();
-			$this->setFirstName($row['firstName']);
-			$this->setLastName($row['lastName']);
-			$this->setPetitionHeader($row['petitionHeader']);
-			$this->setPetitionSignature($row['petitionSignature']);
-			$this->setIFP($row['ifp']);
-			$this->setEmail($row['email']);			
-			$this->setProgramID($row['programID']);
-			$this->setProgramName($row['programName']);
-			$this->setUserLevel($row['userLevel']);
+			$this->setIsAnon($row['anonymous']);
 			
+			// if this is an anonymous user, we want to blank out their name, etc.... so that it doesn't appear on petitions	
+			if ($this->getIsAnon())
+			{
+				$this->setFirstName("");
+				$this->setLastName("");
+				$this->setPetitionHeader("");
+				$this->setPetitionSignature("");
+				$this->setIFP(0);
+				$this->setEmail($row['email']);			
+				$this->setProgramID($row['programID']);
+				$this->setProgramName($row['programName']);
+				$this->setUserLevel($row['userLevel']);
+			}
+			else
+			{
+				$this->setFirstName($row['firstName']);
+				$this->setLastName($row['lastName']);
+				$this->setPetitionHeader($row['petitionHeader']);
+				$this->setPetitionSignature($row['petitionSignature']);
+				$this->setIFP($row['ifp']);
+				$this->setEmail($row['email']);			
+				$this->setProgramID($row['programID']);
+				$this->setProgramName($row['programName']);
+				$this->setUserLevel($row['userLevel']);
+			}			
 			$result->close();
 		}
 	}
