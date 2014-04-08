@@ -1126,10 +1126,38 @@ class Arrest
 		// set attorney variables
 		$odf->setVars("ATTORNEY_HEADER", $attorney->getPetitionHeader());
 		$odf->setVars("ATTORNEY_SIGNATURE", $attorney->getPetitionSignature());
-		$odf->setVars("ATTORNEY_FIRST", $attorney->getFirstName());
-		$odf->setVars("ATTORNEY_LAST", $attorney->getLastName());
-		$odf->setVars("ATTORNEY_ELEC_SIG", $attorney->getFirstName() . " " . $attorney->getLastName());
+		
 
+		// note - we have two name fields - first/last and "real" first/last.  This is because in many cases
+		// the petitioner's name does not appear correctly on the docket sheet.  attorneys complained that they were
+		// being required to assert the incorrect name for their client in the petition.  the caption gets 
+		// the name on the docket; the petition body gets the real first name of the individual
+		$odf->setVars("FIRST_NAME", $this->getFirstName());
+		$odf->setVars("LAST_NAME", $this->getLastName());
+		$odf->setVars("REAL_FIRST_NAME", $person->getFirst());
+		$odf->setVars("REAL_LAST_NAME", $person->getLast());
+		$odf->setVars("STREET", $person->getStreet());
+		$odf->setVars("CITY", $person->getCity());
+		$odf->setVars("STATE", $person->getState());
+		$odf->setVars("ZIP", $person->getZip());
+		
+		// if we are not an anon petition, we have to modify the petition a bit
+		if (!$attorney->getIsAnon())
+		{
+			$odf->setVars("ATTORNEY_FOR", "Attorney for " . $this->getFirstName() . $this->getLastName());
+			$odf->setVars("FILING_ATTORNEY", "through counsel" .  $attorney->getFirstName() . " " . $attorney->getLastName() . ", Esquire");
+			$odf->setVars("COUNSELOR_FOR_PETITIONER", "Counsel for Petitioner");
+			$odf->setVars("ATTORNEY_ELEC_SIG", $attorney->getFirstName() . " " . $attorney->getLastName());
+		}
+		else
+		{
+			$odf->setVars("ATTORNEY_FOR", "");
+			$odf->setVars("FILING_ATTORNEY", "filing pro se");
+			$odf->setVars("COUNSELOR_FOR_PETITIONER", "");
+			$odf->setVars("ATTORNEY_ELEC_SIG", "______________");
+		}
+
+		
 		// set the date.  Format = Month[word] Day[number], Year[4 digit number]
 		$odf->setVars("PETITION_DATE", date("F j, Y"));
 		// set the type of petition
@@ -1142,6 +1170,8 @@ class Arrest
 		
 		if ($attorney->getIFP())
 			$odf->setVars("IFP_MESSAGE", $attorney->getIFPMessage());
+		else
+			$odf->setVars("IFP_MESSAGE", "");
 		
 		// setting docket number involves looping through all docket numbers and setting
 		// each on on there as a line.
@@ -1215,19 +1245,7 @@ class Arrest
 			$odf->setVars("SUMMARY_EXTRA", "");
 		}
 		
-		// note - we have two name fields - first/last and "real" first/last.  This is because in many cases
-		// the petitioner's name does not appear correctly on the docket sheet.  attorneys complained that they were
-		// being required to assert the incorrect name for their client in the petition.  the caption gets 
-		// the name on the docket; the petition body gets the real first name of the individual
-		$odf->setVars("FIRST_NAME", $this->getFirstName());
-		$odf->setVars("LAST_NAME", $this->getLastName());
-		$odf->setVars("REAL_FIRST_NAME", $person->getFirst());
-		$odf->setVars("REAL_LAST_NAME", $person->getLast());
-		$odf->setVars("STREET", $person->getStreet());
-		$odf->setVars("CITY", $person->getCity());
-		$odf->setVars("STATE", $person->getState());
-		$odf->setVars("ZIP", $person->getZip());
-		
+
 		// for costs, we have to subtract out any effect that bail may have had on the costs and fines.  The rules only require
 		// that we tell the court costs and fines accrued and paid off, not bail accrued and paid off
 		$odf->setVars("TOTAL_FINES", "$" . number_format($this->getCostsCharged() - $this->getBailCharged(),2));
