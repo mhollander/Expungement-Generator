@@ -1144,7 +1144,7 @@ class Arrest
 		// if we are not an anon petition, we have to modify the petition a bit
 		if (!$attorney->getIsAnon())
 		{
-			$odf->setVars("ATTORNEY_FOR", "Attorney for " . $this->getFirstName() . $this->getLastName());
+			$odf->setVars("ATTORNEY_FOR", "Attorney for " . $this->getFirstName() . " " . $this->getLastName());
 			$odf->setVars("FILING_ATTORNEY", "through counsel" .  $attorney->getFirstName() . " " . $attorney->getLastName() . ", Esquire");
 			$odf->setVars("COUNSELOR_FOR_PETITIONER", "Counsel for Petitioner");
 			$odf->setVars("ATTORNEY_ELEC_SIG", $attorney->getFirstName() . " " . $attorney->getLastName());
