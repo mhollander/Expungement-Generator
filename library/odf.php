@@ -204,7 +204,7 @@ IMG;
         }
         $string = $segment->getName();
 		// $reg = '@<text:p[^>]*>\[!--\sBEGIN\s' . $string . '\s--\](.*)\[!--.+END\s' . $string . '\s--\]<\/text:p>@smU';
-		$reg = '@\[!--\sBEGIN\s' . $string . '\s--\](.*)\[!--.+END\s' . $string . '\s--\]@smU';
+		$reg = '@\[!--\sBEGIN\s' . $string . '\s--\](.*)\[!--.+END\s' . $string . '\s--\]@smUu';
         $this->contentXml = preg_replace($reg, $segment->getXmlParsed(), $this->contentXml);
         return $this;
     }
