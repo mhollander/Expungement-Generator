@@ -92,9 +92,10 @@ class Segment implements IteratorAggregate, Countable
                 $child->xmlParsed = '';
             }
         }
-        $reg = "/\[!--\sBEGIN\s$this->name\s--\](.*)\[!--\sEND\s$this->name\s--\]/sm";
+		$reg = "/\[!--\sBEGIN\s$this->name\s--\](.*)\[!--\sEND\s$this->name\s--\]/sm";
+	
         $this->xmlParsed = preg_replace($reg, '$1', $this->xmlParsed);
-        $this->file->open($this->odf->getTmpfile());
+		$this->file->open($this->odf->getTmpfile());
         foreach ($this->images as $imageKey => $imageValue) {
 			if ($this->file->getFromName('Pictures/' . $imageValue) === false) {
 				$this->file->addFile($imageKey, 'Pictures/' . $imageValue);
