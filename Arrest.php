@@ -132,11 +132,11 @@ class Arrest
 		
 		(\-|\247|\w+)*) - followed by either a "-" a section symbol, or a series of word characters, all 0+ times.  This is the clean up at the end of the code section, for example, a code section may be listed as 18 § 2701 §§ A.  This would capture the final ss and the A
 	*/ 
-	protected static $chargesSearch2 = "/\d\s+\/\s+(.+)\s{12,}(\w.+?)(?=\s\s)\s{12,}(\w{0,2})\s+(\w{1,2}\s?\247\s?\d+(\-|\247|\w+)*)/u";
+	protected static $chargesSearch2 = "/\d\s+\/\s+(.+)\s{12,}(\w.+?)(?=\s\s)\s{12,}(\w{0,2})\s+(\w{1,2}\s?\xA7\s?\d+(\-|\xA7|\w+)*)/";
 	protected static $ignoreDisps = array("Proceed to Court", "Proceed to Court (Complaint", "Proceed to Court (Complaint Refiled)");	
 	
 	// $1 = code section, $3 = grade, $4 = charge, $5 = offense date, $6 = disposition
-	protected static $mdjChargesSearch = "/^\s*\d\s+((\w|\d|\s(?!\s)|\-|\247|\*)+)\s{2,}(\w{0,2})\s{2,}([\d|\D]+)\s{2,}(\d{1,2}\/\d{1,2}\/\d{4})\s{2,}(\D{2,})/u";
+	protected static $mdjChargesSearch = "/^\s*\d\s+((\w|\d|\s(?!\s)|\-|\247|\*)+)\s{2,}(\w{0,2})\s{2,}([\d|\D]+)\s{2,}(\d{1,2}\/\d{1,2}\/\d{4})\s{2,}(\D{2,})/";
 	
 	protected static $chargesSearchOverflow = "/^\s+(\w+\s*\w*)\s*$/";
 	// disposition date can appear in two different ways (that I have found) and a third for MDJ cases:
