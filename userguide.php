@@ -68,7 +68,7 @@ else
 			<ul class="guideStepDesc">
 				<li><strong>Docket Number:</strong> Select "CP/MC Docket Number."  If you know your client's docket number, you can find an individual case by inputing it.</li>
 				<li><strong>OTN:</strong> If you know a case's OTN number, you can search directly with that number.  An OTN number is commonly found on a Pennsylvania State Police Report.</li>
-				<li><strong>Name:</strong> Select "Participant Name" in the dropdown.  You should search not only for your client's full name, but you should search for spelling variations or just partials of your client's name.  This is because whoever entered your client's name into the online database may have spelled your client's name incorrectly.  <p>As an example, you might want to enter "Julius Ceasar" as "Jul Ceas" in order to capture mispellings of his name.</p><p>Entering a date of  birth is optional.  You may want to leave it off because dates of birth are sometimes mis-entered as well.</p><p>You should leave the other fields blank except for Date Filed.  To capture all cases, enter the range 01/01/1900 to today's date:<br><img border="1" src="images/cpcms_byname.png"></p></li>
+				<li><strong>Name:</strong> Select "Participant Name" in the dropdown.  You should search not only for your client's full name, but you should search for spelling variations or just partials of your client's name.  This is because whoever entered your client's name into the online database may have spelled your client's name incorrectly.  <p>As an example, you might want to enter "Julius Ceasar" as "Jul Ceas" in order to capture mispellings of his name.</p><p>Entering a date of  birth is optional.  You may want to leave it off because dates of birth are sometimes mis-entered as well.</p><p>You should leave the other fields blank except for Date Filed.  To capture all cases, either enter the range 01/01/1900 to today's date or select "criminal" under Docket Type:<br><img border="1" src="images/cpcms_byname.png"></p></li>
 				<li><strong>SID:</strong> If you have your client's SID, you can find all cases associated with that SID by searching for it directly.  This may pull cases where the client has used a name different from his real name when arrested.  The SID for an individual can usually be obtained by contacting your local clerk of courts.</li>
 			</ul>
 			<hr class="guideStepDesc"/>
@@ -95,10 +95,21 @@ else
 			</ul>
 			<hr class="guideStepDesc"/>
 		</div>
+		<div class="guideStep">Step 2a-5a: If outside of Philadelphia, download magisterial district court dockets as well</div>
+		<div class="guideStepDesc">
+			<hr class="guideStepDesc"/>
+			Outside of Philadelphia, many preliminary hearings, summary offenses, and other minor cases are first heard in a magisterial district court.  You have to separately download these dockets.  
+			<ul class="guideStepDesc">
+				<li>First go to the MDJ court website:  <a href="https://ujsportal.pacourts.us/DocketSheets/MDJ.aspx" target="_blank">https://ujsportal.pacourts.us/DocketSheets/MDJ.aspx</a></li>
+				<li>Search for your client again (using any of the methods described above)</li>
+				<li>And download the docket sheets for each MDJ case that you client has</li>
+			</ul>
+			<hr class="guideStepDesc"/>
+		</div>
 		<div class="guideStep">Step 6: Go to the expungement generator website</div>
 		<div class="guideStepDesc">
 			<hr class="guideStepDesc"/>
-			The expungement generator website can be found at <a href="http://www.ronhollander.com/crepdb" target="_blank">http://www.ronhollander.com/crepdb</a>.
+			The expungement generator website can be found at <a href="https://expungementgenerator.org" target="_blank">https://expungementgenerator.org</a>.
 			<ul class="guideStepDesc">
 				<li>If you aren't already logged in, login.</li>
 				<li>Click on the "Expunge" link at the top of the page if you aren't already there:<br/><img border="1" src="images/eg_expungeclick.png"></li>
@@ -108,38 +119,38 @@ else
 		<div class="guideStep">Step 7: Enter your client's information into the expungement generator</div>
 		<div class="guideStepDesc">
 			<hr class="guideStepDesc"/>
+			Put in as much information as you have.  Expungements will be rejected if you are missing any information that is readily obtainable.  You can usually get the SID by calling the clerk of courts in your county and asking for this information.  The PID is a Philadelphia-only field and can be ignored for non Philadelphia Expungements.
 			<ul class="guideStepDesc">
-				<li>Put in as much information as you have.  Expungements will be rejected if you are missing any information that is readily obtainable.</li>
-				<li>For the name field, enter the person's real name.  Do not enter any aliases.</li>
-				<li>If there is no SID or PID available for the person, you can leave SID and/or PID blank and the generator will put "N/A" in for them.</li>
-				<li>If you don't know the SID or PID, try calling your local clerk of courts to see if they will give you that information.</li>
-				<li>If you have access to the "Secure Summary" you can include that with the files, below, and skip typing in the SID and PID.  The generator will pick up the SID and PID from the Secure Summary and include them on all petitions.</li>
+				
+				<li>For the name fields, enter the person's real name.  Do not enter any aliases.</li>
+				<li>Enter your client's current address.</li>
+				<li>Enter your client's Social Security number.  This is required for an expungement.</li>
+				<li>If you have access to the "Secure Summary," download that in step 5, above and leave the PID and SID fields blank and let the generator find them.  You will have to then upload the secure summary along with your docket sheets later in the process.  If you don't know what a Secure Summary is, you should ignore this bullet point.</li>
+				<li>If you don't know the SID or PID for your client, leave these fields blank and the generator will put "N/A" in for them.</li>
 			</ul>
 			<hr class="guideStepDesc"/>
 		</div>
-		<div class="guideStep">Step 8: Enter all of your client's aliases, separated by commas</div>
-		<div class="guideStepDesc">
-			<hr class="guideStepDesc"/>
-			This is pretty self explanatory.  It is a good idea to include the client's real name (as typed in the first two fields) in the list of aliases as well.</div>
-		<div class="guideStep">Step 9: Upload all of your client's docket sheets and the summary docket to the expungement generator</div>
+		<div class="guideStep">Step 8: Upload all of your client's docket sheets and the summary docket to the expungement generator</div>
 		<div class="guideStepDesc">
 			<hr class="guideStepDesc"/>
 			<ul class="guideStepDesc">
+				<li><b>It is critical that you send all of your client's files to the expungement generator at the same time.  </b>This means that if you downloaded 10 docket sheets and a summary sheet for your client, you should select and upload all 11 files to the expungement generator in this step.  The expungement generator will figure out which files warrant expungement, which files warrant redaction, and which files are not eligible for either.</li>
 				<li>Click on the "Choose Files" at the bottom of the page.<br/><img border="1" src="images/eg_fileUpload.png"></li>
 				<li>You should be presented with a dialog box that looks something like this: <br/><img border="0" src="images/eg_fileUploadDialog.png"></li>
 				<li>Use the navigation tools to find the folder where you downloaded your docket sheets and court summary.</li>
 				<li>When you have found the correct folder, click on the first docket sheet, hold shift and click on the last docket sheet.  This should highlight all of the docket sheets from the first to the last one.  Be careful to not include non-docket sheets.  You can alternatively hold the "ctrl" key on your keyboard and click on each docket sheet you want to upload.</li>
 				<li>Press "open" and you should be returned to the form used to input information about your client<br/><img border="0" src="images/eg_selectMultiple.gif"></li>
+				<li>If you have a very modern browser, you can upload all of the files by dragging and dropping.  Use Windows Explorer to separately open the folder containing all of the downloaded docket sheets.  Shift click as above to highlight all of the docket sheets and summary files in the folder.  Drag the highlighted files onto the browse button and the files will all automatically be added.</li>
 			</ul>
 			<hr class="guideStepDesc"/>
 		</div>
-		<div class="guideStep">Step 10: Click "Send Files" and wait for the magic to happen</div>
+		<div class="guideStep">Step 9: Click "Send Files" and wait for the magic to happen</div>
 		<div class="guideStepDesc">
 			<hr class="guideStepDesc"/>
 			This is self explanatory.  Click only once.  In a few seconds (to as long as 20-30 seconds if you have a slow internet connection), you should be taken to a confirmation page.
 			<hr class="guideStepDesc"/>
 		</div>
-		<div class="guideStep">Step 11: You should see the expungement confirmation page</div>
+		<div class="guideStep">Step 10: You should see the expungement confirmation page</div>
 		<div class="guideStepDesc">
 			<hr class="guideStepDesc"/>
 			The expungement confirmation page contains some basic information that is helpful to understanding your case, including:
@@ -151,14 +162,14 @@ else
 			<br/>The confirmation page should look something like this: <br /><img border="1" src="images/eg_Confirmation.png">
 			<hr class="guideStepDesc"/>
 		</div>
-		<div class="guideStep">Step 12: On the expungement confirmation page, download the expungement zip file</div>
+		<div class="guideStep">Step 11: On the expungement confirmation page, download the expungement zip file</div>
 		<div class="guideStepDesc">
 			<hr class="guideStepDesc"/>
 			All of the expungements performed for your client have been placed into a zip file.  This zip file also contains an overview of all of your client's cases, whether each case can be expunged or redacted, and whether an fines, costs, or bail are owed to the court.
 			<p>To download the petition, click the link just after the text "Download Petition and Overview":<br/><img src="images/eg_confirmationDownload.png" border="1"></p>
 			<hr class="guideStepDesc"/>
 		</div>
-		<div class="guideStep">Step 13: Copy the expungements and overview file from the zip file to your computer</div>
+		<div class="guideStep">Step 12: Copy the expungements and overview file from the zip file to your computer</div>
 		<div class="guideStepDesc">
 			<hr class="guideStepDesc"/>
 			<ul class="guideStepDesc">
@@ -170,7 +181,7 @@ else
 			</ul>
 			<hr class="guideStepDesc"/>
 		</div>
-		<div class="guideStep">Step 14: Open the individual expungement files and check their accuracy.</div>
+		<div class="guideStep">Step 13: Open the individual expungement files and check their accuracy.</div>
 		<div class="guideStepDesc">
 			<hr class="guideStepDesc"/>
 			Remember, the expungement generator is only a computer.  While it is very accurate, it does make mistakes, especially with more complicated docket sheets.  <strong>You should always check the expungement petitions that the generator prepares against the downloaded docket sheets to make sure that they are accurate before printing them out.</strong>
