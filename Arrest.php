@@ -7,6 +7,30 @@
 	// 		 we probably don't want both the replaced by information and the final disposition on 
 	// 		 the petition.  This is especially true if the finally dispoition is Guilty
 
+/********************************************
+*
+*	Arrest.php
+*	This is the big momma class.  It handles everything from parsing a criminal arrest
+* 	to checking if an arrest should be a redaction or expungement
+*	to checking to see if multiple arrests shoudl be combined.
+*	It also handles writing an individual arrest to the database and to word files.
+*
+*	Copyright 2011-2015 Community Legal Services
+* 
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    http://www.apache.org/licenses/LICENSE-2.0
+
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+********************************************/
+
 require_once("Charge.php");
 require_once("Person.php");
 require_once("Attorney.php");
