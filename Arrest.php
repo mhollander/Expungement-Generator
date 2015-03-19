@@ -901,9 +901,13 @@ class Arrest
 	// 1) This has to be a summary offense, characterized by "SU" in the docket number.
 	// 2) The person must have been found guilty or plead guilty to the charges (if they were
 	// not guilty or dismissed, then there is nothing to worry about - normal expungmenet.
-	// 3) The person must have five years arrest free AFTER the arrest.  This doesn't have to be 
+	// 3) The person must have five years arrest free AFTER the arrest.  Based on Commonwealth v. Giulian 
+	// (Super. Ct. 2015, only the 5 years immediately following conviction matters.
+	// <OLD COMMENT>
+	// This doesn't have to be 
 	// the five years immediately following the arrest nor does it have to be the most recent five
 	// years.  It just has to be five years arrest free at some point post arrest.  
+	// </OLD COMMENT>
 	// @note - a problem that might come up is if someone has a summary and then is confined in jail
 	// for a long period of time (say 10 years).  This will apear eligible for a summary exp, but
 	// is not.
@@ -984,7 +988,7 @@ class Arrest
 		{
 			$thatDispDate = new DateTime($arrest->getBestDispositionDate());
 			// if the disposition date of that arrest was before this arrest, ignore it
-			if ($thatDispDate < $thisDispDate)
+			if ($thatDispDate <= $thisDispDate)
 				continue;
 			else
 				$dispDates[] = $thatDispDate;
@@ -992,6 +996,7 @@ class Arrest
 		// sort array
 		asort($dispDates);
 
+		/******* FOR METHOD WHERE ANY 5 YEAR PERIOD MATTERS.  REMOVED 3/2015 BASED on GIULIAN CASE
 		// sort through the first n-1 members of the dateArray and compare them to the next
 		// item in the array to see if there is more than 5 years between them
 		for ($i=0; $i<(sizeof($dispDates)-1); $i++)
@@ -1002,6 +1007,23 @@ class Arrest
 				return TRUE;
 			}
 		}
+		**************/
+			
+		/********** NEW GIULIAN STUFF ***************/
+		// sort the disp array.  Compare the first date (which should be the disp date of this crime)
+		// to the second disp date.  If this is > 5 years, we are in the clear and expungement is proper.
+		usort($dispDates, function($a, $b) {
+			if ($a == $b)
+				return 0;
+			return $a < $b ? -1 : 1;
+		});
+
+		if (abs(dateDifference($dispDates[1], $dispDates[0])) >= 5)
+		{
+			$this->setIsArrestSummaryExpungement(TRUE);
+			return(TRUE);
+		}
+		/**************/
 		
 		// if we got here, it means there are no five year periods of freedom
 		$this->setIsArrestSummaryExpungement(FALSE);
