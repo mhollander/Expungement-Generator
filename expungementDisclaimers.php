@@ -26,7 +26,7 @@
 <div class="disclaimer titleMessage">DISCLAIMER!</div>
 <div class="disclaimer">The following is a list of known limitations of the expungement generator:</div>
 <ul>
-<li class='disclaimer item'>Summary offenses are expunged with ANY 5-year arrest free period post summary arrest.</li>
+<li class='disclaimer item'>Summary offenses are expunged only if there is a 5-year arrest free period immediately following arrest (Giulian (Super. Ct. 2015)).</li>
 <li class='disclaimer item'>ARD Expungements do not check for ARD completion</li>
 <li class='disclaimer item'>You must attached an ARD completion letter with ARD expungements</li>
 <li class='disclaimer item'>Expungements are prepared even when fines/costs owed</li>
