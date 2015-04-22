@@ -74,6 +74,46 @@ function getPersonFromGetVars()
 	return $urlPerson;
 }
 
+	// gets vars passed in from LS
+// @return a hash with each value from the get vars escaped etc... to be html and sql safe
+function getLSVars()
+{
+	//
+	if ($GLOBALS['debug'])
+	{
+		print "POST VARS: <br />";
+		foreach ($_POST as $name=>$value)
+		{
+			print "$name: $value <br/>";
+		}
+	}
+	
+	$LSVars = array();
+	
+	if (isSet($_POST["personFirst"])) $LSVars['First'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personFirst"])));
+	if (isSet($_POST["personLast"])) $LSVars['Last'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personLast"])));
+	if (isSet($_POST["personStreet"])) $LSVars['Street'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personStreet"])));
+	if (isSet($_POST["personCity"])) $LSVars['City'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personCity"])));
+	if (isSet($_POST["personState"])) $LSVars['State'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personState"])));
+	if (isSet($_POST["personZip"])) $LSVars['Zip'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personZip"])));
+	if (isSet($_POST["personSID"])) $LSVars['SID'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personSID"])));
+	if (isSet($_POST["personPP"])) $LSVars['PP'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personPP"])));
+	if (isSet($_POST["personSSN"])) $LSVars['SSN'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personSSN"])));
+	if (isSet($_POST["personLSUser"])) $LSVars['LSUser'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["LSUser"])));
+	if (isSet($_POST["personLSPass"])) $LSVars['LSPass'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["LSPass"])));
+	if (isSet($_POST["Token"])) $LSVars['Token'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["Token"])));
+	if (isSet($_POST["debug"])) $LSVars['debug'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["debug"])));
+	
+	return $LSVars;
+}
+
+// print index if exists
+function printVar($array, $index)
+{
+	if (isSet($array["$index"]))
+		print $array["$index"];
+}
+
 // zips all of the files in the array and returns the location of the zipfile.
 // @return the name of the zipfile archive or null if there was a problem making the zipfile.
 function zipFiles($files, $dataDir)
