@@ -32,7 +32,7 @@ $pdftotext = $toolsDir . DIRECTORY_SEPARATOR . "pdftotext";
 
 */
 
-$basedir = join(DIRECTORY_SEPARATOR, array("c:", "mikes program files", "wamp"));
+$basedir = join(DIRECTORY_SEPARATOR, array("c:", "wamp"));
 $toolsDir = join(DIRECTORY_SEPARATOR, array($basedir, "tools"));
 $wwwdir = join(DIRECTORY_SEPARATOR, array ($basedir, "www", "eg"));
 $baseURL = "http://localhost/eg/";
