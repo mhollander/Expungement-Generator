@@ -88,7 +88,8 @@ width: 30%;
 
 .content-center {
 float: left;
-width: 45%;
+width: 43%;
+padding-right: 10px;
 /* background: blue;*/
 }
 
