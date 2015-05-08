@@ -71,12 +71,14 @@ else
 	// integrate the summary information in with the arrests 
 	integrateSummaryInformation($arrests, $person, $arrestSummary);
 	
+	print "<b>EXPUNGEMENT INFORMATION</b><br/><br/>";
 	// combine the docket sheets that are from the same arrest
 	$arrests = combineArrests($arrests);
 		
 	// do the expungements in PDF form
 	$files = doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $expungeRegardless, $db);
 	
+
 	$files[] = createOverview($arrests, $templateDir, $dataDir, $person);  
 	
 	// zip up the final PDFs
@@ -94,6 +96,7 @@ else
 	// possible or a test of the generator itself by yours truly.
 	if (isset($urlPerson['SSN']) && $urlPerson['SSN'] != "")
 		writeExpungementsToDatabase($arrests, $person, $attorney, $db);
+	
 	
 	// if we are debuging, display the expungements
 	if ($GLOBALS['debug']) 
@@ -141,7 +144,7 @@ function parseDockets($tempFile, $pdftotext, $arrestSummary, $person)
 				// now add the arrest to the arrests array
 				// but don't include arrests that were summary traffic tickets or something
 				if ($arrest->isArrestCriminal())
-					$arrests[] = $arrest;
+					$arrests[$arrest->getFirstDocketNumber()] = $arrest;
 					
 				// associate the PDF with the arrest for later saving to the DB
 				// associate the real PDF file name with the arrest as well for use in the overview
@@ -213,9 +216,24 @@ function integrateSummaryInformation($arrests, $person, $arrestSummary)
 			$person->setSID($arrestSummary->getSID());
 		if ($arrestSummary->getPID() != null && $arrestSummary->getPID() != "")
 			$person->setPP($arrestSummary->getPID());
-	}
+	
 
-	// finally, integrate the DOB from the arrests into the person
+		// warn the user about any cases that are in the summary, but that were not uploaded
+		$summaryKeys = $arrestSummary->getArrestKeys();
+		$arrestKeys = array_keys($arrests);
+		$missingDockets = array_diff($summaryKeys, $arrestKeys);
+		
+		if (count($missingDockets) > 0)
+		{
+			print "<b>The following cases appear in the summary docket, but you didn't upload a corresponding docket sheet:</b><br/>";
+			foreach ($missingDockets as $missingDocket)
+				print "$missingDocket<br/>";
+			print "<br/>";
+	
+		}
+	}
+	
+	// integrate the DOB from the arrests into the person
 	foreach ($arrests as $arrest)
 	{
 		$DOB = $arrest->getDOB();
@@ -225,6 +243,7 @@ function integrateSummaryInformation($arrests, $person, $arrestSummary)
 			return;
 		}
 	}
+	
 }
 	
 
