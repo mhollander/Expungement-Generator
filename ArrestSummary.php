@@ -59,6 +59,16 @@ class ArrestSummary
 		else
 			return false;
 	}
+
+	// @return true if the arrestRecordFile is a summary docket sheet of all arrests, false if it isn't
+	public static function isArrestSummaryFromLine($arrestRecord)
+	{
+		if (preg_match("/Court Summary/i", $arrestRecord))
+			return true;
+		else
+			return false;
+	}
+
 	
 	// @return true if there is an arrest key that has the docket number supplied
 	// @param a docket number (CP-51-CR...)
