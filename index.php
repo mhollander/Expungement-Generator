@@ -96,6 +96,7 @@ else
 			<input type="text" name="personSSN" id="personSSN" value="<?php printIfSet('personSSN');?>" />
 			<div class="description">###-##-####</div>
 		</div> 
+		<!--
 		<div class="form-item">
 		<label for="edit-name">PP Number/PPID</label>
 			<input type="text" name="personPP" value="<?php printIfSet('personPP');?>" />
@@ -104,6 +105,7 @@ else
 		<label for="edit-name">SID</label>
 			<input type="text" name="personSID" value="<?php printIfSet('personSID');?>" />
 		</div> 
+		-->
 		<div class="form-item">
 			<label for="userFile1">Send these files (contrl click to select multiple files)</label>
 			<input type="hidden" name="MAX_FILE_SIZE" value="300000" />

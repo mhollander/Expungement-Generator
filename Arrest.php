@@ -1271,10 +1271,10 @@ class Arrest
 				
 		$odf->setVars("OTN", $this->getOTN());
 		$odf->setVars("DC", $this->getDC());
-		$odf->setVars("PP", $person->getPP());
+		// $odf->setVars("PP", $person->getPP()); // PP/PID not needed anymore and we lost secure access
 		$odf->setVars("SSN", $person->getSSN());
 		$odf->setVars("DOB", $this->getDOB());
-		$odf->setVars("SID", $person->getSID());
+		// $odf->setVars("SID", $person->getSID());  // SID not needed anymore and we lost secure access
 		
 		// setting the disposition list is different dependingo on what type of expungement
 		// this is.  An ARD will say that the ard was completed; a summary might say something else
@@ -1466,7 +1466,7 @@ class Arrest
 		$odf->setVars("OTN", $this->getOTN());
 		$odf->setVars("SSN", $person->getSSN());
 		$odf->setVars("DOB", $this->getDOB());
-		$odf->setVars("SID", $person->getSID());
+		// $odf->setVars("SID", $person->getSID());  // SID not needed anymore and CLS lost secure access
 		$odf->setVars("COUNTY", $this->getCounty());						
 		$today = new DateTime();
 		$odf->setVars("ORDER_YEAR", $today->format('Y'));
