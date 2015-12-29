@@ -26,6 +26,7 @@ class ArrestSummary
 	private $arrests = array();
 	private $SID;
 	private $PID;
+	private $archived = false;  // a flag used when reading a summary docket to determine whether we have gotten to the archived cases yet
 	private $aliases = array();
 
 	public function __construct() {}
@@ -38,6 +39,8 @@ class ArrestSummary
 	
 	// matches the arrest Date, Disposition Date, and judge from the summary arrest record
 	protected static $arrestDateDispDateJudgeSearch = "/Arrest Dt:\s*(\d{1,2}\/\d{1,2}\/\d{4})?.*Disp Date:\s*(\d{1,2}\/\d{1,2}\/\d{4})?\s*Disp Judge:(.*)/";
+	protected static $archivedSearch = "/^Archived$/";
+	protected static $archivedCaseNumberSearch = "/((MC|CP)\-\d{2}\-\D{2}\-\d*\-\d{4})/";
 	protected static $migratedJudgeSearch = "/migrated/i";
 	
 	public function getSID() { return $this->SID; }
@@ -45,6 +48,8 @@ class ArrestSummary
 	
 	public function setSID($SID) { $this->SID = $SID; }
 	public function setPID($PID) { $this->PID = $PID; }
+	
+	public function getArrestKeys() { return array_keys($this->arrests); }
 
 	// @return true if the arrestRecordFile is a summary docket sheet of all arrests, false if it isn't
 	public static function isArrestSummary($arrestRecordFile)
@@ -54,6 +59,16 @@ class ArrestSummary
 		else
 			return false;
 	}
+
+	// @return true if the arrestRecordFile is a summary docket sheet of all arrests, false if it isn't
+	public static function isArrestSummaryFromLine($arrestRecord)
+	{
+		if (preg_match("/Court Summary/i", $arrestRecord))
+			return true;
+		else
+			return false;
+	}
+
 	
 	// @return true if there is an arrest key that has the docket number supplied
 	// @param a docket number (CP-51-CR...)
@@ -101,6 +116,22 @@ class ArrestSummary
 		{		
 			//print "$line_num: $line <br/>";
 			
+			// first check to see if we have gotten to the archived section of the dockets
+			if ($this->archived)
+			{
+				// add a new arrest to the queue
+				if (preg_match(self::$archivedCaseNumberSearch, $line, $matches))
+				{
+					$arrest = new Arrest();
+					$arrest->setDocketNumber(array(trim($matches[1])));
+					$this->arrests[trim($matches[1])] = $arrest;
+				}
+			}
+				
+			// check to see if we are at the "archived" section, where only case numbers are listed without information beyond that
+			if (preg_match(self::$archivedSearch, trim($line),$matches))
+				$this->archived=true;
+				
 			if (preg_match(self::$SIDSearch, $line, $matches))
 				$this->setSID(trim($matches[1]));
 			if (preg_match(self::$PIDSearch, $line, $matches))
