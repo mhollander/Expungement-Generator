@@ -23,7 +23,7 @@
 $debug=false;
 
 
-/*
+/* for a linux system
 $basedir = join(DIRECTORY_SEPARATOR, array("home", "expungem");
 $toolsDir = join(DIRECTORY_SEPARATOR, array($basedir, "tools"));
 $wwwdir = join(DIRECTORY_SEPARATOR, array ($basedir, "www"));
@@ -31,19 +31,34 @@ $baseURL = "https://expungementgenerator.org/";
 $pdftotext = $toolsDir . DIRECTORY_SEPARATOR . "pdftotext";
 
 */
-
+// for a windows system
 $basedir = join(DIRECTORY_SEPARATOR, array("c:", "wamp"));
 $toolsDir = join(DIRECTORY_SEPARATOR, array($basedir, "tools"));
 $wwwdir = join(DIRECTORY_SEPARATOR, array ($basedir, "www", "eg"));
 $baseURL = "http://localhost/eg/";
+// windows version of pdftotext must be 3.03
 $pdftotext = "\"" . $toolsDir . DIRECTORY_SEPARATOR . "pdftotext.exe\"";
 
 
-require_once($toolsDir . DIRECTORY_SEPARATOR . "dbinfo.php");
-
+// these shouldn't ever need to change
 $dataDir = join(DIRECTORY_SEPARATOR, array($wwwdir, "data")) . DIRECTORY_SEPARATOR;
 $templateDir = join(DIRECTORY_SEPARATOR, array($wwwdir, "templates")) . DIRECTORY_SEPARATOR;
 $docketSheetsDir = join(DIRECTORY_SEPARATOR, array($wwwdir, "docketsheets")) . DIRECTORY_SEPARATOR;
+
+
+// db information
+$dbPassword = "fakepassword";
+$dbUser = "fakeusername";
+$dbName = "eg";
+$dbHost = "localhost";
+
+// this is only needed in the CLS production environmnet
+/*
+$crepDBPassword = "fakepassword";
+$crepDBUser = "fakeusername";
+$crepDBName = "eg";
+$crepDBHost = "mydburl.org";
+*/
 
 
 $tempFile = tempnam($dataDir, "FOO");
