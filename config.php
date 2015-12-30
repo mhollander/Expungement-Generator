@@ -36,7 +36,7 @@ $basedir = join(DIRECTORY_SEPARATOR, array("c:", "wamp"));
 $toolsDir = join(DIRECTORY_SEPARATOR, array($basedir, "tools"));
 $wwwdir = join(DIRECTORY_SEPARATOR, array ($basedir, "www", "eg"));
 $baseURL = "http://localhost/eg/";
-// windows version of pdftotext must be 3.03
+// windows version of pdftotext must be 3.03.  Although it may work with a later version, I have actually run into problems where the parser parses pdfs differently in the newer version
 $pdftotext = "\"" . $toolsDir . DIRECTORY_SEPARATOR . "pdftotext.exe\"";
 
 
