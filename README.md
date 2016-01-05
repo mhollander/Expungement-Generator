@@ -10,7 +10,7 @@ The vast majority of the program is written in PHP and has been tested on PHP 5.
 
 There are two external dependencies, one of which is bundled with this code in git.
 * PHP-ODT (http://php-odt.sourceforge.net/) - a library that allows you to make template ODT files and then use PHP to modify variables within the templates and generate ODTs.  The ODTs are able to be opened in word 2007 or later or openoffice.  I made a few modifications to the PHP-ODT code, so I package it here.
-* pdftotext - This is available on both windows and linux systems.  On windows, I use 3.03.  On linux I use .  It is important to use these versions even though they may not be the most up to date.  There was a time when I updated pdftotext on my linux machine and the EG broke.  It seems that different versions of this program parse complex pdfs differently.
+* pdftotext 3.03 (from the xpdf package) - This is available on both windows and linux systems.  On windows, I use 3.03.  On linux I use 3.03.  It is important to use these versions even though they may not be the most up to date.  There was a time when I updated pdftotext on my linux machine and the EG broke.  It seems that different versions of this program parse complex pdfs differently.
 
 You can install the template database using database.sql as the structure.
 
