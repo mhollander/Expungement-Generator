@@ -36,6 +36,9 @@ require_once("Person.php");
 require_once("Attorney.php");
 require_once("utils.php");
 require_once("config.php");
+require_once __DIR__ . '/vendor/phpoffice/phpword/src/PhpWord/Autoloader.php';                              
+\PhpOffice\PhpWord\Autoloader::register();                                                                  
+
 
 class Arrest
 {
@@ -92,7 +95,7 @@ class Arrest
 	public static $summaryExpungementTemplateIFP = "summaryExpungementTemplateIFP.odt";
 	public static $ARDexpungementTemplate = "ARDexpungementTemplate.odt";
 	public static $ARDexpungementTemplateIFP = "ARDexpungementTemplateIFP.odt";
-	public static $overviewTemplate = "overviewTemplate.odt";
+	public static $overviewTemplate = "overviewTemplate.docx";
 	
 	protected static $unknownInfo = "N/A";
 	protected static $unknownOfficer = "Unknown officer";
@@ -1182,99 +1185,89 @@ class Arrest
 	
 	public function writeExpungement($inputDir, $outputDir, $person, $attorney, $expungeRegardless, $db)
 	{
-		$odf = new odf($inputDir . "790ExpungementTemplate.odt");
+	    
+        $docx = new \PhpOffice\PhpWord\TemplateProcessor('templates/790ExpungementTemplate.docx');
+	    
 		if ($GLOBALS['debug'])
 			print ($this->isArrestExpungement() || $this->isArrestSummaryExpungement)?("Performing Expungement"):("Performing Redaction");
 		
 		// set attorney variables
-		$odf->setVars("ATTORNEY_HEADER", $attorney->getPetitionHeader());
-		$odf->setVars("ATTORNEY_SIGNATURE", $attorney->getPetitionSignature());
+		$docx->setValue("ATTORNEY_HEADER",  htmlspecialchars($attorney->getPetitionHeader(),  ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("ATTORNEY_SIGNATURE",  htmlspecialchars($attorney->getPetitionSignature(), ENT_COMPAT, 'UTF-8'));
 		
 
 		// note - we have two name fields - first/last and "real" first/last.  This is because in many cases
 		// the petitioner's name does not appear correctly on the docket sheet.  attorneys complained that they were
 		// being required to assert the incorrect name for their client in the petition.  the caption gets 
 		// the name on the docket; the petition body gets the real first name of the individual
-		$odf->setVars("FIRST_NAME", $this->getFirstName());
-		$odf->setVars("LAST_NAME", $this->getLastName());
-		$odf->setVars("REAL_FIRST_NAME", $person->getFirst());
-		$odf->setVars("REAL_LAST_NAME", $person->getLast());
-		$odf->setVars("STREET", $person->getStreet());
-		$odf->setVars("CITY", $person->getCity());
-		$odf->setVars("STATE", $person->getState());
-		$odf->setVars("ZIP", $person->getZip());
+		$docx->setValue("FIRST_NAME",  htmlspecialchars($this->getFirstName(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("LAST_NAME", htmlspecialchars($this->getLastName(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("REAL_FIRST_NAME", htmlspecialchars($person->getFirst(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("REAL_LAST_NAME", htmlspecialchars($person->getLast(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("STREET", htmlspecialchars($person->getStreet(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("CITY", htmlspecialchars($person->getCity(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("STATE", htmlspecialchars($person->getState(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("ZIP", htmlspecialchars($person->getZip(), ENT_COMPAT, 'UTF-8'));
 		
 		// if we are not an anon petition, we have to modify the petition a bit
 		if (!$attorney->getIsAnon())
 		{
-			$odf->setVars("ATTORNEY_FOR", "Attorney for " . $this->getFirstName() . " " . $this->getLastName());
-			$odf->setVars("FILING_ATTORNEY", "through counsel " .  $attorney->getFirstName() . " " . $attorney->getLastName() . ", Esquire");
-			$odf->setVars("COUNSELOR_FOR_PETITIONER", "Counsel for Petitioner");
-			$odf->setVars("ATTORNEY_ELEC_SIG", $attorney->getFirstName() . " " . $attorney->getLastName());
+			$docx->setValue("ATTORNEY_FOR", htmlspecialchars("Attorney for " . $this->getFirstName() . " " . $this->getLastName(), ENT_COMPAT, 'UTF-8'));
+			$docx->setValue("FILING_ATTORNEY", "through counsel " .  $attorney->getFirstName() . " " . $attorney->getLastName() . ", Esquire");
+			$docx->setValue("COUNSELOR_FOR_PETITIONER", "Counsel for Petitioner");
+			$docx->setValue("ATTORNEY_ELEC_SIG", htmlspecialchars($attorney->getFirstName() . " " . $attorney->getLastName(), ENT_COMPAT, 'UTF-8'));
 		}
 		else
 		{
-			$odf->setVars("ATTORNEY_FOR", "");
-			$odf->setVars("FILING_ATTORNEY", "filing pro se");
-			$odf->setVars("COUNSELOR_FOR_PETITIONER", "");
-			$odf->setVars("ATTORNEY_ELEC_SIG", "______________");
+			$docx->setValue("ATTORNEY_FOR", "");
+			$docx->setValue("FILING_ATTORNEY", "filing pro se");
+			$docx->setValue("COUNSELOR_FOR_PETITIONER", "");
+			$docx->setValue("ATTORNEY_ELEC_SIG", "______________");
 		}
 
 		
 		// set the date.  Format = Month[word] Day[number], Year[4 digit number]
-		$odf->setVars("PETITION_DATE", date("F j, Y"));
+		$docx->setValue("PETITION_DATE", htmlspecialchars(date("F j, Y"), ENT_COMPAT, 'UTF-8'));
 		// set the type of petition
 		// NOTE: Should I just keep the "else clause" and get rid of the if clause?  I think this handles every case for redaction or expungement.  Why not just test
 		// the expungements and then move on to redaction?  Or test the redaction and write "Expungement" otherwise.
 		if (($this->isArrestRedaction() && !$this->isArrestExpungement()) && !$this->isArrestOver70Expungement && !$expungeRegardless)
-			$odf->setVars("EXPUNGEMENT_OR_REDACTION","Redaction");
+			$docx->setValue("EXPUNGEMENT_OR_REDACTION","Redaction");
 		else if ($this->isArrestExpungement() || $this->isArrestSummaryExpungement || $this->isArrestOver70Expungement || $expungeRegardless)
-			$odf->setVars("EXPUNGEMENT_OR_REDACTION", "Expungement");
+			$docx->setValue("EXPUNGEMENT_OR_REDACTION", "Expungement");
 		
 		if ($attorney->getIFP())
-			$odf->setVars("IFP_MESSAGE", $attorney->getIFPMessage());
+			$docx->setValue("IFP_MESSAGE", htmlspecialchars($attorney->getIFPMessage(), ENT_COMPAT, 'UTF-8'));
 		else
-			$odf->setVars("IFP_MESSAGE", "");
-		
-		// setting docket number involves looping through all docket numbers and setting
-		// each on on there as a line.
-		// Because ODFPHP doesn't like having the same segment reproduced within a document
-		// multiple times, we have to name the segment on the petition, order, and verification
-		// something different.  hence docketnumber, docketnumber1, and docketnumber2.  
-		$theDocketNum = $odf->setSegment("docketnumber");
-		$theDocketNum1 = $odf->setSegment("docketnumber1");
-		$theDocketNum2 = $odf->setSegment("docketnumber2");
-		$theDocketNum3 = $odf->setSegment("docketnumber3");
-		
-		foreach ($this->getDocketNumber() as $value)
-		{
-			$theDocketNum->setVars("CP", $value);
-			$theDocketNum1->setVars("CP", $value);
-			$theDocketNum2->setVars("CP", $value);
-			$theDocketNum3->setVars("CP", $value);
-			
-			$theDocketNum->merge();
-			$theDocketNum1->merge();
-			$theDocketNum2->merge();
-			$theDocketNum3->merge();
-		}
+			$docx->setValue("IFP_MESSAGE", "");
 
-		$odf->mergeSegment($theDocketNum);
-		$odf->mergeSegment($theDocketNum1);
-		$odf->mergeSegment($theDocketNum2);
-		$odf->mergeSegment($theDocketNum3);
-			
+
+        // set the docket numbers on the petition and order.  I have four different places where docket
+        // numbers live, so I have to clone the CP row four different times.  The setValue command
+        // actually finds all instances of the variable in question, so I don't have to worry about
+        // seting value a number of times.
+        $aDocketNumbers = $this->getDocketNumber();
+        $docx->cloneRow("CP",count($aDocketNumbers));                                                        
+        $docx->cloneRow("CP",count($aDocketNumbers));                                                        
+        $docx->cloneRow("CP",count($aDocketNumbers));                                                        
+        $docx->cloneRow("CP",count($aDocketNumbers));                                                        
+        for ($i=0; $i < count($aDocketNumbers); $i++)                                                                 
+        {                                                                                                       
+            $j = $i+1;                                                                                          
+            $docx->setValue("CP#" . $j, htmlspecialchars($aDocketNumbers[$i], ENT_COMPAT, 'UTF-8'));
+        }             
+	    
 		$aliases = $person->getAliasCommaList();
 		if (trim($aliases) == FALSE)
 			$aliases = "None";
-		$odf->setVars("ALIASES", $aliases);
+		$docx->setValue("ALIASES", htmlspecialchars($aliases, ENT_COMPAT, 'UTF-8'));
 				
-		$odf->setVars("OTN", $this->getOTN());
-		$odf->setVars("DC", $this->getDC());
-		// $odf->setVars("PP", $person->getPP()); // PP/PID not needed anymore and we lost secure access
-		$odf->setVars("SSN", $person->getSSN());
-		$odf->setVars("DOB", $this->getDOB());
-		// $odf->setVars("SID", $person->getSID());  // SID not needed anymore and we lost secure access
+		$docx->setValue("OTN", htmlspecialchars($this->getOTN(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("DC", htmlspecialchars($this->getDC(), ENT_COMPAT, 'UTF-8'));
+		// $docx->setValue("PP", $person->getPP()); // PP/PID not needed anymore and we lost secure access
+		$docx->setValue("SSN", htmlspecialchars($person->getSSN(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("DOB", htmlspecialchars($this->getDOB(), ENT_COMPAT, 'UTF-8'));
+		// $docx->setValue("SID", $person->getSID());  // SID not needed anymore and we lost secure access
 		
 		// setting the disposition list is different dependingo on what type of expungement
 		// this is.  An ARD will say that the ard was completed; a summary might say something else
@@ -1283,57 +1276,58 @@ class Arrest
 		
 		if ($this->isArrestARDExpungement())
 		{
-			$odf->setVars("DISPOSITION_LIST", $this->getDispList());
-			$odf->setVars("ARD_EXTRA", " and the petitioner successfully completed ARD. The ARD completion letter is attached to this petition");
-			$odf->setVars("SUMMARY_EXTRA", "");
+			$docx->setValue("DISPOSITION_LIST", htmlspecialchars($this->getDispList(), ENT_COMPAT, 'UTF-8'));
+			$docx->setValue("ARD_EXTRA", htmlspecialchars(" and the petitioner successfully completed ARD. The ARD completion letter is attached to this petition", ENT_COMPAT, 'UTF-8'));
+			$docx->setValue("SUMMARY_EXTRA", "");
 		}
 		else if ($this->isArrestOver70Expungement)
 		{
 			// print the disposition list with all offenses, not just redactable ones
-			$odf->setVars("DISPOSITION_LIST", $this->getDispList(FALSE));
-			$odf->setVars("ARD_EXTRA", "");
-			$odf->setVars("SUMMARY_EXTRA", " and the Petitioner is over 70 years old has been free of arrest or prosecution for ten years following from completion the sentence");
+			$docx->setValue("DISPOSITION_LIST", htmlspecialchars($this->getDispList(FALSE), ENT_COMPAT, 'UTF-8'));
+			$docx->setValue("ARD_EXTRA", "");
+			$docx->setValue("SUMMARY_EXTRA", htmlspecialchars(" and the Petitioner is over 70 years old has been free of arrest or prosecution for ten years following from completion the sentence", ENT_COMPAT, 'UTF-8'));
 		}
 	
 		else if ($this->isArrestSummaryExpungement)
 		{
-			$odf->setVars("DISPOSITION_LIST", "summary convictions");
-			$odf->setVars("ARD_EXTRA", "");
-			$odf->setVars("SUMMARY_EXTRA", ".  The petitioner has been arrest free for more than five years since this summary conviction");
+			$docx->setValue("DISPOSITION_LIST", htmlspecialchars("summary convictions", ENT_COMPAT, 'UTF-8'));
+			$docx->setValue("ARD_EXTRA", "");
+			$docx->setValue("SUMMARY_EXTRA", htmlspecialchars(".  The petitioner has been arrest free for more than five years since this summary conviction", ENT_COMPAT, 'UTF-8'));
 		}
 		else
 		{
-			$odf->setVars("DISPOSITION_LIST", $this->getDispList());
-			$odf->setVars("ARD_EXTRA", "");
-			$odf->setVars("SUMMARY_EXTRA", "");
+			$docx->setValue("DISPOSITION_LIST", htmlspecialchars($this->getDispList(), ENT_COMPAT, 'UTF-8'));
+			$docx->setValue("ARD_EXTRA", "");
+			$docx->setValue("SUMMARY_EXTRA", "");
 		}
 		
 
 		// for costs, we have to subtract out any effect that bail may have had on the costs and fines.  The rules only require
 		// that we tell the court costs and fines accrued and paid off, not bail accrued and paid off
-		$odf->setVars("TOTAL_FINES", "$" . number_format($this->getCostsCharged() - $this->getBailCharged(),2));
-		$odf->setVars("FINES_PAID", "$" . number_format($this->getCostsPaid() + $this->getCostsAdjusted() - $this->getBailPaid() - $this->getBailAdjusted(),2));
+		$docx->setValue("TOTAL_FINES", htmlspecialchars("$" . number_format($this->getCostsCharged() - $this->getBailCharged(),2), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("FINES_PAID", htmlspecialchars("$" . number_format($this->getCostsPaid() + $this->getCostsAdjusted() - $this->getBailPaid() - $this->getBailAdjusted(),2), ENT_COMPAT, 'UTF-8'));
 		
 		// if judge exists, then write "Judge $judge"; otherwise write "Unknown Judge"
-		$odf->setVars("JUDGE", (isset($this->judge) && $this->getJudge() != "") 
-			? "Judge " . $this->getJudge() : "Unknown Judge");
-		$odf->setVars("ARREST_DATE", $this->getArrestDate());
-		$odf->setVars("AFFIANT", $this->getArrestingOfficer());
+		$tempJudge = (isset($this->judge) && $this->getJudge() != "") ? "Judge " . $this->getJudge() : "Unknown Judge";
+		$docx->setValue("JUDGE", htmlspecialchars($tempJudge, ENT_COMPAT, 'UTF-8'));
+
+		$docx->setValue("ARREST_DATE", htmlspecialchars($this->getArrestDate(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("AFFIANT", htmlspecialchars($this->getArrestingOfficer(), ENT_COMPAT, 'UTF-8'));
 
 //		if ($this->isArrestRedaction() && !$this->isArrestExpungement())
-//			$odf->setVars("EXPUNGEABLE_CHARGE_LIST", $this->getChargeList(TRUE));
+//			$docx->setValue("EXPUNGEABLE_CHARGE_LIST", $this->getChargeList(TRUE));
 		
 		
-		$odf->setVars("COUNTY", $this->getCounty());						
-		$odf->setVars("ARRESTING_AGENCY", $this->getArrestingAgency());
-		$odf->setVars("COMPLAINT_DATE", $this->getComplaintDate());		
+		$docx->setValue("COUNTY", htmlspecialchars($this->getCounty(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("ARRESTING_AGENCY", htmlspecialchars($this->getArrestingAgency(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("COMPLAINT_DATE", htmlspecialchars($this->getComplaintDate(), ENT_COMPAT, 'UTF-8'));
 
 		$mdjNumberForTemplate = "";
 		if ($this->getIsMDJ() == 1)
 			// if this is an mdj, set the below var so that it inputs onto the shset the district number
 			// if this isn't an mdj, then we set nothing and this field will be blanked out on the petition.
 			$mdjNumberForTemplate = "Magisterial District Number: {$this->getMDJDistrictNumber()}";
-		$odf->setVars("MDJ_DISTRICT_NUMBER", $mdjNumberForTemplate);
+		$docx->setValue("MDJ_DISTRICT_NUMBER", htmlspecialchars($mdjNumberForTemplate, ENT_COMPAT, 'UTF-8'));
 
 		// set the agencies for receiving orders.  As silly as this is, I need to do this through
 		// php since there are different agencies that are notified if this is an mdj case.
@@ -1347,26 +1341,26 @@ class Arrest
 			// if this is an mdj case, put the MDJ court in the list, right after the clerk of courts
 			array_splice($agencies,1,0,"Magisterial District Court {$this->getMDJDistrictNumber()}");
 
-		$theAgencies=$odf->setSegment("AGENCY");
-		foreach ($agencies as $key=>$value)
-		{
-			$a = $key+1;
-			$theAgencies->AGENCY_NAME("{$a}. {$value}");
-			$theAgencies->merge();
-		}
-		$odf->mergeSegment($theAgencies);
 		
+        $docx->cloneRow("AGENCY_NAME",count($agencies));
+		for ($i=0; $i < count($agencies); $i++)
+		{
+            $j = $i+1;
+			$docx->setValue("AGENCY_NAME#" . $j, htmlspecialchars($j . ". " . $agencies[$i], ENT_COMPAT, 'UTF-8'));
+		}
+
+	    
 		$courtInformation = $this->getCourtInformation($db);
 		
-		$odf->setVars("COURT_NAME", $courtInformation['courtName']);
-		$odf->setVars("COURT_STREET", $courtInformation['address']) . ' ' . $courtInformation['address2'];
-		$odf->setVars("COURT_CITY_STATE_ZIP", $courtInformation['city'] . ", " . $courtInformation['state'] . " " . $courtInformation['zip']);
+		$docx->setValue("COURT_NAME", htmlspecialchars($courtInformation['courtName'], ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("COURT_STREET", htmlspecialchars($courtInformation['address'] . ' ' . $courtInformation['address2'], ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("COURT_CITY_STATE_ZIP", htmlspecialchars($courtInformation['city'] . ", " . $courtInformation['state'] . " " . $courtInformation['zip'], ENT_COMPAT, 'UTF-8'));
 		
 		// if this isn't philadelphia, say that the CHR is attached
 		if ($this->getCounty()!="Philadelphia")
-			$odf->setVars("INCLUDE_CHR", "I have attached a copy of my Pennsylvania State Police Criminal History which I have obtained within 60 days before filing this petition.");
+			$docx->setValue("INCLUDE_CHR", htmlspecialchars("I have attached a copy of my Pennsylvania State Police Criminal History which I have obtained within 60 days before filing this petition.", ENT_COMPAT, 'UTF-8'));
 		else
-			$odf->setVars("INCLUDE_CHR", "");
+			$docx->setValue("INCLUDE_CHR", "");
 		
 		// if this is a summary arrest or this is an MDJ case,  this is a 490 petition
 		// otherwise it is a 790 petition
@@ -1376,23 +1370,25 @@ class Arrest
 		// that are dropped, not convictions.  But the court wants 490 petitions in that case
 		// so now all SU cases are going to be summary expungements under 490.
 		if ($this->getIsSummaryArrest() || $this->getIsMDJ() == 1)
-			$odf->setVars("490_OR_790", "490");
+			$docx->setValue("490_OR_790", "490");
 		else
-			$odf->setVars("490_OR_790", "790");
+			$docx->setValue("490_OR_790", "790");
 
 
 		// add in extra order information for CREP
 		if ($attorney->getProgramId() == 2)
 		{
 			$crepOrderLanguage = "All criminal justice agencies upon whom this order is served also are enjoined from disseminating to any non-criminal justice agency any and all criminal history record information ordered to be expunged/redacted pursuant to this Order unless otherwise permitted to do so pursuant to the Criminal History Information Records Act.  ";
-			$odf->setVars("CREP_EXTRA_ORDER_LANGUAGE", $crepOrderLanguage);
+			$docx->setValue("CREP_EXTRA_ORDER_LANGUAGE", htmlspecialchars($crepOrderLanguage, ENT_COMPAT, 'UTF-8'));
 		}
 		else
-			$odf->setVars("CREP_EXTRA_ORDER_LANGUAGE", "");
-			
-		$theCharges=$odf->setSegment("charges");
-		$theCharges1=$odf->setSegment("charges1");
-		foreach ($this->getCharges() as $charge)
+			$docx->setValue("CREP_EXTRA_ORDER_LANGUAGE", "");
+
+        // hacky; should create a getExpungeable Charges function instead
+		$i=0;
+	    
+	    // first count the number of expungeable charges
+	    foreach ($this->getCharges() as $charge)
 		{
 			if (!$this->isArrestOver70Expungement && !$expungeRegardless)
 			{
@@ -1403,31 +1399,42 @@ class Arrest
 				//if ($this->isArrestSummaryExpungement && !$charge->isSummaryRedactable()) 
 				//	continue;
 			}
-			
-			// sometimes disp date isn't associated with a charge.  If not, just use the disposition
-			// date of the whole shebang.  It is a good guess, at the very least.
-			$dispDate = $charge->getDispDate();
-			if ($dispDate == null || $dispDate == "")
-				$dispDate = $this->getDispositionDate();
-
-				$theCharges->CHARGE($charge->getChargeName());
-			$theCharges->GRADE($charge->getGrade());
-			$theCharges->CODE_SEC($charge->getCodeSection());
-			$theCharges->DISP($charge->getDisposition());
-			$theCharges->DISP_DATE($dispDate);
-			$theCharges->merge();
-
-			$theCharges1->CHARGE1($charge->getChargeName());
-			$theCharges1->CODE_SEC1($charge->getCodeSection());
-			$theCharges1->GRADE($charge->getGrade());
-			$theCharges1->DISP1($charge->getDisposition());
-			$theCharges1->DISP_DATE1($dispDate);
-			$theCharges1->merge();
+		    $i = $i+1;
 		}
-		$odf->mergeSegment($theCharges);
-		$odf->mergeSegment($theCharges1);
+	        
+        // now clone the table row the correct number of times and make substitutions
+        // Do the clone twice--once to get the table in the petition and once in the order
+		if ($i>0)
+        {
+	          $docx->cloneRow('CODE_SEC',$i);
+	          $docx->cloneRow('CODE_SEC',$i);
+        }
+        
+		$j = 1;
+        foreach ($this->getCharges() as $charge)                                                        
+	    {                                                                                               
+		    if (!$this->isArrestOver70Expungement && !$expungeRegardless)                           
+		    {                                                                                      
+			    if (!$this->isArrestSummaryExpungement && !$charge->isRedactable())             
+			        continue;                                                               
+		    }                                                                                       
+		    	    
+			
+		    // sometimes disp date isn't associated with a charge.  If not, just use the disposition
+		    // date of the whole shebang.  It is a good guess, at the very least.
+		    $dispDate = $charge->getDispDate();
+		    if ($dispDate == null || $dispDate == "")
+		      $dispDate = $this->getDispositionDate();
 
-
+		    // after cloning, the variables are named CHARGES#1, CHARGES#2, CHARGES#3, etc...
+		    $docx->setValue("CHARGE#" . $j, htmlspecialchars($charge->getChargeName(), ENT_COMPAT, 'UTF-8'));
+		    $docx->setValue("GRADE#" . $j, htmlspecialchars($charge->getGrade(), ENT_COMPAT, 'UTF-8'));
+		    $docx->setValue("CODE_SEC#" . $j, htmlspecialchars(utf8_encode($charge->getCodeSection()), ENT_COMPAT, 'UTF-8'));
+		    $docx->setValue("DISP#" . $j, htmlspecialchars($charge->getDisposition(), ENT_COMPAT, 'UTF-8'));
+		    $docx->setValue("DISP_DATE#" . $j, htmlspecialchars($dispDate, ENT_COMPAT, 'UTF-8'));
+		    $j = $j+1;
+		}
+		
 		// save template to file
 		$outputFile = $outputDir . $this->getFirstName() . $this->getLastName() . $this->getFirstDocketNumber();
 		if ($this->isArrestARDExpungement())
@@ -1438,39 +1445,42 @@ class Arrest
 			$outputFile .= "ExpungementOver70";
 		else
 			$outputFile .= "Redaction";
-		$odf->saveToDisk($outputFile . ".odt");
-		return $outputFile . ".odt";
+		$docx->saveAs($outputFile . ".docx");
+		return $outputFile . ".docx";
 
 	}
 
 
 	public function writeIFP($person, $attorney)
 	{
-		$odf = new odf($GLOBALS["templateDir"] . "IFPTemplate.odt");
+        return true; // TEMP FOR DOCX
+        $docx = new \PhpOffice\PhpWord\TemplateProcessor('templates/IFPTemplate.docx');
 		
 		if ($GLOBALS['debug'])
 			print "Writing IFP Template.";
 		
 		// set attorney and client vars 
-		$odf->setVars("ATTORNEY_HEADER", $attorney->getPetitionHeader());
-		$odf->setVars("ATTORNEY_FIRST", $attorney->getFirstName());
-		$odf->setVars("ATTORNEY_LAST", $attorney->getLastName());
-		$odf->setVars("PROGRAM_NAME", $attorney->getProgramName());
-		$odf->setVars("PETITION_DATE", date("F j, Y"));
-		$odf->setVars("FIRST_NAME", $this->getFirstName());
-		$odf->setVars("LAST_NAME", $this->getLastName());
-		$odf->setVars("STREET", $person->getStreet());
-		$odf->setVars("CITY", $person->getCity());
-		$odf->setVars("STATE", $person->getState());
-		$odf->setVars("ZIP", $person->getZip());
-		$odf->setVars("OTN", $this->getOTN());
-		$odf->setVars("SSN", $person->getSSN());
-		$odf->setVars("DOB", $this->getDOB());
-		// $odf->setVars("SID", $person->getSID());  // SID not needed anymore and CLS lost secure access
-		$odf->setVars("COUNTY", $this->getCounty());						
+		$docx->setValue("ATTORNEY_HEADER", $attorney->getPetitionHeader());
+		$docx->setValue("ATTORNEY_FIRST", $attorney->getFirstName());
+		$docx->setValue("ATTORNEY_LAST", $attorney->getLastName());
+		$docx->setValue("PROGRAM_NAME", $attorney->getProgramName());
+		$docx->setValue("PETITION_DATE", date("F j, Y"));
+		$docx->setValue("FIRST_NAME", $this->getFirstName());
+		$docx->setValue("LAST_NAME", $this->getLastName());
+		$docx->setValue("STREET", $person->getStreet());
+		$docx->setValue("CITY", $person->getCity());
+		$docx->setValue("STATE", $person->getState());
+		$docx->setValue("ZIP", $person->getZip());
+		$docx->setValue("OTN", $this->getOTN());
+		$docx->setValue("SSN", $person->getSSN());
+		$docx->setValue("DOB", $this->getDOB());
+		// $docx->setValue("SID", $person->getSID());  // SID not needed anymore and CLS lost secure access
+		$docx->setValue("COUNTY", $this->getCounty());						
 		$today = new DateTime();
-		$odf->setVars("ORDER_YEAR", $today->format('Y'));
+		$docx->setValue("ORDER_YEAR", $today->format('Y'));
 		
+	    
+	    /* temp comment for docx
 		// set the docket numbers
 		$theDocketNum = $odf->setSegment("docketnumber");
 		foreach ($this->getDocketNumber() as $value)
@@ -1479,10 +1489,11 @@ class Arrest
 			$theDocketNum->merge();
 		}
 		$odf->mergeSegment($theDocketNum);
-		
+	     end temp */
+	    
 		// output the file for later pickup
-		$outputFile = $GLOBALS["dataDir"] . $this->getFirstName() . $this->getLastName() . $this->getFirstDocketNumber() . "IFP.odt";
-		$odf->saveToDisk($outputFile);
+		$outputFile = $GLOBALS["dataDir"] . $this->getFirstName() . $this->getLastName() . $this->getFirstDocketNumber() . "IFP.docx";
+		$docx->saveAs($outputFile);
 		return $outputFile;
 	}
 	
