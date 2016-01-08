@@ -23,14 +23,14 @@
 $debug=false;
 
 
-/* for a linux system
-$basedir = join(DIRECTORY_SEPARATOR, array("home", "expungem");
-$toolsDir = join(DIRECTORY_SEPARATOR, array($basedir, "tools"));
-$wwwdir = join(DIRECTORY_SEPARATOR, array ($basedir, "www"));
-$baseURL = "https://expungementgenerator.org/";
+// for a linux system
+$basedir = join(DIRECTORY_SEPARATOR, array("", "opt", "bitnami", "apache2", "htdocs"));
+$toolsDir = join(DIRECTORY_SEPARATOR, array("", "usr", "local", "bin"));
+$wwwdir = join(DIRECTORY_SEPARATOR, array ($basedir, "eg"));
+$baseURL = "http://104.197.133.211/eg/";
 $pdftotext = $toolsDir . DIRECTORY_SEPARATOR . "pdftotext";
 
-*/
+/*
 // for a windows system
 $basedir = join(DIRECTORY_SEPARATOR, array("c:", "wamp"));
 $toolsDir = join(DIRECTORY_SEPARATOR, array($basedir, "tools"));
@@ -38,7 +38,7 @@ $wwwdir = join(DIRECTORY_SEPARATOR, array ($basedir, "www", "eg"));
 $baseURL = "http://localhost/eg/";
 // windows version of pdftotext must be 3.03.  Although it may work with a later version, I have actually run into problems where the parser parses pdfs differently in the newer version
 $pdftotext = "\"" . $toolsDir . DIRECTORY_SEPARATOR . "pdftotext.exe\"";
-
+*/
 
 // these shouldn't ever need to change
 $dataDir = join(DIRECTORY_SEPARATOR, array($wwwdir, "data")) . DIRECTORY_SEPARATOR;
@@ -47,9 +47,9 @@ $docketSheetsDir = join(DIRECTORY_SEPARATOR, array($wwwdir, "docketsheets")) . D
 
 
 // db information
-$dbPassword = "fakepassword";
-$dbUser = "fakeusername";
-$dbName = "eg";
+$dbPassword = "1424ChestnutSt";
+$dbUser = "eg_user";
+$dbName = "expungem_expungementsite";
 $dbHost = "localhost";
 
 // this is only needed in the CLS production environmnet

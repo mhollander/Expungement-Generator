@@ -163,7 +163,7 @@ function parseDockets($tempFile, $pdftotext, $arrestSummary, $person)
 	}
 	try
 	{
-		unlink($tempFile);
+		// unlink($tempFile);
 	}
 	catch (Exception $e) {}
 	
@@ -286,21 +286,21 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
 // creates an overview document that lists all of the relevant information for the advocate
 function createOverview($arrests, $templateDir, $dataDir, $person)
 {
-	$odf = new odf($templateDir . Arrest::$overviewTemplate);
-	
+    $docx = new \PhpOffice\PhpWord\TemplateProcessor($templateDir . Arrest::$overviewTemplate);
+      
 	// set person variables
-	$odf->setVars("NAME", $person->getFirst() . " " . $person->getLast());
-	$odf->setVars("PPID", $person->getPP());
-	$odf->setVars("SID", $person->getSID());
+	$docx->setValue("NAME", htmlspecialchars($person->getFirst() . " " . $person->getLast(), ENT_COMPAT, 'UTF-8'));
+	$docx->setValue("PPID", htmlspecialchars($person->getPP(), ENT_COMPAT, 'UTF-8'));
+	$docx->setValue("SID", htmlspecialchars($person->getSID(), ENT_COMPAT, 'UTF-8'));
 	
 	if (sizeof($arrests) > 0)
-		$odf->setVars("DOB", $arrests[0]->getDOB());
+		$docx->setValue("DOB", htmlspecialchars($arrests[0]->getDOB(), ENT_COMPAT, 'UTF-8'));
 
-	$theArrest = $odf->setSegment("summary");
+	$docx->cloneRow("DOCKET", count($arrests));
 
+    $i = 1;
 	foreach ($arrests as $arrest)
 	{
-		{
 			$expType = "No expungement possible";
 			if ($arrest->isArrestRedaction())
 				$expType = "Redaction";
@@ -312,19 +312,17 @@ function createOverview($arrests, $templateDir, $dataDir, $person)
 				$expType = "Summary Expungement";
 			if ($arrest->isArrestOver70Expungement($arrests, $person))
 				$expType = "Expungement (over 70)";
-			$theArrest->setVars("DOCKET", implode(", ", $arrest->getDocketNumber()));
-			$theArrest->setVars("PDFNAME", $arrest->getPDFFileName());
-			$theArrest->setVars("OTN", $arrest->getOTN());
-			$theArrest->setVars("EXPUNGEMENT_TYPE", $expType);
-			$theArrest->setVars("UNPAID_COSTS", number_format($arrest->getCostsTotal() - $arrest->getBailTotal(),2));
-			$theArrest->setVars("BAIL",number_format($arrest->getBailTotalTotal(),2));
-			$theArrest->merge();
-		}
+			$docx->setValue("DOCKET#" . $i, htmlspecialchars(implode(", ", $arrest->getDocketNumber()), ENT_COMPAT, 'UTF-8'));
+			$docx->setValue("PDFNAME#" . $i, htmlspecialchars($arrest->getPDFFileName(), ENT_COMPAT, 'UTF-8'));
+			$docx->setValue("OTN#" . $i, htmlspecialchars($arrest->getOTN(), ENT_COMPAT, 'UTF-8'));
+			$docx->setValue("EXPUNGEMENT_TYPE#" . $i, htmlspecialchars($expType, ENT_COMPAT, 'UTF-8'));
+			$docx->setValue("UNPAID_COSTS#" . $i, htmlspecialchars(number_format($arrest->getCostsTotal() - $arrest->getBailTotal(),2), ENT_COMPAT, 'UTF-8'));
+			$docx->setValue("BAIL#" . $i, htmlspecialchars(number_format($arrest->getBailTotalTotal(),2), ENT_COMPAT, 'UTF-8'));
+            $i = $i+1;
 	}
-	$odf->mergeSegment($theArrest);
 	
-	$outputFile = $dataDir . $person->getFirst() . $person->getLast() . "Overview.odt";
-	$odf->saveToDisk($outputFile);	
+	$outputFile = $dataDir . $person->getFirst() . $person->getLast() . "Overview.docx";
+	$docx->saveAs($outputFile);	
 	
 	return $outputFile;
 }
