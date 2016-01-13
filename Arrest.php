@@ -87,14 +87,8 @@ class Arrest
 	// isMDJ = 0 if this is not an mdj case at all, 1 if this is an mdj case and 2 if this is a CP case that decended from MDJ
 	private $isMDJ = 0;
 	
-	public static $redactionTemplate = "redactionTemplate.odt";
-	public static $expungementTemplate = "expungementTemplate.odt";
-	public static $redactionTemplateIFP = "redactionTemplateIFP.odt";
-	public static $expungementTemplateIFP = "expungementTemplateIFP.odt";
-	public static $summaryExpungementTemplate = "summaryExpungementTemplate.odt";
-	public static $summaryExpungementTemplateIFP = "summaryExpungementTemplateIFP.odt";
-	public static $ARDexpungementTemplate = "ARDexpungementTemplate.odt";
-	public static $ARDexpungementTemplateIFP = "ARDexpungementTemplateIFP.odt";
+	public static $expungementTemplate = "790ExpungementTemplate.docx";
+	public static $IFPTemplate = "IFPTemplate.docx";
 	public static $overviewTemplate = "overviewTemplate.docx";
 	
 	protected static $unknownInfo = "N/A";
@@ -1186,7 +1180,7 @@ class Arrest
 	public function writeExpungement($inputDir, $outputDir, $person, $attorney, $expungeRegardless, $db)
 	{
 	    
-        $docx = new \PhpOffice\PhpWord\TemplateProcessor('templates/790ExpungementTemplate.docx');
+        $docx = new \PhpOffice\PhpWord\TemplateProcessor($inputDir . Arrest::$expungementTemplate);
 	    
 		if ($GLOBALS['debug'])
 			print ($this->isArrestExpungement() || $this->isArrestSummaryExpungement)?("Performing Expungement"):("Performing Redaction");
@@ -1351,12 +1345,20 @@ class Arrest
 
 	    
 		$courtInformation = $this->getCourtInformation($db);
+        
+        // put all court information together into one block.  If there isn't any court information, 
+        // this allows as few newlines as possible in the petition and order that are generated
+        $formattedCourtInformation = "";
+        if (!empty($courtInformation['courtName'])) 
+        {   
+            $formattedCourtInformation = $courtInformation['courtName'] . "\r\n";
+            $formattedCourtInformation .= $courtInformation['address'] . ' ' . $courtInformation['address2'] . "\r\n";
+            $formattedCourtInformation .= $courtInformation['city'] . ", " . $courtInformation['state'] . ' ' . $courtInformation['zip'];
+        }
+		$docx->setValue("COURT_INFORMATION", htmlspecialchars($formattedCourtInformation, ENT_COMPAT, 'UTF-8')); 
+
 		
-		$docx->setValue("COURT_NAME", htmlspecialchars($courtInformation['courtName'], ENT_COMPAT, 'UTF-8'));
-		$docx->setValue("COURT_STREET", htmlspecialchars($courtInformation['address'] . ' ' . $courtInformation['address2'], ENT_COMPAT, 'UTF-8'));
-		$docx->setValue("COURT_CITY_STATE_ZIP", htmlspecialchars($courtInformation['city'] . ", " . $courtInformation['state'] . " " . $courtInformation['zip'], ENT_COMPAT, 'UTF-8'));
-		
-		// if this isn't philadelphia, say that the CHR is attached
+        // if this isn't philadelphia, say that the CHR is attached
 		if ($this->getCounty()!="Philadelphia")
 			$docx->setValue("INCLUDE_CHR", htmlspecialchars("I have attached a copy of my Pennsylvania State Police Criminal History which I have obtained within 60 days before filing this petition.", ENT_COMPAT, 'UTF-8'));
 		else
@@ -1451,10 +1453,9 @@ class Arrest
 	}
 
 
-	public function writeIFP($person, $attorney)
+	public function writeIFP($templateDir, $person, $attorney)
 	{
-        return true; // TEMP FOR DOCX
-        $docx = new \PhpOffice\PhpWord\TemplateProcessor('templates/IFPTemplate.docx');
+        $docx = new \PhpOffice\PhpWord\TemplateProcessor($templateDir . Arrest::$IFPTemplate);
 		
 		if ($GLOBALS['debug'])
 			print "Writing IFP Template.";
@@ -1479,18 +1480,15 @@ class Arrest
 		$today = new DateTime();
 		$docx->setValue("ORDER_YEAR", $today->format('Y'));
 		
-	    
-	    /* temp comment for docx
-		// set the docket numbers
-		$theDocketNum = $odf->setSegment("docketnumber");
-		foreach ($this->getDocketNumber() as $value)
-		{
-			$theDocketNum->setVars("CP", $value);
-			$theDocketNum->merge();
-		}
-		$odf->mergeSegment($theDocketNum);
-	     end temp */
-	    
+        // set the docket numbers on the petition.  
+        $aDocketNumbers = $this->getDocketNumber();
+        $docx->cloneRow("CP",count($aDocketNumbers));
+        for ($i=0; $i < count($aDocketNumbers); $i++)  
+        {                                                                             
+            $j = $i+1;
+            $docx->setValue("CP#" . $j, htmlspecialchars($aDocketNumbers[$i], ENT_COMPAT, 'UTF-8'));
+	    }
+        
 		// output the file for later pickup
 		$outputFile = $GLOBALS["dataDir"] . $this->getFirstName() . $this->getLastName() . $this->getFirstDocketNumber() . "IFP.docx";
 		$docx->saveAs($outputFile);

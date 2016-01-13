@@ -27,7 +27,6 @@
 
 
 require_once("config.php");
-require_once("library/odf.php");
 require_once("Arrest.php");
 require_once("ArrestSummary.php");
 require_once("Person.php");
@@ -163,7 +162,7 @@ function parseDockets($tempFile, $pdftotext, $arrestSummary, $person)
 	}
 	try
 	{
-		// unlink($tempFile);
+		unlink($tempFile);
 	}
 	catch (Exception $e) {}
 	
@@ -263,7 +262,7 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
 			// if this isn't a philly arrest and this is an agency that has IFP status, then add in 
 			// an IFP notice.
 			if ($arrest->getCounty()!="Philadelphia" && $attorney->getIFP())
-				$files[] = $arrest->writeIFP($person, $attorney);
+				$files[] = $arrest->writeIFP($templateDir, $person, $attorney);
 			
 			print "<li><span class='boldLabel'>Performing ";
 			
