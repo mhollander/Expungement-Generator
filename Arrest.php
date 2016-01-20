@@ -1459,24 +1459,25 @@ class Arrest
 		
 		if ($GLOBALS['debug'])
 			print "Writing IFP Template.";
-		
+
 		// set attorney and client vars 
-		$docx->setValue("ATTORNEY_HEADER", $attorney->getPetitionHeader());
-		$docx->setValue("ATTORNEY_FIRST", $attorney->getFirstName());
-		$docx->setValue("ATTORNEY_LAST", $attorney->getLastName());
-		$docx->setValue("PROGRAM_NAME", $attorney->getProgramName());
+        $docx->setValue("ATTORNEY_HEADER", htmlspecialchars($attorney->getPetitionHeader(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("ATTORNEY_FIRST", htmlspecialchars($attorney->getFirstName(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("ATTORNEY_LAST", htmlspecialchars($attorney->getLastName(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("PROGRAM_NAME", htmlspecialchars($attorney->getProgramName(), ENT_COMPAT, 'UTF-8'));
+    	$docx->setValue("ATTORNEY_FOR", htmlspecialchars("Attorney for " . $this->getFirstName() . " " . $this->getLastName(), ENT_COMPAT, 'UTF-8'));
 		$docx->setValue("PETITION_DATE", date("F j, Y"));
-		$docx->setValue("FIRST_NAME", $this->getFirstName());
-		$docx->setValue("LAST_NAME", $this->getLastName());
-		$docx->setValue("STREET", $person->getStreet());
-		$docx->setValue("CITY", $person->getCity());
-		$docx->setValue("STATE", $person->getState());
-		$docx->setValue("ZIP", $person->getZip());
-		$docx->setValue("OTN", $this->getOTN());
-		$docx->setValue("SSN", $person->getSSN());
-		$docx->setValue("DOB", $this->getDOB());
+		$docx->setValue("FIRST_NAME", htmlspecialchars($this->getFirstName(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("LAST_NAME", htmlspecialchars($this->getLastName(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("STREET", htmlspecialchars($person->getStreet(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("CITY", htmlspecialchars($person->getCity(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("STATE", htmlspecialchars($person->getState(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("ZIP", htmlspecialchars($person->getZip(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("OTN", htmlspecialchars($this->getOTN(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("SSN", htmlspecialchars($person->getSSN(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("DOB", htmlspecialchars($this->getDOB(), ENT_COMPAT, 'UTF-8'));
 		// $docx->setValue("SID", $person->getSID());  // SID not needed anymore and CLS lost secure access
-		$docx->setValue("COUNTY", $this->getCounty());						
+		$docx->setValue("COUNTY", htmlspecialchars($this->getCounty(), ENT_COMPAT, 'UTF-8'));
 		$today = new DateTime();
 		$docx->setValue("ORDER_YEAR", $today->format('Y'));
 		

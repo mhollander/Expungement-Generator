@@ -24,10 +24,10 @@ $debug=false;
 
 
 // for a linux system
-$basedir = join(DIRECTORY_SEPARATOR, array("", "opt", "bitnami", "apache2", "htdocs"));
+$basedir = join(DIRECTORY_SEPARATOR, array("", "opt", "bitnami", "apps", "eg", "htdocs"));
 $toolsDir = join(DIRECTORY_SEPARATOR, array("", "usr", "local", "bin"));
 $wwwdir = join(DIRECTORY_SEPARATOR, array ($basedir, "eg"));
-$baseURL = "http://104.197.133.211/eg/";
+$baseURL = "https://www.expungementgenerator.org/";
 $pdftotext = $toolsDir . DIRECTORY_SEPARATOR . "pdftotext";
 
 /*
@@ -49,16 +49,16 @@ $docketSheetsDir = join(DIRECTORY_SEPARATOR, array($wwwdir, "docketsheets")) . D
 // db information
 $dbPassword = "1424ChestnutSt";
 $dbUser = "eg_user";
-$dbName = "expungem_expungementsite";
+$dbName = "eg_site";
 $dbHost = "localhost";
 
 // this is only needed in the CLS production environmnet
-/*
-$crepDBPassword = "fakepassword";
-$crepDBUser = "fakeusername";
-$crepDBName = "eg";
-$crepDBHost = "mydburl.org";
-*/
+
+$crepDBPassword = "CLS1424Expungement";
+$crepDBUser = "paexpung_eg";
+$crepDBName = "paexpung_eg";
+$crepDBHost = "plsephilly.org";
+
 
 
 $tempFile = tempnam($dataDir, "FOO");
