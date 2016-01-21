@@ -26,8 +26,11 @@ $debug=false;
 // for a linux system
 $basedir = join(DIRECTORY_SEPARATOR, array("", "opt", "bitnami", "apps", "eg", "htdocs"));
 $toolsDir = join(DIRECTORY_SEPARATOR, array("", "usr", "local", "bin"));
-$wwwdir = join(DIRECTORY_SEPARATOR, array ($basedir, "eg"));
-$baseURL = "https://www.expungementgenerator.org/";
+$includeDir = join(DIRECTORY_SEPARATOR, array("", "usr", "local", "include"));
+$wwwdir = join(DIRECTORY_SEPARATOR, array ($basedir, "eg-test"));
+$casperScript = join(DIRECTORY_SEPARATOR, array($includeDir, "cpcmsNavigate", "searchCPCMS.js"));
+$casperjsCommand = join(DIRECTORY_SEPARATOR, array($toolsDir, "casperjs"));
+$baseURL = "https://test.expungementgenerator.org";
 $pdftotext = $toolsDir . DIRECTORY_SEPARATOR . "pdftotext";
 
 /*
@@ -47,18 +50,18 @@ $docketSheetsDir = join(DIRECTORY_SEPARATOR, array($wwwdir, "docketsheets")) . D
 
 
 // db information
-$dbPassword = "1424ChestnutSt";
-$dbUser = "eg_user";
-$dbName = "eg_site";
+$dbPassword = "fakePW";
+$dbUser = "fake_user";
+$dbName = "fake_db";
 $dbHost = "localhost";
 
 // this is only needed in the CLS production environmnet
-
-$crepDBPassword = "CLS1424Expungement";
-$crepDBUser = "paexpung_eg";
-$crepDBName = "paexpung_eg";
-$crepDBHost = "plsephilly.org";
-
+/*
+$crepDBPassword = "fakepassword";
+$crepDBUser = "fakeusername";
+$crepDBName = "eg";
+$crepDBHost = "mydburl.org";
+*/
 
 
 $tempFile = tempnam($dataDir, "FOO");
