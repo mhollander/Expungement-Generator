@@ -22,3 +22,4 @@ $(function () {
 		$(this).next().toggle();
 	});
 });
+

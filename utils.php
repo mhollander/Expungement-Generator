@@ -67,9 +67,8 @@ function getPersonFromGetVars()
 	$urlPerson['City'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personCity"])));
 	$urlPerson['State'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personState"])));
 	$urlPerson['Zip'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personZip"])));
-	$urlPerson['SID'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personSID"])));
-	$urlPerson['PP'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personPP"])));
 	$urlPerson['SSN'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personSSN"])));
+	$urlPerson['DOB'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personDOB"])));
 	
 	return $urlPerson;
 }
@@ -116,7 +115,7 @@ function printVar($array, $index)
 
 // zips all of the files in the array and returns the location of the zipfile.
 // @return the name of the zipfile archive or null if there was a problem making the zipfile.
-function zipFiles($files, $dataDir)
+function zipFiles($files, $dataDir, $dockets)
 {
 	$zip = new ZipArchive();
 	$zipFileName = $dataDir . time() . ".zip";
@@ -128,14 +127,20 @@ function zipFiles($files, $dataDir)
 			if($zip->addFile($file, basename($file)) && $GLOBALS['debug'])
 				print "added $file to archive <br />";
 		}
+        
+        foreach ($dockets['userFile']['tmp_name'] as $key=>$docket)
+        {
+            $zip->addFile($docket, "dockets" . DIRECTORY_SEPARATOR . $dockets['userFile']['name'][$key]);
+        }
+        
 		if ($zip->close())
 			return $zipFileName;
 	}
 	
 	// if we couldn't open the zip file or save the zip file, return null
 	return NULL;
-	
 }
+
 
 // removes all of the files in $files from the OS
 function cleanupFiles($files)

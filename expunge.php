@@ -32,6 +32,7 @@ require_once("ArrestSummary.php");
 require_once("Person.php");
 require_once("Attorney.php");
 require_once("utils.php");
+require_once("CPCMS.php");
 
 include('head.php');
 include('header.php');
@@ -45,7 +46,33 @@ include('header.php');
 // if the user isn't logged in, then don't display this page.  Tell them they need to log in.
 if (!isLoggedIn())
 	include("displayNotLoggedIn.php");
-else
+
+// they are logged in, see if we were supposed to do a CPCMS search or if they are sending
+// us files from CPCMS themselves
+else if (isset($_POST['cpcmsSearch']) && $_POST['cpcmsSearch'] == "true")
+{
+    // this is a CPCMS search.  So do one, display the results in a form (with hidden fields for
+    // entries from teh previous screen), and shoot everything back here to do the expungements
+    $urlPerson = getPersonFromGetVars();
+    $cpcms = new CPCMS($urlPerson['First'], $urlPerson['Last'], $urlPerson['DOB']);
+    $status = $cpcms->cpcmsSearch();
+    if (!preg_match("/0/",$status[0]))
+        print "There was a problem with your search. Either the CPCMS website is down or your search returned no results.  Status: $status[0].";
+    else
+    {
+        $cpcms->integrateSummaryInformation();
+        
+        // remove the cpcmsSearch variable from the POST vars and then pass them to
+        // a display funciton that will display all of the arrests as a webform, with all
+        // of the post vars re-posted as hidden variables.  Also pass this filename as the 
+        // form action location.
+        unset($_POST['cpcmsSearch']);
+        
+        $cpcms->displayAsWebForm(basename(__FILE__), $_POST);
+    }
+}
+
+else 
 {
 
 	$arrests = array();
@@ -53,7 +80,7 @@ else
 
 	// get information about the person from the POST vars passed in
 	$urlPerson = getPersonFromGetVars();
-	$person = new Person($urlPerson['First'], $urlPerson['Last'], $urlPerson['PP'], $urlPerson['SID'], $urlPerson['SSN'], $urlPerson['Street'], $urlPerson['City'], $urlPerson['State'], $urlPerson['Zip']);
+	$person = new Person($urlPerson['First'], $urlPerson['Last'], $urlPerson['SSN'], $urlPerson['Street'], $urlPerson['City'], $urlPerson['State'], $urlPerson['Zip']);
 	
 	// if this is true, then we do an expungement of every charge, even ones that normally aren't expungeable.
 	// This is for situations like pardons where someone needs an expungement of convictions.
@@ -65,7 +92,11 @@ else
 		$attorney->printAttorneyInfo();
 	
 	// parse the uploaded files will lead to expungements or redactions
-	$arrests = parseDockets($tempFile, $pdftotext, $arrestSummary, $person);
+    $docketFiles = $_FILES;
+    if (isset($_POST['scrapedDockets']))
+        $docketFiles = CPCMS::downloadDockets($_POST['docket']);
+      
+	$arrests = parseDockets($tempFile, $pdftotext, $arrestSummary, $person, $docketFiles);
 	
 	// integrate the summary information in with the arrests 
 	integrateSummaryInformation($arrests, $person, $arrestSummary);
@@ -81,7 +112,7 @@ else
 	$files[] = createOverview($arrests, $templateDir, $dataDir, $person);  
 	
 	// zip up the final PDFs
-	$zipFile = zipFiles($files, $dataDir);
+	$zipFile = zipFiles($files, $dataDir, $docketFiles);
 
 	print "<div>&nbsp;</div>";
 	if (count($files) > 0)
@@ -116,11 +147,11 @@ include ('foot.php');
 
 // parse the docket sheets into Arrest objects and place them all into an array
 // @return an array of Arrest objects containing each docket sheet parsed
-function parseDockets($tempFile, $pdftotext, $arrestSummary, $person)
+function parseDockets($tempFile, $pdftotext, $arrestSummary, $person, $docketFiles)
 {
 	$arrests = array();
 	// loop over all of the files that we uploaded and read them in to see if they are expungeable
-	foreach($_FILES["userFile"]["tmp_name"] as $key => $file)
+	foreach($docketFiles["userFile"]["tmp_name"] as $key => $file)
 	{
 		$command = $pdftotext . " -layout \"" . $file . "\" \"" . $tempFile . "\"";
 		//print $command;
@@ -147,10 +178,10 @@ function parseDockets($tempFile, $pdftotext, $arrestSummary, $person)
 					
 				// associate the PDF with the arrest for later saving to the DB
 				// associate the real PDF file name with the arrest as well for use in the overview
-				if ($_FILES["userFile"]["size"][$key] > 0)
+				if ($docketFiles["userFile"]["size"][$key] > 0)
 				{
 					$arrest->setPDFFile($file);
-					$arrest->setPDFFileName($_FILES["userFile"]["name"][$key]);
+					$arrest->setPDFFileName($docketFiles["userFile"]["name"][$key]);
 				}
 			}
 			elseif (ArrestSummary::isArrestSummary($thisRecord))

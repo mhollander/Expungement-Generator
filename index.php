@@ -62,6 +62,11 @@ else
 		<div class="form-item">
 		</div> 
 		<div class="form-item">
+		<label for="personDOB">Date of Birth</label>
+			<input type="date" name="personDOB" value="<?php printIfSet('personDOB');?>" maxlength="10"/>
+			<div class="description">MM/DD/YYYY</div>
+		</div>
+		<div class="form-item">
 			<label for="personStreet">Address</label>
 			<input type="text" name="personStreet" id="personStreet" class="form-text" value="<?php printIfSet('personStreet');?>" />
 			<div class="description">Street Name, Number</div>
@@ -96,23 +101,23 @@ else
 			<input type="text" name="personSSN" id="personSSN" value="<?php printIfSet('personSSN');?>" />
 			<div class="description">###-##-####</div>
 		</div> 
-		<!--
-		<div class="form-item">
-		<label for="edit-name">PP Number/PPID</label>
-			<input type="text" name="personPP" value="<?php printIfSet('personPP');?>" />
-		</div> 
-		<div class="form-item">
-		<label for="edit-name">SID</label>
-			<input type="text" name="personSID" value="<?php printIfSet('personSID');?>" />
-		</div> 
-		-->
-		<div class="form-item">
-			<label for="userFile1">Send these files (contrl click to select multiple files)</label>
-			<input type="hidden" name="MAX_FILE_SIZE" value="300000" />
-			<input name="userFile[]" type="file" multiple="true" name="userFile1"/>
-		</div>
-		<div class="form-item">
-			<input type="submit" value="Send files" />
+        <div class="form-item">
+            <input type="radio" name="cpcmsSearch" value="true" checked="checked" onclick="$('#addFiles').hide();"/>Search CPCMS for me
+        <div>
+        <div class="form-item">
+            <input type="radio" name="cpcmsSearch" value="false" onclick="$('#addFiles').show();"/>I would like to upload my own dockets
+        </div>
+        <div class="space-line"></div>
+        <div style="display:none" id="addFiles">
+    		<div class="form-item">
+    			<label for="userFile1">Send these files (contrl click to select multiple files)</label>
+    			<input type="hidden" name="MAX_FILE_SIZE" value="300000" />
+    			<input name="userFile[]" type="file" multiple="true" name="userFile1"/>
+    		</div>
+    		<div class="space-line">&nbsp;</div>
+        </div>
+    	<div class="form-item">
+			<input type="submit" value="Start Expunging" />
 		</div>
 		<div class="form-item">
 			<br />

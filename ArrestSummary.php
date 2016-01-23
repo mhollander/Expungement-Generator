@@ -45,6 +45,7 @@ class ArrestSummary
 	
 	public function getSID() { return $this->SID; }
 	public function getPID() { return $this->PID; }
+    public function getArrests() { return $this->arrests; }
 	
 	public function setSID($SID) { $this->SID = $SID; }
 	public function setPID($PID) { $this->PID = $PID; }
@@ -113,8 +114,8 @@ class ArrestSummary
 	public function readArrestSummary($arrestRecordFile)
 	{
 		foreach ($arrestRecordFile as $line_num => $line)
-		{		
-			//print "$line_num: $line <br/>";
+		{
+			// print "$line_num: $line <br/>";
 			
 			// first check to see if we have gotten to the archived section of the dockets
 			if ($this->archived)
