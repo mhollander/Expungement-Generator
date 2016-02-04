@@ -319,7 +319,7 @@ print "
         }
         
         // download the summary docket as well
-        $bestSummary = $dns[0];
+        $bestSummary = $dockets[0];
         // check each of the docket numbers to see if it is better than dns[0], the first on the list
         foreach ($dockets as $dn)
         {

@@ -62,10 +62,16 @@ else
 		<div class="form-item">
 		</div> 
 		<div class="form-item">
+<?php 
+    if ($attorney->getProgramID() == 1) { 
+?>
 		<label for="personDOB">Date of Birth</label>
 			<input type="date" name="personDOB" value="<?php printIfSet('personDOB');?>" maxlength="10"/>
 			<div class="description">MM/DD/YYYY</div>
 		</div>
+<?php 
+} 
+?>
 		<div class="form-item">
 			<label for="personStreet">Address</label>
 			<input type="text" name="personStreet" id="personStreet" class="form-text" value="<?php printIfSet('personStreet');?>" />
@@ -101,6 +107,10 @@ else
 			<input type="text" name="personSSN" id="personSSN" value="<?php printIfSet('personSSN');?>" />
 			<div class="description">###-##-####</div>
 		</div> 
+<?php 
+    if ($attorney->getProgramID() == 18) { 
+?>
+
         <div class="form-item">
             <input type="radio" name="cpcmsSearch" value="true" checked="checked" onclick="$('#addFiles').hide();"/>Search CPCMS for me
         <div>
@@ -109,6 +119,17 @@ else
         </div>
         <div class="space-line"></div>
         <div style="display:none" id="addFiles">
+<?php
+}
+else
+{
+?>
+        <div class="space-line"></div>
+        <div id="addFiles">
+
+<?php
+}
+?>
     		<div class="form-item">
     			<label for="userFile1">Send these files (contrl click to select multiple files)</label>
     			<input type="hidden" name="MAX_FILE_SIZE" value="300000" />
