@@ -320,8 +320,8 @@ function createOverview($arrests, $templateDir, $dataDir, $person)
       
 	// set person variables
 	$docx->setValue("NAME", htmlspecialchars($person->getFirst() . " " . $person->getLast(), ENT_COMPAT, 'UTF-8'));
-	$docx->setValue("PPID", htmlspecialchars($person->getPP(), ENT_COMPAT, 'UTF-8'));
-	$docx->setValue("SID", htmlspecialchars($person->getSID(), ENT_COMPAT, 'UTF-8'));
+	//$docx->setValue("PPID", htmlspecialchars($person->getPP(), ENT_COMPAT, 'UTF-8'));
+	//$docx->setValue("SID", htmlspecialchars($person->getSID(), ENT_COMPAT, 'UTF-8'));
 	
 	if (sizeof($arrests) > 0)
 		$docx->setValue("DOB", htmlspecialchars($arrests[0]->getDOB(), ENT_COMPAT, 'UTF-8'));

@@ -24,8 +24,6 @@ class Person
 {
 	private $first;
 	private $last;
-	private $PP;
-	private $SID;
 	private $SSN;
 	private $street;
 	private $city;
@@ -35,12 +33,10 @@ class Person
 	private $personID;
 	private $DOB;
 	
-	public function __construct($first, $last, $PP, $SID, $SSN, $street, $city, $state, $zip) 
+	public function __construct($first, $last, $SSN, $street, $city, $state, $zip) 
 	{
 		$this->setFirst($first);
 		$this->setLast($last);
-		$this->setPP($PP);
-		$this->setSID($SID);
 		$this->setSSN($SSN);
 		$this->setStreet($street);
 		$this->setCity($city);
@@ -50,8 +46,6 @@ class Person
 	// setters
 	public function setFirst($first) { $this->first = $first; }
 	public function setLast($last) { $this->last = $last; }
-	public function setPP($PP) { $this->PP = $PP; }
-	public function setSID($SID) { $this->SID = $SID; }
 	public function setSSN($SSN) { $this->SSN = $SSN; }
 	public function setStreet($street) { $this->street = $street; }
 	public function setCity($city) { $this->city = $city; }
@@ -64,8 +58,6 @@ class Person
 	// getters
 	public function getFirst() { return $this->first; }
 	public function getLast() { return $this->last; }
-	public function getPP() { return $this->PP; }
-	public function getSID() { return $this->SID; }
 	public function getSSN() { return $this->SSN; }
 	public function getStreet() { return $this->street; }
 	public function getCity() { return $this->city; }
@@ -91,7 +83,7 @@ class Person
 		if ($this->checkInDB($db))
 			return;
 		
-		$sql = "INSERT INTO defendant (firstName, lastName, PP, SID, SSN, DOB, street, city, state, zip, alias) VALUES ('" . $this->getFirst() . "', '" . $this->getLast() . "', '" . $this->getPP() . "', '" . $this->getSID() . "', '" . $this->getSSN() . "', '" . dateConvert($this->getDOB()) . "', '" . $this->getStreet() . "', '" . $this->getCity() . "', '" . $this->getState() . "', '" . $this->getZip() . "', '" . $this->getAliasCommaList() . "')";
+		$sql = "INSERT INTO defendant (firstName, lastName, PP, SID, SSN, DOB, street, city, state, zip, alias) VALUES ('" . $this->getFirst() . "', '" . $this->getLast() . "', '', '', '" . $this->getSSN() . "', '" . dateConvert($this->getDOB()) . "', '" . $this->getStreet() . "', '" . $this->getCity() . "', '" . $this->getState() . "', '" . $this->getZip() . "', '" . $this->getAliasCommaList() . "')";
 		
 		if (!$db->query($sql))
 		{
