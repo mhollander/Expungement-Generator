@@ -60,7 +60,10 @@ else if (isset($_POST['cpcmsSearch']) && $_POST['cpcmsSearch'] == "true")
         print "There was a problem with your search. Either the CPCMS website is down or your search returned no results.  Status: $status[0].";
     else
     {
-        $cpcms->integrateSummaryInformation();
+        //only integrate the summary information if we
+        // have a DOB; otherwise what is the point?
+        if (!empty($urlPerson['DOB']))
+            $cpcms->integrateSummaryInformation();
         
         // remove the cpcmsSearch variable from the POST vars and then pass them to
         // a display funciton that will display all of the arrests as a webform, with all
