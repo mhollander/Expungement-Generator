@@ -108,7 +108,7 @@ else
 			<div class="description">###-##-####</div>
 		</div> 
 <?php 
-    if ($attorney->getProgramID() == 18) { 
+    if ($attorney->getProgramID() == 1) { 
 ?>
 
         <div class="form-item">
