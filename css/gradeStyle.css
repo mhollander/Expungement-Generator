@@ -1,0 +1,15 @@
+.input {
+    height=55px;
+}
+
+.exclude {
+    background-color: #FC8383;
+}
+
+.maybe {
+    background: #EAFC83;
+}
+
+.codeTitle {
+    white-space:nowrap;
+}
