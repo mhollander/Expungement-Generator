@@ -115,10 +115,10 @@ function printVar($array, $index)
 
 // zips all of the files in the array and returns the location of the zipfile.
 // @return the name of the zipfile archive or null if there was a problem making the zipfile.
-function zipFiles($files, $dataDir, $dockets)
+function zipFiles($files, $dataDir, $dockets, $fileName)
 {
 	$zip = new ZipArchive();
-	$zipFileName = $dataDir . time() . ".zip";
+	$zipFileName = $dataDir . $fileName . ".zip";
 	
 	if ($zip->open($zipFileName, ZipArchive::CREATE)===TRUE )
 	{

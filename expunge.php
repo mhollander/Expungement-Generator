@@ -115,7 +115,7 @@ else
 	$files[] = createOverview($arrests, $templateDir, $dataDir, $person);  
 	
 	// zip up the final PDFs
-	$zipFile = zipFiles($files, $dataDir, $docketFiles);
+	$zipFile = zipFiles($files, $dataDir, $docketFiles, $person->getFirst() . $person->getLast() . "Expungements");
 
 	print "<div>&nbsp;</div>";
 	if (count($files) > 0)

@@ -797,7 +797,7 @@ class Arrest
 			return  $this->getIsCriminal();
 		else
 		{
-			$criminalMatch = "/CR|SU|SA|MJ|JV/";
+			$criminalMatch = "/CR|SU|SA|MJ|JV|MD/";
 			if (preg_match($criminalMatch, $this->getFirstDocketNumber()))
 			{
 					$this->setIsCriminal(TRUE);
