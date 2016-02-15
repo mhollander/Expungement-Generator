@@ -102,16 +102,50 @@ class CPCMS
     {                                                                                                         
         $this->sortResults();                                                                                 
         $summaryCase = $this->findBestSummaryDocketNumber();                                                  
-        print "<b>Results for '$this->first $this->last'";
         if (empty($this->dob))
-          print " with no DOB specified.  Only showing the first page of results from CPCMS";
-        else
-          print " with DOB $this->dob";
-        print "</b>";
-        print "<div class='space-line'>&nbsp;</div>";
-        print "<div class='boldLabel'>Docket Sheets downloaded from CPCMS</div>";
-        print "<div class='space-line'>&nbsp;</div>";
-        print "<div class='boldLabel'>";
+          print "<b>Only showing the first page of results from CPCMS because no DOB specified</b>";
+        // print out a form to resubmit your search query
+        print "<form action='$postLocation' method='post'>";
+        // print out all of the hidden form variables and a post button
+        foreach ($postVars as $name=>$value)
+        {
+            print "<input type='hidden' name='$name' value='" . htmlspecialchars($value) . "' />";
+        }
+      ?>
+            <div class="form-item">                                                                                                                                 
+                <label for="personFirst">Client's Name</label>
+                <div class="form-item-column">                                                                                                                      
+                    <input type="text" name="personFirst" id="personFirst" class="form-text" value="<?php printIfSet('personFirst');?>" />
+                </div>                                                                                                                                              
+                <div class="form-item-column">                                                                                                                      
+                    <input type="text" name="personLast" id="personLast" class="form-text" value="<?php printIfSet('personLast');?>" />                             
+                </div>                                                                                                                                              
+                <div class="space-line"></div>                                                                                                                      
+                <div class="description">                                                                                                                           
+                    <div class="form-item-column">                                                                                                                  
+                        First Name                                                                                                                                  
+                    </div>                                                                                                                                          
+                    <div class="form-item-column">                                                                                                                  
+                        Last Name                                                                                                                                   
+                    </div>                                                                                                                                          
+                </div>                                                                                                                                              
+                <div class="space-line"></div>                                                                                                                      
+            </div>                                                                                                                                                  
+            <div class="form-item">                                                                                                                                 
+                <label for="personDOB">Date of Birth</label>                                                                                                            
+                <input type="date" name="personDOB" value="<?php printIfSet('personDOB');?>" maxlength="10"/>                                                       
+                <div class="description">MM/DD/YYYY</div>                                                                                                           
+            </div>              
+            <input type="hidden" name="cpcmsSearch" value="true" />
+            <div class="form-item">                                                                                                                                 
+                <input type="submit" value="Redo CPCMS Search" />                                                                                                     
+            </div>                                                                                                                                                  
+        </form>
+        <div class='space-line'>&nbsp;</div>
+        <div class='boldLabel'>Docket Sheets downloaded from CPCMS</div>
+        <div class='space-line'>&nbsp;</div>
+        <div class='boldLabel'>
+<?php
         print "<a href='". CPCMS::$summaryURL . $summaryCase . "' target='_blank'>Summary Docket</a>";
         print "</div>";
         print "<div class='space-line'>&nbsp;</div>";
@@ -147,6 +181,10 @@ print "
         <div class='form-item'>
         <input type='hidden' name='scrapedDockets' value='true'>
         <input type='submit' value='Expunge' />
+        </div>
+        <div class='form-item'>                                                                                                                                 
+            <br />                                                                                                                                              
+            <input type='checkbox' name='expungeRegardless' /> Expunge Regardless of whether the docket is actually expungable.  This should only be used in very rare circumstances, like when someone receives a pardon and you want to prepare an expungement petition for them despite the docket not appearing to be expungeable.
         </div>
         </form>
         <script type='text/javascript'>

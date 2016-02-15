@@ -44,6 +44,8 @@ function printIfSet($key)
 {
 	if(isset($_GET[$key]))
 		print $_GET[$key];
+    else if (isset($_POST[$key]))
+      print $_POST[$key];
 }
 
 	// gets a "person" from the getvars
