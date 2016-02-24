@@ -208,7 +208,7 @@ class Charge
             }
             elseif ($this->getGrade()=="M3")
               $this->setIsSealable(1);
-            elseif ($this0>getGrade()=="M2")
+            elseif ($this->getGrade()=="M2")
             {
               $this->setIsSealable(0);
               $this->setSealablePercent("M2 Simple Assault");
