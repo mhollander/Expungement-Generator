@@ -19,4 +19,9 @@
 	if ($db->connect_error) 
 		die('Error connecting to the db: Connect Error (' . $db->connect_errno . ') ' . $db->connect_error);
 
+    // charge database, used to assess Act 5 compliance
+    $chargeDB = new mysqli("localhost", "cpcms", "cpcms", "cpcms_aopc_summary");        
+    if ($chargeDB->connect_error)                  
+       die('Error connecting to the charge db: Connect Error (' . $chargeDB->connect_errno . ') ' . $chargeDB->connect_error);
+
 ?>

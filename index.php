@@ -30,8 +30,8 @@
 ?>
 
 <div class="main">
-	<div class="content-left">&nbsp;</div>
-	<div class="content-center">
+	<div class="pure-u-8-24">&nbsp;</div>
+	<div class="pure-u-12-24">
 <?php
 // if the user isn't logged in, then don't display this page.  Tell them they need to log in.
 if (!isLoggedIn())

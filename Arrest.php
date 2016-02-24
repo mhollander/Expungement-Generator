@@ -75,10 +75,14 @@ class Arrest
 	private $isARDExpungement;
 	private $isExpungement;
 	private $isRedaction;
+	private $isSealable;
 	private $isHeldForCourt;
+	private $isOnlyHeldForCourt;
 	private $isSummaryArrest = FALSE;
 	private $isArrestSummaryExpungement;
 	private $isArrestOver70Expungement;
+    private $isArrestConviction;
+    private $sealableMaybeReasons = array();
 	private $pdfFile;
 	private $pdfFileName;
 	private $aliases = array();
@@ -116,13 +120,6 @@ class Arrest
 	protected static $aliasNameStartSearch = "/^Alias Name/"; // \r?\n(?:(^.+)\r?\n)(?:(^.+)\r?\n)?(?:(^.+)\r?\n)?(?:(^.+)\r?\n)?(?:(^.+)\r?\n)?(?:(^.+)\r?\n)?/m"; 
 	protected static $aliasNameEndSearch = "/CASE PARTICIPANTS/";
 	protected static $endOfPageSearch = "/(CPCMS|AOPC)\s\d{4}/";
-
-	
-
-
-
-
-
 
 	// there are two special judge situations that need to be covered.  The first is that MDJ dockets sometimes say
 	// "magisterial district judge xxx".  In that case, there could be overflow to the next line.  We want to capture that
@@ -211,8 +208,11 @@ class Arrest
 	public function getIsARDExpungement()  { return $this->isARDExpungement; }
 	public function getIsExpungement()  { return $this->isExpungement; }
 	public function getIsRedaction()  { return $this->isRedaction; }
+	public function getIsSealable()  { return $this->isSealable; }
 	public function getIsHeldForCourt()  { return $this->isHeldForCourt; }
+	public function getIsOnlyHeldForCourt()  { return $this->isOnlyHeldForCourt; }
 	public function getIsSummaryArrest()  { return $this->isSummaryArrest; }
+    public function getSealableMaybeReasons() { return $this->sealableMaybeReasons; }
 	public function getIsMDJ() { return $this->isMDJ; }
 	public function getPDFFile() { return $this->pdfFile;}
 	public function getPDFFileName() { return $this->pdfFileName;}
@@ -260,9 +260,11 @@ class Arrest
 	public function setIsARDExpungement($isARDExpungement)  {  $this->isARDExpungement = $isARDExpungement; }
 	public function setIsExpungement($isExpungement)  {  $this->isExpungement = $isExpungement; }
 	public function setIsRedaction($isRedaction)  {  $this->isRedaction = $isRedaction; }
+	public function setIsSealable($isSealable)  {  $this->isSealable = $isSealable; }
 	public function setIsArrestSummaryExpungement($isSummaryExpungement) { $this->isArrestSummaryExpungement = $isSummaryExpungement; }
 	public function setIsArrestOver70Expungement($isOver70Expungement) { $this->isArrestOver70Expungement = $isOver70Expungement; }
 	public function setIsHeldForCourt($isHeldForCourt)  {  $this->isHeldForCourt = $isHeldForCourt; }
+	public function setIsOnlyHeldForCourt($isOnlyHeldForCourt)  {  $this->isOnlyHeldForCourt = $isOnlyHeldForCourt; }
 	public function setIsMDJ($isMDJ)  {  $this->isMDJ = $isMDJ; }
 	public function setPDFFile($pdfFile) { $this->pdfFile = $pdfFile; }
 	public function setPDFFileName($pdfFileName) { $this->pdfFileName = $pdfFileName; }
@@ -890,7 +892,26 @@ class Arrest
 		return TRUE;
 			
 	}
-	
+
+    // returns true if any charges on this case ended in conviction
+	function isArrestConviction()
+    {
+        if (isset($this->isArrestConviction))
+          return $this->isArrestConviction;
+        else
+        {
+            foreach ($this->getCharges as $charge)
+            {
+                if ($charge->isConviction())
+                {
+                    $this->isArrestConviction = true;
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+    
 	// @function isArrestSummaryExpungement - returns true if this is an expungeable summary 
 	// arrest.  
 	// This is true in a slightly more complicated sitaution than the others.  To be a 
@@ -1053,7 +1074,7 @@ class Arrest
 			{
 				// the quirky case where on a CP, the held for court charges are listed from the MC
 				// case.
-				if ($this->isCP() && $charge->getDisposition() == "Held for Court")
+				if ($this->isCP() && $charge->isHeldForCourt())
 					continue;
 				if(!$charge->isRedactable())
 				{
@@ -1095,7 +1116,45 @@ class Arrest
 			return FALSE;
 		}
 	}
+
 	
+    // returns the sealable value of this arrest
+    // 0 is not sealable; 1 is definitely sealable; >1 is maybe sealable;
+    // also collates the reasons why something is potentially sealable in an array, for use in displaying
+    // to the user.
+    // QUESTION To MYSELF: what happens if this is sealable only by virtue of also being expungeable or 
+    // held for court?  I geuss we have to check for that in future logic.
+    public function isArrestSealable()
+    {
+        if (isset($this->isSealable))
+          return $this->getIsSealable();
+        else
+        {
+            $sealable = 1; // default to sealable
+            $charges = $this->getCharges();
+            
+            // if there are no charges recognizable in this case, then it isn't sealable
+            if (count($charges) == 0)
+            {
+                $this->setIsSealable(0);
+                return 0;
+            }
+            foreach ($charges as $charge)
+            {
+                $chargeSealable = $charge->isSealable();
+                // multiplying!  math!  basically, if any charge isn't seable, the whole sealing fails
+                // under Act 5 of 2016. So multiply all of the sealable ratings together.  If there are
+                // any 0s, then sealable will zero out.  If everythign is a 1, then we can return 1;
+                // if anything is > 1, we'll know that this is a maybe
+                $sealable = $sealable * $chargeSealable;
+                if ($chargeSealable > 1)
+                  $this->sealableMaybeReasons[] = $charge->getSealablePercent();
+            }
+            $this->setIsSealable($sealable);
+            return $this->getIsSealable();
+        }
+    }
+    
 	// returns true if this is a redactable offense.  this is true if there are charges that are NOT
 	// guilty or guilty plea or held for court.  returns true for expungements as well.
 	public function isArrestRedaction()
@@ -1120,6 +1179,33 @@ class Arrest
 		}
 	}
 	
+    // return true only if ALL of the charges are held for court.
+    public function isArrestOnlyHeldForCourt()
+    {
+		if (isset($this->isOnlyHeldForCourt))
+        	return  $this->getIsOnlyHeldForCourt();
+		else
+		{
+            $charges = $this->getCharges();
+            if (count($charges) == 0)
+            {
+                $this->isOnlyHeldForCourt=false;
+                return false;
+            }
+			foreach ($charges as $charge)
+			{
+                $disp = $charge->getDisposition();
+                if (!$charge->isHeldForCourt() || empty($disp))
+                {
+                        $this->isOnlyHeldForCourt=false;
+                    return false;
+                }
+            }
+            $this->isOnlyHeldForCourt=true;
+            return true;
+        }
+    }
+        
 	// return true if any of the charges are held for court.  this means we are ripe for 
 	// consolodating with another arrest
 	public function isArrestHeldForCourt()
@@ -1392,6 +1478,10 @@ class Arrest
 	    // first count the number of expungeable charges
 	    foreach ($this->getCharges() as $charge)
 		{
+            
+            // testing!!! xxx
+            //print "<br /> " . $charge->getCodeSection() . " | " . $charge->getGrade() . " | " . $charge->getDisposition() . " | " . strval($charge->isSealable()) . " | " . $charge->getSealablePercent();
+            
 			if (!$this->isArrestOver70Expungement && !$expungeRegardless)
 			{
 				if (!$this->isArrestSummaryExpungement && !$charge->isRedactable())

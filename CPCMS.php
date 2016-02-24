@@ -79,11 +79,12 @@ class CPCMS
         $summaryCase = $this->findBestSummaryDocketNumber();
 
         print "<a href='$this->summaryURL" . $summaryCase . "' target='_blank'>Summary Docket</a>";
-        print "<table><th>Docket Number</th><th>Status</th><th>OTN</th><TH>DOB</TH>";
+        print "<table class='pure-table'><thead><th>Docket Number</th><th>Status</th><th>OTN</th><TH>DOB</TH></thead>";
         foreach ($this->results as $result)
         {
             print "<tr>";
-            print "<td><a href='$this->docketURL" . $result[0] . "' target='_blank'>$result[0]</a></td>";
+            print "<td><a href='$this->docketURL" . $result[0] . "' target='_blank'>$result[0]</a>";
+            print "(<a href='$this->summaryURL" . $result[0] . "' target='_blank'>s</a>)</td>";
             print "<td>$result[1]</td>";
             print "<td>$result[2]</td>";
             print "<td>$result[3]</td>";
@@ -150,17 +151,19 @@ class CPCMS
         print "</div>";
         print "<div class='space-line'>&nbsp;</div>";
         print "<form action='$postLocation' method='post'>";
-        print "<table><th>&nbsp;</th><th>Docket Number</th><th>Status</th><th>OTN</th>";
+        print "<table class='pure-table'><thead><th>&nbsp;</th><th>Docket Number</th><th>Status</th><th>OTN</th>";
         
         // only print the DOB field if we are viewing 
         if (empty($this->dob))
           print "<TH>DOB</TH>";
+        print "</thead>";
         print "<tr><td><input type='checkbox' id='checkAll' checked='checked'/></td><td>Check/Uncheck All</td></tr>";
         foreach ($this->results as $result)                                                                   
         {                                                                                                     
             print "<tr>";       
             print "<td><input type='checkbox' name='docket[]' value='$result[0]' checked='checked' class='checkItem' /></td>";
-            print "<td><a href='" . CPCMS::$docketURL . $result[0] . "' target='_blank'>$result[0]</a></td>";     
+            print "<td><a href='" . CPCMS::$docketURL . $result[0] . "' target='_blank'>$result[0]</a>";
+            print "(<a href='".CPCMS::$summaryURL . $result[0] . "' target='_blank'>s</a>)</td>";
             print "<td>$result[1]</td>";                                                                      
             print "<td>$result[2]</td>";
             

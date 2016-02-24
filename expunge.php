@@ -39,8 +39,8 @@ include('header.php');
 ?>
 
 <div class="main">
-	<div class="content-left">&nbsp;</div>
-	<div class="content-center">
+	<div class="pure-u-5-24">&nbsp;</div>
+	<div class="pure-u-14-24">
 
 <?php
 // if the user isn't logged in, then don't display this page.  Tell them they need to log in.
@@ -107,12 +107,15 @@ else
 	print "<b>EXPUNGEMENT INFORMATION</b><br/><br/>";
 	// combine the docket sheets that are from the same arrest
 	$arrests = combineArrests($arrests);
+    
+    // check to see if Act5 Sealable
+    $sealable = checkIfSealable($arrests);
 		
 	// do the expungements in PDF form
-	$files = doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $expungeRegardless, $db);
+	$files = doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $expungeRegardless, $db, $sealable);
 	
 
-	$files[] = createOverview($arrests, $templateDir, $dataDir, $person);  
+	$files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
 	
 	// zip up the final PDFs
 	$zipFile = zipFiles($files, $dataDir, $docketFiles, $person->getFirst() . $person->getLast() . "Expungements");
@@ -140,7 +143,7 @@ else
 } // if isLoggedIn()
 ?>
 		</div> <!-- content-center -->
-	<div class="content-right"><?php include("expungementDisclaimers.php");?></div>
+	<div class="pure-u-4-24"><?php include("expungementDisclaimers.php");?></div>
 	</div>
 
 <?php
@@ -225,6 +228,36 @@ function combineArrests($arrests)
 	return $arrests;
 }
 
+// checks if anything is sealable by running through each case and checking if that case is sealable
+// Not sealable if any case is not sealable or if there are 4 or more convictions on this record
+// Returns true or false.  If true, still need to check later to get the reasons something may not
+// be sealable (this is for isSealable > 1).
+function checkIfSealable($arrests)
+{
+    $sealable = 1;
+    $convictions = 0;
+    foreach ($arrests as $arrest)
+    {
+        $sealable = $sealable * $arrest->isArrestSealable();
+        if ($sealable == 0)
+          break;
+        
+        // if this is a conviction on a non-summary case, we need to increment convictions
+        if ($arrest->isArrestConviction() && !$arrest->getIsSummaryArrest())
+        {
+            $convictions++;
+            // if there are more than 4 convictions, then we can't seal
+            if ($convictions > 3)
+            {
+              $sealable == 0;
+              break;
+            }
+        }
+    }
+    return $sealable;
+}
+
+
 // integrates information from the summaryArrest object and the arrests array.  The summary 
 // arrest object most commonly contains additional information about the judge, but could
 // have other useful information like the OTN or DC number.
@@ -282,15 +315,21 @@ function integrateSummaryInformation($arrests, $person, $arrestSummary)
 
 // loops through all of the Arrests in $arrests and does a paper and to screen expungement
 // @return an array of the file names that were created during this process.
-function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $expungeRegardless, $db)
+function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $expungeRegardless, $db, $sealable)
 {
 	$files = array();
-
-	print "<ul class='no-indent'>";
+    
+	print "<table class='pure-table pure-table-horizontal pure-table-striped'>";
+    print "<thead><tr><th>Docket #</th><th>Expungeable</th><th>Sealable</th></tr></thead>";
 	foreach ($arrests as $arrest)	
 	{
-		if ($arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestExpungement() ||  $arrest->isArrestOver70Expungement($arrests, $person) || $arrest->isArrestRedaction() || $expungeRegardless)
-		{
+        print "<tr><td>".$arrest->getFirstDocketNumber()."</td><td>";
+        if ($arrest->isArrestOnlyHeldForCourt())
+          print "Held for Court</td><td>--</td></tr>";
+        else
+        {
+	  	  if ($arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestExpungement() ||  $arrest->isArrestOver70Expungement($arrests, $person) || $arrest->isArrestRedaction() || $expungeRegardless)
+		  {
 			$files[] = $arrest->writeExpungement($templateDir, $dataDir, $person, $attorney, $expungeRegardless, $db);
 			
 			// if this isn't a philly arrest and this is an agency that has IFP status, then add in 
@@ -298,26 +337,78 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
 			if ($arrest->getCounty()!="Philadelphia" && $attorney->getIFP())
 				$files[] = $arrest->writeIFP($templateDir, $person, $attorney);
 			
-			print "<li><span class='boldLabel'>Performing ";
-			
 			if ($arrest->isArrestExpungement() || $arrest->isArrestSummaryExpungement($arrests) || $expungeRegardless)
-				print "expungement";
+				print "Expungement";
 			else if ($arrest->isArrestOver70Expungement($arrests, $person))
-				print "expungement (over 70)";
+				print "Expungement (over 70)";
 			else 
-				print "redaction";
+				print "Redaction";
+          }
+          else 
+            print "No";
+        
 
-			print " on case: </span> " . $arrest->getFirstDocketNumber() . "</li>";
-		}
-		else 
-			print "<li><span class='boldLabel'>No expungement possible on case: </span>" . $arrest->getFirstDocketNumber() . "</li>";
+          print "</td><td>";
+
+          if ($arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestExpungement() || $arrest->isArrestOver70Expungement())
+            print "--";
+          elseif ($arrest->isArrestSealable()==1)
+          {
+              if ($sealable==0)
+                print "Yes, but excluded by other cases";
+              if ($sealable==1)
+                print "Yes";
+              if ($sealable>1)
+                print "Yes, but maybe excluded by other cases";
+          }
+          elseif ($arrest->isArrestSealable() > 1)
+          {              
+              if ($sealable==0)
+                print "Maybe, but excluded by other cases";
+              elseif ($sealable==1)
+                print "Maybe";
+              elseif ($sealable>1 && ($sealable != $arrest->isArrestSealable()))
+                print "Maybe, but maybe excluded by other cases";
+              else
+                // this means that sealable and arrest->sealable are the same; in other words, 
+                // this is the potentially sealable case, so just say Maybe
+                print "Maybe";
+          }
+          elseif ($arrest->isArrestSealable() ==0)
+              print "No";
+            
+          print "</td></tr>";
+        } // if held for court
 	}
-	print "</ul>";
+	print "</table>";
 	return $files;
 }
 
+// runs through every arrest and counts each charge that is sealble (and not expungeable)
+function getTotalSealableCharges($arrests)
+{
+    $i=0;
+    foreach ($arrests as $arrest)
+    {
+        if ($arrest->isArrestOnlyHeldForCourt())
+          continue;
+        // todo - add in over70expungements to this list
+        if ($arrest->isArrestExpungement() || $arrest->isArrestSummaryExpungement($arrests))
+          continue;
+        if ($arrest->isArrestSealable())
+        {
+            foreach ($arrest->getCharges() as $charge)
+            {
+                if (($charge->isSealable() > 0) && $charge->isConviction())
+                  $i++;
+            }
+        }
+       
+    }
+    return $i;
+}
 // creates an overview document that lists all of the relevant information for the advocate
-function createOverview($arrests, $templateDir, $dataDir, $person)
+function createOverview($arrests, $templateDir, $dataDir, $person, $sealable)
 {
     $docx = new \PhpOffice\PhpWord\TemplateProcessor($templateDir . Arrest::$overviewTemplate);
       
@@ -330,28 +421,65 @@ function createOverview($arrests, $templateDir, $dataDir, $person)
 		$docx->setValue("DOB", htmlspecialchars($arrests[0]->getDOB(), ENT_COMPAT, 'UTF-8'));
 
 	$docx->cloneRow("DOCKET", count($arrests));
-
+    
+    $totalSealableCharges = getTotalSealableCharges($arrests);
+    if ($totalSealableCharges > 0)
+        $docx->cloneRow("SEAL_DOCKET", $totalSealableCharges);
+    else
+    {
+        $docx->setValue("SEAL_DOCKET", "NA");
+        $docx->setValue("CHARGE_NAME", "NA");
+        $docx->setValue("CHARGE_CODESECTION", "NA");
+        $docx->setValue("SEALABLE", "NA");
+        $docx->setValue("SEALABLE_INFO", "NA");
+    }
+    
     $i = 1;
+    $j=1;
 	foreach ($arrests as $arrest)
 	{
-			$expType = "No expungement possible";
-			if ($arrest->isArrestRedaction())
-				$expType = "Redaction";
-			if ($arrest->isArrestExpungement())
-				$expType = "Expungement";
-			if ($arrest->isArrestARDExpungement())
-				$expType = "ARD Expungement***";
-			if ($arrest->isArrestSummaryExpungement($arrests))
-				$expType = "Summary Expungement";
-			if ($arrest->isArrestOver70Expungement($arrests, $person))
-				$expType = "Expungement (over 70)";
-			$docx->setValue("DOCKET#" . $i, htmlspecialchars(implode(", ", $arrest->getDocketNumber()), ENT_COMPAT, 'UTF-8'));
-			$docx->setValue("PDFNAME#" . $i, htmlspecialchars($arrest->getPDFFileName(), ENT_COMPAT, 'UTF-8'));
-			$docx->setValue("OTN#" . $i, htmlspecialchars($arrest->getOTN(), ENT_COMPAT, 'UTF-8'));
-			$docx->setValue("EXPUNGEMENT_TYPE#" . $i, htmlspecialchars($expType, ENT_COMPAT, 'UTF-8'));
-			$docx->setValue("UNPAID_COSTS#" . $i, htmlspecialchars(number_format($arrest->getCostsTotal() - $arrest->getBailTotal(),2), ENT_COMPAT, 'UTF-8'));
-			$docx->setValue("BAIL#" . $i, htmlspecialchars(number_format($arrest->getBailTotalTotal(),2), ENT_COMPAT, 'UTF-8'));
-            $i = $i+1;
+		$expType = "No expungement possible";
+		if ($arrest->isArrestRedaction())
+			$expType = "Redaction";
+		if ($arrest->isArrestExpungement())
+			$expType = "Expungement";
+		if ($arrest->isArrestARDExpungement())
+			$expType = "ARD Expungement***";
+		if ($arrest->isArrestSummaryExpungement($arrests))
+			$expType = "Summary Expungement";
+		if ($arrest->isArrestOver70Expungement($arrests, $person))
+			$expType = "Expungement (over 70)";
+		$docx->setValue("DOCKET#" . $i, htmlspecialchars(implode(", ", $arrest->getDocketNumber()), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("PDFNAME#" . $i, htmlspecialchars($arrest->getPDFFileName(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("OTN#" . $i, htmlspecialchars($arrest->getOTN(), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("EXPUNGEMENT_TYPE#" . $i, htmlspecialchars($expType, ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("UNPAID_COSTS#" . $i, htmlspecialchars(number_format($arrest->getCostsTotal() - $arrest->getBailTotal(),2), ENT_COMPAT, 'UTF-8'));
+		$docx->setValue("BAIL#" . $i, htmlspecialchars(number_format($arrest->getBailTotalTotal(),2), ENT_COMPAT, 'UTF-8'));
+        $i = $i+1;
+        
+        // if there are some sealable offenses in this arrest
+        if ($arrest->isArrestSealable() > 0)
+        {
+            // iterate over all of the charges
+            foreach ($arrest->getCharges() as $charge)
+            {
+                // check if they are both conviction charges and sealable (non-conviction charges get a 1)
+                if ($charge->isConviction() && ($charge->isSealable() > 0))
+                {
+                    $docx->setValue("SEAL_DOCKET#".$j, htmlspecialchars($arrest->getFirstDocketNumber(), ENT_COMPAT, 'UTF-8'));
+                    $docx->setValue("CHARGE_NAME#".$j, htmlspecialchars($charge->getChargeName(), ENT_COMPAT, 'UTF-8'));
+                    $docx->setValue("CHARGE_CODESECTION#".$j, htmlspecialchars(utf8_encode($charge->getCodeSection()), ENT_COMPAT, 'UTF-8'));
+                    $docx->setValue("SEALABLE_INFO#".$j, htmlspecialchars($charge->getSealablePercent(), ENT_COMPAT, 'UTF-8'));
+
+                    if ($charge->isSealable()==1)
+                      $docx->setValue("SEALABLE#".$j, "Yes");
+                    else
+                      $docx->setValue("SEALABLE#".$j, "Maybe");
+                    $j++;
+
+                }
+            }
+        }
 	}
 	
 	$outputFile = $dataDir . $person->getFirst() . $person->getLast() . "Overview.docx";
