@@ -223,7 +223,7 @@ print "
         // default case--if there is only one docket number, return 0; this tells the
         // user of the function to use the first docket number since there are none that match our criteria
         // this also prevents an infinite recursion
-        if (count($aResults) == 1)
+        if (count($aResults) == 0)
             return 0;
 
         // if this is a closed case and it is criminal, return it
