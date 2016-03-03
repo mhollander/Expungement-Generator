@@ -114,7 +114,7 @@ class CPCMS
         }
       ?>
             <div class="form-item">                                                                                                                                 
-                <label for="personFirst">Client's Name</label>
+                <label for="personFirst">Client's Name</label> <!--'-->
                 <div class="form-item-column">                                                                                                                      
                     <input type="text" name="personFirst" id="personFirst" class="form-text" value="<?php printIfSet('personFirst');?>" />
                 </div>                                                                                                                                              
@@ -197,7 +197,7 @@ print "
         }); 
         </script>                                                                                                          
             
-";
+"; //"
     }                        
     
     public function findBestSummaryDocketNumber()
