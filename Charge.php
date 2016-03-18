@@ -187,8 +187,8 @@ class Charge
             return 0;
         }
        
-        // similar to above, but with specific codesection
-        elseif ((trim($codeSection[0])=="18") && $this->inOffensesWithSubsection(trim($codeSection[1]), trim($codeSection[2])))
+        // similar to above, but with specific subsection, but only if there is a subsection listed
+        elseif ((count($codeSection)>2) && ((trim($codeSection[0])=="18") && $this->inOffensesWithSubsection(trim($codeSection[1]), trim($codeSection[2]))))
         {
             $this->setIsSealable(0); 
             $this->setSealablePercent("This crime/subsection is one of the exclusionary crimes (but not simple assault)");

@@ -351,7 +351,7 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
 
           print "</td><td>";
 
-          if ($arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestExpungement() || $arrest->isArrestOver70Expungement())
+          if ($arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestExpungement() || $arrest->isArrestOver70Expungement($arrests,$person))
             print "--";
           elseif ($arrest->isArrestSealable()==1)
           {

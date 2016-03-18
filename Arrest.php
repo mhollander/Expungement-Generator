@@ -900,7 +900,7 @@ class Arrest
           return $this->isArrestConviction;
         else
         {
-            foreach ($this->getCharges as $charge)
+            foreach ($this->getCharges() as $charge)
             {
                 if ($charge->isConviction())
                 {
