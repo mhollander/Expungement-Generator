@@ -28,9 +28,13 @@ class CPCMS
     private $last;
     private $dob = null;
     private $results = array();
+    private $resultsMDJ = array();
     private $bestSummaryDocketNumber;
+    private $bestSummaryDocketNumberMDJ;
     public static $docketURL = "https://ujsportal.pacourts.us/DocketSheets/CPReport.ashx?docketNumber=";
     public static $summaryURL = "https://ujsportal.pacourts.us/DocketSheets/CourtSummaryReport.ashx?docketNumber=";
+    public static $docketURLMDJ = "https://ujsportal.pacourts.us/DocketSheets/MDJReport.ashx?docketNumber=";
+    public static $summaryURLMDJ = "https://ujsportal.pacourts.us/DocketSheets/MDJCourtSummaryReport.ashx?docketNumber=";
     
 
     // expects that the date will come in YYYY-MM-DD formate, but CPCMS requires mm/dd/yyy format
@@ -46,8 +50,9 @@ class CPCMS
 
     // searches CPCMS for the person matchine first, last, and DOB.  If no DOB is specified, returns
     // the first page of results from a search of just the first and last name.
+    // param mdj will do an MDJ search and modify the MDJ member not the regular cpcms member. 
     // Returns the sttaus code.
-    public function cpcmsSearch()
+    public function cpcmsSearch($mdj=false)
     {
         $searchString = " --first=$this->first --last=$this->last";
     
@@ -56,6 +61,9 @@ class CPCMS
           $searchString = $searchString . " --DOB=$this->dob";
         else
           $searchString = $searchString . " --limit";
+        
+        if ($mdj)
+          $searchString = $searchString . " --mdj";
     
         $command = $GLOBALS['casperjsCommand'] . " " . $GLOBALS['casperScript'] . $searchString;
         // print $command . "<br/>";
@@ -66,7 +74,11 @@ class CPCMS
            $results[$key] = explode(" | ", $value);
         }
         $status = array_shift($results);
-        $this->results = $results;
+
+        if ($mdj)
+            $this->resultsMDJ = $results;
+        else
+            $this->results = $results;
         return $status;
     }   
 
@@ -75,7 +87,10 @@ class CPCMS
     //
     public function printResultsForWeb()
     {
+        
         $this->sortResults();
+        
+        //first print CP cases, then print MDJ
         $summaryCase = $this->findBestSummaryDocketNumber();
 
         print "<a href='$this->summaryURL" . $summaryCase . "' target='_blank'>Summary Docket</a>";
@@ -91,7 +106,26 @@ class CPCMS
             print "</tr>";
         }   
         print "</table>";
-
+        
+        //MDJ
+        if (count($resultsMDJ > 0))
+        {
+            $summaryCaseMDJ = $this->findBestSummaryDocketNumberMDJ();
+            print "<br/><b>MDJ Cases</b>";
+            print "<a href='$this->summaryURL" . $summaryCase . "' target='_blank'>Summary Docket (MDJ)</a>";
+            print "<table class='pure-table'><thead><th>Docket Number</th><th>Status</th><th>OTN</th><TH>DOB</TH></thead>";
+            foreach ($this->resultsMDJ as $result)
+            {
+                print "<tr>";
+                print "<td><a href='$this->docketURL" . $result[0] . "' target='_blank'>$result[0]</a>";
+                print "(<a href='$this->summaryURL" . $result[0] . "' target='_blank'>s</a>)</td>";
+                print "<td>$result[1]</td>";
+                print "<td>$result[2]</td>";
+                print "<td>$result[3]</td>";
+                print "</tr>";
+            }   
+            print "</table>";
+        }
     }
 
     // assumes a result array that looks like this:                                                           
@@ -103,6 +137,7 @@ class CPCMS
     {                                                                                                         
         $this->sortResults();                                                                                 
         $summaryCase = $this->findBestSummaryDocketNumber();                                                  
+        $summaryCaseMDJ = $this->findBestSummaryDocketNumberMDJ();
         if (empty($this->dob))
           print "<b>Only showing the first page of results from CPCMS because no DOB specified</b>";
         // print out a form to resubmit your search query
@@ -145,10 +180,19 @@ class CPCMS
         <div class='space-line'>&nbsp;</div>
         <div class='boldLabel'>Docket Sheets downloaded from CPCMS</div>
         <div class='space-line'>&nbsp;</div>
-        <div class='boldLabel'>
 <?php
-        print "<a href='". CPCMS::$summaryURL . $summaryCase . "' target='_blank'>Summary Docket</a>";
-        print "</div>";
+        if (!empty($summaryCase))
+        {
+            print "<div class='boldLabel'>";
+            print "<a href='". CPCMS::$summaryURL . $summaryCase . "' target='_blank'>Summary Docket</a>";
+            print "</div>";
+        }
+        if (!empty($summaryCaseMDJ))
+        {
+            print "<div class='boldLabel'>";
+            print "<a href='". CPCMS::$summaryURLMDJ . $summaryCaseMDJ . "' target='_blank'>MDJ Summary Docket</a>";
+            print "</div>";
+        }
         print "<div class='space-line'>&nbsp;</div>";
         print "<form action='$postLocation' method='post'>";
         print "<table class='pure-table'><thead><th>&nbsp;</th><th>Docket Number</th><th>Status</th><th>OTN</th>";
@@ -171,7 +215,21 @@ class CPCMS
             if (empty($this->dob))
                 print "<td>$result[3]</td>";                                                                      
             print "</tr>";                                                                                    
-        }                                                                                                     
+        }      
+        foreach ($this->resultsMDJ as $result)
+        {
+            print "<tr>";       
+            print "<td><input type='checkbox' name='docket[]' value='$result[0]' checked='checked' class='checkItem' /></td>";
+            print "<td><a href='" . CPCMS::$docketURLMDJ . $result[0] . "' target='_blank'>$result[0]</a>";
+            print "(<a href='".CPCMS::$summaryURLMDJ . $result[0] . "' target='_blank'>s</a>)</td>";
+            print "<td>$result[1]</td>";                                                                      
+            print "<td>$result[2]</td>";
+            
+            // only print the DOB if we are looking at a general search
+            if (empty($this->dob))
+                print "<td>$result[3]</td>";                                                                      
+            print "</tr>";                     
+        }
         print "</table>";
         
         // now print out all of the hidden form variables and a post button
@@ -200,11 +258,37 @@ print "
 "; //"
     }                        
     
+    // either returns the currently set bestsummarydocketnumber or uses a recusive algorithm to do so.
+    // if there is no best summary docket number, then retuns null;
     public function findBestSummaryDocketNumber()
     {
+        if (count($this->results) < 1)
+            return null;
+        
         if (isset($this->bestSummaryDocketNumber))
           return $this->bestSummaryDocketNumber;
-        else $number = $this->findBestSummaryDocket($this->results);
+        
+        else $number = $this->findBestSummaryDocket($this->results, "CR");
+        
+        if ($number === 0)
+            return $this->results[0][0];
+
+        else
+            return $number;
+    }
+
+    
+    // either returns the currently set bestsummarydocketnumber or uses a recusive algorithm to do so.
+    // if there is no best summary docket number, then retuns null;
+    public function findBestSummaryDocketNumberMDJ()
+    {
+        if (count($this->resultsMDJ) < 1)
+            return null;
+        
+        if (isset($this->bestSummaryDocketNumberMDJ))
+          return $this->bestSummaryDocketNumberMDJ;
+        
+        else $number = $this->findBestSummaryDocket($this->resultsMDJ, "(TR|NT|CR)");
         
         if ($number === 0)
             return $this->results[0][0];
@@ -218,7 +302,7 @@ print "
     // Closed cases are better.  Cases with a -CR- in them are better (criminal cases), SU cases second best
     // Helpfully, the results returned by CPCMS are generally already in the correct order.  
     // returns 0 if there are no docketes that fit the bill
-    private function findBestSummaryDocket($aResults)
+    private function findBestSummaryDocket($aResults, $bestDocketTell)
     {
         // default case--if there is only one docket number, return 0; this tells the
         // user of the function to use the first docket number since there are none that match our criteria
@@ -227,7 +311,7 @@ print "
             return 0;
 
         // if this is a closed case and it is criminal, return it
-        if (preg_match("/Closed/", $aResults[0][1]) && preg_match("/\-CR\-/", $aResults[0][0]))
+        if (preg_match("/Closed/", $aResults[0][1]) && preg_match("/\-".$bestDocketTell."\-/", $aResults[0][0]))
             return $aResults[0][0];
 
         // otherwise, remove the first element from the array (the one that we just rejected) and try again
@@ -235,7 +319,7 @@ print "
         {
             array_shift($aResults);
             // perform the same exercise on the remainig dockets
-            return $this->findBestSummaryDocket($aResults);
+            return $this->findBestSummaryDocket($aResults, $bestDocketTell);
         }
     }
             
@@ -290,12 +374,27 @@ print "
 
     // downloads a docketsheet from CPCMS.  If isSummary is true, will download a summary
     // docketSheet based on the docketnumber given; otherwise gets a regular docket sheet
+    // Analyzes the docket number to see if this is an MDJ docket or a CP docket.
     public static function getDocket($docketNumber, $isSummary)
     {
+
         $url;
-        if ($isSummary) $url = CPCMS::$summaryURL . $docketNumber;
-        else $url = CPCMS::$docketURL . $docketNumber;
         
+        // if this is an MDJ docket, it will start with MJ and will need different download URLs
+        if (preg_match("/MJ\-/", $docketNumber))
+        {
+            if ($isSummary) $url = CPCMS::$summaryURLMDJ . $docketNumber;
+            else $url = CPCMS::$docketURLMDJ . $docketNumber;
+        }
+        
+        //otherwise this ia a CP case and we need different URLS
+        else 
+        {
+           if ($isSummary) $url = CPCMS::$summaryURL . $docketNumber;
+           else $url = CPCMS::$docketURL . $docketNumber;
+        }
+        
+        // now that we know the docket url, download!
         $ch = CPCMS::initConnection();
         curl_setopt($ch, CURLOPT_URL, $url);
         
@@ -328,6 +427,10 @@ print "
     private function sortResults()
     {
         usort($this->results, function($a,$b) {                                                                           
+           return substr($b[0],-4) - substr($a[0],-4);                                                             
+        });
+        
+        usort($this->resultsMDJ, function($a,$b) {                                                                           
            return substr($b[0],-4) - substr($a[0],-4);                                                             
         });
     }
@@ -364,9 +467,10 @@ print "
         // check each of the docket numbers to see if it is better than dns[0], the first on the list
         foreach ($dockets as $dn)
         {
-            if (preg_match("/-CR-/", $dn))
+            // a good URL will have a CR in the middle and not start with MJ (not an MDJ case)
+            if (preg_match("/^(?!MJ).*-CR-/", $dn))
             {
-                // if we found a CR docket, then use that instead of whatever is already in bestSummary
+                // if we found a Common Pleas CR docket, then use that instead of whatever is already in bestSummary
                 $bestSummary = $dn;
                 break;
             }
