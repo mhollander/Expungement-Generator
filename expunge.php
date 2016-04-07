@@ -56,7 +56,7 @@ else if (isset($_POST['cpcmsSearch']) && $_POST['cpcmsSearch'] == "true")
     $urlPerson = getPersonFromGetVars();
     $cpcms = new CPCMS($urlPerson['First'], $urlPerson['Last'], $urlPerson['DOB']);
     $status = $cpcms->cpcmsSearch();
-    $statusMD = $cpcms->cpcmsSearch(true);
+    $statusMDJ = $cpcms->cpcmsSearch(true);
     if (!preg_match("/0/",$status[0]) && !preg_match("/0/", $statusMDJ[0]))
     {
          print "<br/><b>Your search returned no results.  This is probably because there is no one with the name '" . $urlPerson['First'] . " " . $urlPerson['Last'] . "' in the court database.</b><br/><br/>  The other possibliity is that CPCMS is down.  You can press back and try your search again or you can check <a href='https://ujsportal.pacourts.us/DocketSheets/CP.aspx' target='_blank'>CPCMS by clicking here and doing your search there</a>.</b>";
