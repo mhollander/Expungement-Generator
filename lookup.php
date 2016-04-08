@@ -39,9 +39,9 @@ $dob = "";
 if (!empty($_POST))
 {
     $submit = true;
-    $first = htmlspecialchars(stripslashes($_POST['personFirst']));
-    $last = htmlspecialchars(stripslashes($_POST['personLast']));
-    $dob = htmlspecialchars(stripslashes($_POST['personDOB']));
+    $first = trim(htmlspecialchars(stripslashes($_POST['personFirst'])));
+    $last = trim(htmlspecialchars(stripslashes($_POST['personLast'])));
+    $dob = trim(htmlspecialchars(stripslashes($_POST['personDOB'])));
 }
 ?>
 
@@ -90,15 +90,15 @@ if ($submit)
     if (!preg_match("/0/",$status[0]) && !preg_match("/0/", $statusMDJ[0]))
     {                                                                      
         print "<br/><b>Your search returned no results.  This is probably because there is no one with the name $first $last in the court database.  You can try searching <a href='http://ujsportal.pacourts.us' target='_blank'>CPCMS directly</a> if you think that there is some error.";
-        print $status[0];
-        print "<br/>" . $statusMDJ[0]; 
+        //print $status[0];
+        //print "<br/>" . $statusMDJ[0]; 
     }
     else
     {
         //only integrate the summary information if we have a DOB; otherwise what is the point?
         if (!empty($dob))                                                                        
             $cpcms->integrateSummaryInformation();
-         $cpcms->displayAsWebForm(basename(__FILE__), $_POST);
+         $cpcms->displayResultsInTable(basename(__FILE__), false);
     }
 }
 ?>

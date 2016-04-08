@@ -21,6 +21,8 @@
 *
 **************************************/
 
+require_once("Arrest.php");
+
 class ArrestSummary
 {
 	private $arrests = array();

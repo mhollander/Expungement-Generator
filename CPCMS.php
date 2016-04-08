@@ -66,7 +66,7 @@ class CPCMS
           $searchString = $searchString . " --mdj";
     
         $command = $GLOBALS['casperjsCommand'] . " " . $GLOBALS['casperScript'] . $searchString;
-        // print $command . "<br/>";
+        //print $command . "<br/>";
         exec($command, $results);
     
         foreach($results as $key=>$value)
@@ -74,7 +74,6 @@ class CPCMS
            $results[$key] = explode(" | ", $value);
         }
         $status = array_shift($results);
-
         if ($mdj)
             $this->resultsMDJ = $results;
         else
@@ -128,18 +127,9 @@ class CPCMS
         }
     }
 
-    // assumes a result array that looks like this:                                                           
-    // [1..n]->Docket Number | Active/inactive | OTN | DOB                                                    
-    // will create a form that displays all of the dockets with some information about them
-    // as well as hidden fields from all of the postVars passed in.  The form will submit
-    // to the $postLocation
-    public function displayAsWebForm($postLocation, $postVars)
-    {                                                                                                         
-        $this->sortResults();                                                                                 
-        $summaryCase = $this->findBestSummaryDocketNumber();                                                  
-        $summaryCaseMDJ = $this->findBestSummaryDocketNumberMDJ();
-        if (empty($this->dob))
-          print "<b>Only showing the first page of results from CPCMS because no DOB specified</b>";
+    
+    public function displaySearchForm($postLocation, $postVars)
+    {
         // print out a form to resubmit your search query
         print "<form action='$postLocation' method='post'>";
         // print out all of the hidden form variables and a post button
@@ -147,15 +137,19 @@ class CPCMS
         {
             print "<input type='hidden' name='$name' value='" . htmlspecialchars($value) . "' />";
         }
-      ?>
+print <<<END
             <div class="form-item">                                                                                                                                 
                 <label for="personFirst">Client's Name</label> <!--'-->
-                <div class="form-item-column">                                                                                                                      
-                    <input type="text" name="personFirst" id="personFirst" class="form-text" value="<?php printIfSet('personFirst');?>" />
+                <div class="form-item-column">
+END;
+                    print '<input type="text" name="personFirst" id="personFirst" class="form-text" value="' . $_POST['personFirst'] . '" />';
+print <<<END
                 </div>                                                                                                                                              
-                <div class="form-item-column">                                                                                                                      
-                    <input type="text" name="personLast" id="personLast" class="form-text" value="<?php printIfSet('personLast');?>" />                             
-                </div>                                                                                                                                              
+                <div class="form-item-column">
+END;
+                    print '<input type="text" name="personLast" id="personLast" class="form-text" value="' . $_POST['personLast'] . '" />';
+print <<<END
+          </div>                                                                                                                                              
                 <div class="space-line"></div>                                                                                                                      
                 <div class="description">                                                                                                                           
                     <div class="form-item-column">                                                                                                                  
@@ -169,7 +163,9 @@ class CPCMS
             </div>                                                                                                                                                  
             <div class="form-item">                                                                                                                                 
                 <label for="personDOB">Date of Birth</label>                                                                                                            
-                <input type="date" name="personDOB" value="<?php printIfSet('personDOB');?>" maxlength="10"/>                                                       
+END;
+                    print '<input type="date" name="personDOB" value="' . $_POST['personDOB'] . '" maxlength="10"/>';
+PRINT <<<END
                 <div class="description">MM/DD/YYYY</div>                                                                                                           
             </div>              
             <input type="hidden" name="cpcmsSearch" value="true" />
@@ -177,10 +173,24 @@ class CPCMS
                 <input type="submit" value="Redo CPCMS Search" />                                                                                                     
             </div>                                                                                                                                                  
         </form>
-        <div class='space-line'>&nbsp;</div>
-        <div class='boldLabel'>Docket Sheets downloaded from CPCMS</div>
-        <div class='space-line'>&nbsp;</div>
-<?php
+END;
+    }
+    
+    // displays the search data in a table; if $form is true, puts in a form and includes a checkbox in the 
+    // first column
+    public function displayResultsInTable($postLocation, $form)
+    {
+        $this->sortResults();                                                                                 
+        $summaryCase = $this->findBestSummaryDocketNumber();                                                  
+        $summaryCaseMDJ = $this->findBestSummaryDocketNumberMDJ();
+        
+        print "<div class='space-line'>&nbsp;</div>";
+        print "<div class='boldLabel'>Docket Sheets downloaded from CPCMS</div>";
+        print "<div class='space-line'>&nbsp;</div>";
+
+        if (empty($this->dob))
+          print "<div class='boldLabel'>Only showing the first page of results from CPCMS because no DOB specified.  Note that because we are only searching the first page of results and so many MDJ dockets are not criminal, there is a reasonable chance that no MDJ dockets will show up when no DOB is specified.  If you put in a DOB, your client's criminal MDJ cases will show up.</div>";
+        
         if (!empty($summaryCase))
         {
             print "<div class='boldLabel'>";
@@ -194,18 +204,24 @@ class CPCMS
             print "</div>";
         }
         print "<div class='space-line'>&nbsp;</div>";
-        print "<form action='$postLocation' method='post'>";
-        print "<table class='pure-table'><thead><th>&nbsp;</th><th>Docket Number</th><th>Status</th><th>OTN</th>";
+        if ($form) 
+           print "<form action='$postLocation' method='post'>";
+        print "<table class='pure-table'><thead>";
+        if ($form)
+           print "<th>&nbsp;</th>";
+        print "<th>Docket Number</th><th>Status</th><th>OTN</th>";
         
         // only print the DOB field if we are viewing 
         if (empty($this->dob))
           print "<TH>DOB</TH>";
         print "</thead>";
-        print "<tr><td><input type='checkbox' id='checkAll' checked='checked'/></td><td>Check/Uncheck All</td></tr>";
+        if ($form)
+          print "<tr><td><input type='checkbox' id='checkAll' checked='checked'/></td><td>Check/Uncheck All</td></tr>";
         foreach ($this->results as $result)                                                                   
         {                                                                                                     
             print "<tr>";       
-            print "<td><input type='checkbox' name='docket[]' value='$result[0]' checked='checked' class='checkItem' /></td>";
+            if ($form)
+              print "<td><input type='checkbox' name='docket[]' value='$result[0]' checked='checked' class='checkItem' /></td>";
             print "<td><a href='" . CPCMS::$docketURL . $result[0] . "' target='_blank'>$result[0]</a>";
             print "(<a href='".CPCMS::$summaryURL . $result[0] . "' target='_blank'>s</a>)</td>";
             print "<td>$result[1]</td>";                                                                      
@@ -219,7 +235,8 @@ class CPCMS
         foreach ($this->resultsMDJ as $result)
         {
             print "<tr>";       
-            print "<td><input type='checkbox' name='docket[]' value='$result[0]' checked='checked' class='checkItem' /></td>";
+            if ($form)
+              print "<td><input type='checkbox' name='docket[]' value='$result[0]' checked='checked' class='checkItem' /></td>";
             print "<td><a href='" . CPCMS::$docketURLMDJ . $result[0] . "' target='_blank'>$result[0]</a>";
             print "(<a href='".CPCMS::$summaryURLMDJ . $result[0] . "' target='_blank'>s</a>)</td>";
             print "<td>$result[1]</td>";                                                                      
@@ -231,7 +248,11 @@ class CPCMS
             print "</tr>";                     
         }
         print "</table>";
-        
+
+    }
+    
+    public function formClose($postVars)
+    {
         // now print out all of the hidden form variables and a post button
         foreach ($postVars as $name=>$value)
         {
@@ -256,6 +277,18 @@ print "
         </script>                                                                                                          
             
 "; //"
+    }
+    
+    // assumes a result array that looks like this:                                                           
+    // [1..n]->Docket Number | Active/inactive | OTN | DOB                                                    
+    // will create a form that displays all of the dockets with some information about them
+    // as well as hidden fields from all of the postVars passed in.  The form will submit
+    // to the $postLocation
+    public function displayAsWebForm($postLocation, $postVars)
+    {
+        $this->displaySearchForm($postLocation, $postVars);
+        $this->displayResultsInTable($postLocation, true);
+        $this->formClose($postVars);        
     }                        
     
     // either returns the currently set bestsummarydocketnumber or uses a recusive algorithm to do so.
