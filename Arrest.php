@@ -1454,9 +1454,14 @@ class Arrest
 		$docx->setValue("COURT_INFORMATION", htmlspecialchars($formattedCourtInformation, ENT_COMPAT, 'UTF-8')); 
 
 		
-        // if this isn't philadelphia, say that the CHR is attached
+        // if this isn't philadelphia, say that the CHR is attached.  
 		if ($this->getCounty()!="Philadelphia")
-			$docx->setValue("INCLUDE_CHR", htmlspecialchars("I have attached a copy of my Pennsylvania State Police Criminal History which I have obtained within 60 days before filing this petition.", ENT_COMPAT, 'UTF-8'));
+        {
+            // we also don't include the CHR for ARD expungements in Montco
+            if ($this->getCounty()=="Montgomery" && $this->isArrestARDExpungement())
+    			$docx->setValue("INCLUDE_CHR", "");
+            $docx->setValue("INCLUDE_CHR", htmlspecialchars("I have attached a copy of my Pennsylvania State Police Criminal History which I have obtained within 60 days before filing this petition.", ENT_COMPAT, 'UTF-8'));
+        }
 		else
 			$docx->setValue("INCLUDE_CHR", "");
 		
