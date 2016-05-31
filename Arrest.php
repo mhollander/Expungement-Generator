@@ -1295,7 +1295,7 @@ class Arrest
 			$docx->setValue("ATTORNEY_FOR", htmlspecialchars("Attorney for " . $this->getFirstName() . " " . $this->getLastName(), ENT_COMPAT, 'UTF-8'));
 			$docx->setValue("FILING_ATTORNEY", "through counsel " .  $attorney->getFirstName() . " " . $attorney->getLastName() . ", Esquire");
 			$docx->setValue("COUNSELOR_FOR_PETITIONER", "Counsel for Petitioner");
-			$docx->setValue("ATTORNEY_ELEC_SIG", htmlspecialchars($attorney->getFirstName() . " " . $attorney->getLastName(), ENT_COMPAT, 'UTF-8'));
+			$docx->setValue("ATTORNEY_ELEC_SIG", htmlspecialchars($attorney->getElectronicSig(), ENT_COMPAT, 'UTF-8'));
 		}
 		else
 		{

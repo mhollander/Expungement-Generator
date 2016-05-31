@@ -339,6 +339,21 @@ class Attorney
 		
 		return;
 	}
+    
+    // returns the individual's electronic signature, which is generally their first and last name, 
+    // although is a series of underscores for people who don't want an electronic signature
+    public function getElectronicSig()
+    {
+        // returns the electronic signature of each attorney.  
+        // this shoudl really be int he database, but isn't worth the time for a schema change.
+        // Only one person has requested that he have a different sig; I will leave this as is until
+        // more people ask
+        
+        if (in_array($this->getUserID(), array("27", "36"))) // Dean Beer and Erica Briant
+            return "____________";
+        else
+          return $this->getFirstName() . " " . $this->getLastName();
+    }
 	
 }
 ?>
