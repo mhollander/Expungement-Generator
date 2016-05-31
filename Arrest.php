@@ -1391,6 +1391,16 @@ class Arrest
 		$tempJudge = (isset($this->judge) && $this->getJudge() != "") ? "Judge " . $this->getJudge() : "Unknown Judge";
 		$docx->setValue("JUDGE", htmlspecialchars($tempJudge, ENT_COMPAT, 'UTF-8'));
 
+        // sometimes there is no arrest date available; if there is a complaint date, use that on the order
+        // otherwise just put in N/A
+		if (!empty($this->arrestDate))
+    		$docx->setValue("ARREST_COMPLAINT_DATE", "Arrest Date: " . htmlspecialchars($this->getArrestDate(), ENT_COMPAT, 'UTF-8'));
+		elseif (!empty($this->complaintDate))
+    		$docx->setValue("ARREST_COMPLAINT_DATE", "Complaint Date: " . htmlspecialchars($this->getComplaintDate(), ENT_COMPAT, 'UTF-8'));
+        else
+    		$docx->setValue("ARREST_COMPLAINT_DATE", "Arrest Date: N/A");
+          
+
 		$docx->setValue("ARREST_DATE", htmlspecialchars($this->getArrestDate(), ENT_COMPAT, 'UTF-8'));
 		$docx->setValue("AFFIANT", htmlspecialchars($this->getArrestingOfficer(), ENT_COMPAT, 'UTF-8'));
 
