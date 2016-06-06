@@ -620,7 +620,7 @@ class Arrest
 	// have charge information with, just judge, arrest date, etc...
 	public function combineWithSummary($that)
 	{
-		if ($that->getJudge() != "")
+		if (!empty($that->getJudge()))
 			$this->setJudge($that->getJudge());
 		if (!isset($this->arrestDate) || $this->getArrestDate() == self::$unknownInfo)
 			$this->setArrestDate($that->getArrestDate());
