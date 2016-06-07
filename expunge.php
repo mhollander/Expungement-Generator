@@ -341,6 +341,9 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
 			// an IFP notice.
 			if ($arrest->getCounty()!="Philadelphia" && $attorney->getIFP())
 				$files[] = $arrest->writeIFP($templateDir, $person, $attorney);
+              
+            if ($arrest->getCounty()=="Montgomery")
+                $files[] = $arrest->writeCOS($templateDir, $person, $attorney);
 			
 			if ($arrest->isArrestExpungement() || $arrest->isArrestSummaryExpungement($arrests) || $expungeRegardless)
 				print "Expungement";

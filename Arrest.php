@@ -93,6 +93,8 @@ class Arrest
 	
 	public static $expungementTemplate = "790ExpungementTemplate.docx";
 	public static $IFPTemplate = "IFPTemplate.docx";
+    public static $COSTemplate = "MontcoCertificateofServiceTemplate.docx";
+   
 	public static $overviewTemplate = "overviewTemplate.docx";
 	
 	protected static $unknownInfo = "N/A";
@@ -1564,7 +1566,36 @@ class Arrest
 		
 		if ($GLOBALS['debug'])
 			print "Writing IFP Template.";
+        
+        $this->writeHeader($docx, $person, $attorney);
+        
+		// output the file for later pickup
+		$outputFile = $GLOBALS["dataDir"] . $this->getFirstName() . $this->getLastName() . $this->getFirstDocketNumber() . "IFP.docx";
+		$docx->saveAs($outputFile);
+		return $outputFile;
+	}
 
+	// write a certificate of service for montco
+    public function writeCOS($templateDir, $person, $attorney)
+	{
+        $docx = new \PhpOffice\PhpWord\TemplateProcessor($templateDir . Arrest::$COSTemplate);
+		
+		if ($GLOBALS['debug'])
+			print "Writing COS Template.";
+
+        $this->writeHeader($docx, $person, $attorney);
+		$docx->setValue("ATTORNEY_SIGNATURE",  htmlspecialchars($attorney->getPetitionSignature(), ENT_COMPAT, 'UTF-8'));
+    	$docx->setValue("ATTORNEY_ELEC_SIG", htmlspecialchars($attorney->getElectronicSig(), ENT_COMPAT, 'UTF-8'));
+
+		// output the file for later pickup
+        $outputFile = $GLOBALS["dataDir"] . $this->getFirstName() . $this->getLastName() . $this->getFirstDocketNumber() . "CertificateOfService.docx";
+		$docx->saveAs($outputFile);
+		return $outputFile;
+    }
+    
+    // takes a docx object and writes out the basic petition header information
+    private function writeHeader($docx, $person, $attorney)
+    {
 		// set attorney and client vars 
         $docx->setValue("ATTORNEY_HEADER", htmlspecialchars($attorney->getPetitionHeader(), ENT_COMPAT, 'UTF-8'));
 		$docx->setValue("ATTORNEY_FIRST", htmlspecialchars($attorney->getFirstName(), ENT_COMPAT, 'UTF-8'));
@@ -1595,10 +1626,6 @@ class Arrest
             $docx->setValue("CP#" . $j, htmlspecialchars($aDocketNumbers[$i], ENT_COMPAT, 'UTF-8'));
 	    }
         
-		// output the file for later pickup
-		$outputFile = $GLOBALS["dataDir"] . $this->getFirstName() . $this->getLastName() . $this->getFirstDocketNumber() . "IFP.docx";
-		$docx->saveAs($outputFile);
-		return $outputFile;
 	}
 	
 	
