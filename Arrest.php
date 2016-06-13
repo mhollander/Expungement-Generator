@@ -153,7 +153,7 @@ class Arrest
 		(\-|\247|\w+)*) - followed by either a "-" a section symbol, or a series of word characters, all 0+ times.  This is the clean up at the end of the code section, for example, a code section may be listed as 18 § 2701 §§ A.  This would capture the final ss and the A
 	*/ 
 	protected static $chargesSearch2 = "/\d\s+\/\s+(.+)\s{12,}(\w.+?)(?=\s\s)\s{12,}(\w{0,2})\s+(\w{1,2}\s?\247\s?\d+(\-|\247|\w+)*)/";
-	protected static $ignoreDisps = array("Proceed to Court", "Proceed to Court (Complaint", "Proceed to Court (Complaint Refiled)");	
+	protected static $ignoreDisps = array("Proceed to Court", "Proceed to Court (Complaint", "Proceed to Court (Complaint Refiled)", "Proceed to Court (SDP)");	
 	
 	// $1 = code section, $3 = grade, $4 = charge, $5 = offense date, $6 = disposition
 	protected static $mdjChargesSearch = "/^\s*\d\s+((\w|\d|\s(?!\s)|\-|\247|\*)+)\s{2,}(\w{0,2})\s{2,}([\d|\D]+)\s{2,}(\d{1,2}\/\d{1,2}\/\d{4})\s{2,}(\D{2,})/";
@@ -1412,6 +1412,15 @@ class Arrest
 		
 		$docx->setValue("COUNTY", htmlspecialchars($this->getCounty(), ENT_COMPAT, 'UTF-8'));
 		$docx->setValue("ARRESTING_AGENCY", htmlspecialchars($this->getArrestingAgency(), ENT_COMPAT, 'UTF-8'));
+
+        // in montgomery county, we have to put the actual address of the arresting agency, which is 
+        // stored in the db.  in other counties, we just need to write the name of the county as the 
+        // address of the arresting agency
+        if ($this->getCounty()=="Montgomery")
+    		$docx->setValue("AGENCY_ADDRESS", htmlspecialchars($this->getAgencyAddress(), ENT_COMPAT, 'UTF-8'));
+        else
+        	$docx->setValue("AGENCY_ADDRESS", htmlspecialchars($this->getCounty(), ENT_COMPAT, 'UTF-8') . " County, PA");
+          
 		$docx->setValue("COMPLAINT_DATE", htmlspecialchars($this->getComplaintDate(), ENT_COMPAT, 'UTF-8'));
 
 		$mdjNumberForTemplate = "";
@@ -1802,6 +1811,36 @@ class Arrest
 		}
 		return;
 	}
+    
+    // @return string 
+    // @function getAgencyAddress() returns the address of the arresting agency.  
+    // If there is no match, returns the county and state.
+    
+    public function getAgencyAddress()
+    {
+        $query = "SELECT * FROM Police WHERE MATCH(name) AGAINST('" . $this->getArrestingAgency() . "') LIMIT 1;";
+        $result = $GLOBALS['db']->query($query);
+
+        if (!$result)                                                                                    
+        {                                                                                                
+            if ($GLOBALS['debug'])                                                                       
+                die('Could not get the Police information from the DB:' . $db->error);                 
+            else                                                                                         
+                die('Could not get the Police Information from the DB');                               
+        }                                                                                                
+        
+        $address;
+        // if there are no results returned, just get the county, otherwise get the full address
+        if($result->num_rows > 0)
+        {
+            $row = $result->fetch_assoc();
+            $address = $row['street'] . ", " . $row['city'] . ", " . $row['state'] . " " . $row['zip'];
+        }
+        else
+            $address = $this->getCounty() . " County, PA";
+        $result->close();
+        return $address;
+    }
 	
 	// @return none
 	// @function writePDFToDatabase - writes the PDF docket sheet to the database 
