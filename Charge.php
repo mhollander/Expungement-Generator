@@ -8,7 +8,7 @@
 *	Copyright 2011-2015 Community Legal Services
 * 
 * Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
+* you may not use this file ehexcept in compliance with the License.
 * You may obtain a copy of the License at
 *
 *    http://www.apache.org/licenses/LICENSE-2.0
@@ -111,7 +111,7 @@ class Charge
 		$disp = $this->getDisposition();
 		
 		// "waived for court" appears on some MDJ cases.  It means the same as held for court.
-		$nonRedactableDisps = array("Guilty" , "Guilty - Rule 1002", "Guilty Plea", "Guilty Plea - Negotiated", "Guilty Plea - Non-Negotiated", "Guilty Plea (Lower Court)", "Held for Court", "Waived for Court", "Waived for Court (Lower Court)", "Held for Court (Lower Court)", "Nolo Contendere");
+		$nonRedactableDisps = array("Guilty" , "Guilty - Rule 1002", "Guilty Plea", "Guilty Plea - Negotiated", "Guilty Plea - Non-Negotiated", "Guilty Plea (Lower Court)", "Guilty by Trial (Lower Court)", "Held for Court", "Waived for Court", "Waived for Court (Lower Court)", "Held for Court (Lower Court)", "Nolo Contendere");
 		if (in_array($disp, $nonRedactableDisps))
 			$this->setIsRedactable(FALSE);
 		else
