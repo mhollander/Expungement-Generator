@@ -1815,15 +1815,23 @@ class Arrest
     
     public function getAgencyAddress()
     {
-        $query = "SELECT * FROM Police WHERE MATCH(name) AGAINST('" . $this->getArrestingAgency() . "') LIMIT 1;";
+        
+        // if there is no arresting agency for some reason, just return the county and exit
+        if (empty($this->getArrestingAgency()))
+            return ($this->getCounty() . " County, PA");
+        
+        $query = 'SELECT * FROM Police WHERE MATCH(name) AGAINST("' . $this->getArrestingAgency() . '") LIMIT 1;';
         $result = $GLOBALS['db']->query($query);
 
         if (!$result)                                                                                    
         {                                                                                                
             if ($GLOBALS['debug'])                                                                       
                 die('Could not get the Police information from the DB:' . $db->error);                 
-            else                                                                                         
-                die('Could not get the Police Information from the DB');                               
+            else                                            
+            {
+                $result->close();
+                return ($this->getCounty() . " County, PA");
+            }
         }                                                                                                
         
         $address;
