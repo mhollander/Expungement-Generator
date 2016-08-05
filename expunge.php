@@ -283,10 +283,10 @@ function integrateSummaryInformation($arrests, $person, $arrestSummary)
 		}
 		
 		// integrate the SID and PPID
-		if ($arrestSummary->getSID() != null && $arrestSummary->getSID() != "")
-			$person->setSID($arrestSummary->getSID());
-		if ($arrestSummary->getPID() != null && $arrestSummary->getPID() != "")
-			$person->setPP($arrestSummary->getPID());
+//		if ($arrestSummary->getSID() != null && $arrestSummary->getSID() != "")
+//			$person->setSID($arrestSummary->getSID());
+//		if ($arrestSummary->getPID() != null && $arrestSummary->getPID() != "")
+//			$person->setPP($arrestSummary->getPID());
 	
 
 		// warn the user about any cases that are in the summary, but that were not uploaded
