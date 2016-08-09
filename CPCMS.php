@@ -128,26 +128,22 @@ class CPCMS
     }
 
     
-    public function displaySearchForm($postLocation, $postVars)
+    public function displaySearchForm($postLocation)
     {
         // print out a form to resubmit your search query
         print "<form action='$postLocation' method='post'>";
-        // print out all of the hidden form variables and a post button
-        foreach ($postVars as $name=>$value)
-        {
-            print "<input type='hidden' name='$name' value='" . htmlspecialchars($value) . "' />";
-        }
+
 print <<<END
             <div class="form-item">                                                                                                                                 
                 <label for="personFirst">Client's Name</label> <!--'-->
                 <div class="form-item-column">
 END;
-                    print '<input type="text" name="personFirst" id="personFirst" class="form-text" value="' . $_POST['personFirst'] . '" />';
+                    print '<input type="text" name="personFirst" id="personFirst" class="form-text" value="' . $_SESSION['urlPerson']['First'] . '" />';
 print <<<END
                 </div>                                                                                                                                              
                 <div class="form-item-column">
 END;
-                    print '<input type="text" name="personLast" id="personLast" class="form-text" value="' . $_POST['personLast'] . '" />';
+                    print '<input type="text" name="personLast" id="personLast" class="form-text" value="' . $_SESSION['urlPerson']['Last'] . '" />';
 print <<<END
           </div>                                                                                                                                              
                 <div class="space-line"></div>                                                                                                                      
@@ -164,7 +160,7 @@ print <<<END
             <div class="form-item">                                                                                                                                 
                 <label for="personDOB">Date of Birth</label>                                                                                                            
 END;
-                    print '<input type="date" name="personDOB" value="' . $_POST['personDOB'] . '" maxlength="10"/>';
+                    print '<input type="date" name="personDOB" value="' . $_SESSION['urlPerson']['DOB'] . '" maxlength="10"/>';
 PRINT <<<END
                 <div class="description">MM/DD/YYYY</div>                                                                                                           
             </div>              
@@ -251,22 +247,13 @@ END;
 
     }
     
-    public function formClose($postVars)
+    public function formClose()
     {
-        // now print out all of the hidden form variables and a post button
-        foreach ($postVars as $name=>$value)
-        {
-            print "<input type='hidden' name='$name' value='" . htmlspecialchars($value) . "' />";
-        }
         
 print "        
         <div class='form-item'>
         <input type='hidden' name='scrapedDockets' value='true'>
         <input type='submit' value='Expunge' />
-        </div>
-        <div class='form-item'>                                                                                                                                 
-            <br />                                                                                                                                              
-            <input type='checkbox' name='expungeRegardless' /> Expunge Regardless of whether the docket is actually expungable.  This should only be used in very rare circumstances, like when someone receives a pardon and you want to prepare an expungement petition for them despite the docket not appearing to be expungeable.
         </div>
         </form>
         <script type='text/javascript'>
@@ -284,11 +271,11 @@ print "
     // will create a form that displays all of the dockets with some information about them
     // as well as hidden fields from all of the postVars passed in.  The form will submit
     // to the $postLocation
-    public function displayAsWebForm($postLocation, $postVars)
+    public function displayAsWebForm($postLocation)
     {
-        $this->displaySearchForm($postLocation, $postVars);
+        $this->displaySearchForm($postLocation);
         $this->displayResultsInTable($postLocation, true);
-        $this->formClose($postVars);        
+        $this->formClose();        
     }                        
     
     // either returns the currently set bestsummarydocketnumber or uses a recusive algorithm to do so.

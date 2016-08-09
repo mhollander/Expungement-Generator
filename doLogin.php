@@ -55,8 +55,8 @@ if (isset($_POST['username']))
 		// if we want to "remember login"
 		if (isset($_POST['rememberMe']))
 		{
-			session_set_cookie_params('60000000'); // more than a year.
-			session_regenerate_id(true); 
+			// session_set_cookie_params('60000000'); // more than a year.
+			// session_regenerate_id(true); 
 		}
 
 		$_SESSION['loginUserFirst'] = $row['firstName'];

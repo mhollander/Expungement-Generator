@@ -53,7 +53,7 @@ else if (isset($_POST['cpcmsSearch']) && $_POST['cpcmsSearch'] == "true")
 {
     // this is a CPCMS search.  So do one, display the results in a form (with hidden fields for
     // entries from teh previous screen), and shoot everything back here to do the expungements
-    $urlPerson = getPersonFromGetVars();
+    $urlPerson = getPersonFromPostOrSession();
     $cpcms = new CPCMS($urlPerson['First'], $urlPerson['Last'], $urlPerson['DOB']);
     $status = $cpcms->cpcmsSearch();
     $statusMDJ = $cpcms->cpcmsSearch(true);
@@ -76,24 +76,27 @@ else if (isset($_POST['cpcmsSearch']) && $_POST['cpcmsSearch'] == "true")
         // form action location.
         unset($_POST['cpcmsSearch']);
         
-        $cpcms->displayAsWebForm(basename(__FILE__), $_POST);
+        $cpcms->displayAsWebForm(basename(__FILE__));
     }
 }
 
 else 
 {
-
+    if (isset($_POST['docket']))
+       $_SESSION['docket'] = $_POST['docket'];
+    if (isset($_POST['scrapedDockets']))
+       $_SESSION['scrapedDockets'] = $_POST['scrapedDockets'];
+    
 	$arrests = array();
 	$arrestSummary = new ArrestSummary();
 
 	// get information about the person from the POST vars passed in
-	$urlPerson = getPersonFromGetVars();
+	$urlPerson = getPersonFromPostOrSession();
 	$person = new Person($urlPerson['First'], $urlPerson['Last'], $urlPerson['SSN'], $urlPerson['Street'], $urlPerson['City'], $urlPerson['State'], $urlPerson['Zip']);
 	
-	// if this is true, then we do an expungement of every charge, even ones that normally aren't expungeable.
-	// This is for situations like pardons where someone needs an expungement of convictions.
-	$expungeRegardless = isset($_POST["expungeRegardless"]);
-
+    // set some session vars based on get and post vars
+    getInfoFromGetVars();
+              
 	// make sure to change this in the future to prevent hacking!
 	$attorney = new Attorney($_SESSION["loginUserID"], $db);
 	if($GLOBALS['debug'])
@@ -101,8 +104,8 @@ else
 	
 	// parse the uploaded files will lead to expungements or redactions
     $docketFiles = $_FILES;
-    if (isset($_POST['scrapedDockets']))
-        $docketFiles = CPCMS::downloadDockets($_POST['docket']);
+    if (isset($_SESSION['scrapedDockets']))
+        $docketFiles = CPCMS::downloadDockets($_SESSION['docket']);
       
 	$arrests = parseDockets($tempFile, $pdftotext, $arrestSummary, $person, $docketFiles);
 	
@@ -117,7 +120,7 @@ else
     $sealable = checkIfSealable($arrests);
 		
 	// do the expungements in PDF form
-	$files = doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $expungeRegardless, $db, $sealable);
+	$files = doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $_SESSION['expungeRegardless'], $db, $sealable);
 	
 
 	$files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
@@ -325,7 +328,7 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
 	$files = array();
     
 	print "<table class='pure-table pure-table-horizontal pure-table-striped'>";
-    print "<thead><tr><th>Docket #</th><th>Expungeable</th><th>Sealable</th></tr></thead>";
+    print "<thead><tr><th>Docket #</th><th>Expungeable</th><th>Sealable</th><th>Optional Petitions</th></tr></thead>";
 	foreach ($arrests as $arrest)	
 	{
         print "<tr><td>".$arrest->getFirstDocketNumber()."</td><td>";
@@ -333,7 +336,7 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
           print "Held for Court</td><td>--</td></tr>";
         else
         {
-	  	  if ($arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestExpungement() ||  $arrest->isArrestOver70Expungement($arrests, $person) || $arrest->isArrestRedaction() || $expungeRegardless)
+	  	  if ($arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestExpungement() ||  $arrest->isArrestOver70Expungement($arrests, $person) || $arrest->isArrestRedaction() || $expungeRegardless || $_SESSION['act5Regardless'])
 		  {
 			$files[] = $arrest->writeExpungement($templateDir, $dataDir, $person, $attorney, $expungeRegardless, $db);
 			
@@ -349,6 +352,8 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
 				print "Expungement";
 			else if ($arrest->isArrestOver70Expungement($arrests, $person))
 				print "Expungement (over 70)";
+            else if ($_SESSION['act5Regardless'])
+                print "Act 5 Sealing";
 			else 
 				print "Redaction";
           }
@@ -385,7 +390,11 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
           elseif ($arrest->isArrestSealable() ==0)
               print "No";
             
-          print "</td></tr>";
+          print "</td>";
+          
+            
+          // allow generation of Act 5 and Pardon petitions
+          print "<td><a href='?act5Regardless=true&docket=" . implode("|",$arrest->getDocketNumber()) ."' target='_blank'>Act 5</a> | <a href='?expungeRegardless=true&docket=" . implode("|",$arrest->getDocketNumber()) ."' target='_blank'>Pardon</a></td></tr>";
         } // if held for court
 	}
 	print "</table>";
@@ -457,6 +466,8 @@ function createOverview($arrests, $templateDir, $dataDir, $person, $sealable)
 			$expType = "Summary Expungement";
 		if ($arrest->isArrestOver70Expungement($arrests, $person))
 			$expType = "Expungement (over 70)";
+        if ($_SESSION['act5Regardless'])
+            $expType = "Act 5 Sealing";
 		$docx->setValue("DOCKET#" . $i, htmlspecialchars(implode(", ", $arrest->getDocketNumber()), ENT_COMPAT, 'UTF-8'));
 		$docx->setValue("PDFNAME#" . $i, htmlspecialchars($arrest->getPDFFileName(), ENT_COMPAT, 'UTF-8'));
 		$docx->setValue("OTN#" . $i, htmlspecialchars($arrest->getOTN(), ENT_COMPAT, 'UTF-8'));

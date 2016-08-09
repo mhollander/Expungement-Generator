@@ -38,6 +38,8 @@ if (!isLoggedIn())
 	include("displayNotLoggedIn.php");
 else
 {
+    // kill old session information that might screw things up on the search page
+    resetSession();
 ?>
 		<form action="expunge.php" method="post" enctype="multipart/form-data">
 		<div class="form-item">
@@ -120,9 +122,6 @@ else
     	<div class="form-item">
 			<input type="submit" value="Start Expunging" />
 		</div>
-		<div class="form-item">
-			<br />
-			<input type="checkbox" name="expungeRegardless" /> Generate expungement regardless of whether expungement is proper (for pardons, cases where the docket is wrong, etc...).  It is very rare that you will need this.  Please only check this box if you know what you are doing.
 		</form>
 <?php 
 }  // else isloggedin()

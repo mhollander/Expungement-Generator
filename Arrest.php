@@ -92,6 +92,7 @@ class Arrest
 	private $isMDJ = 0;
 	
 	public static $expungementTemplate = "790ExpungementTemplate.docx";
+	public static $act5Template = "791Act5SealingTemplate.docx";
 	public static $IFPTemplate = "IFPTemplate.docx";
     public static $COSTemplate = "MontcoCertificateofServiceTemplate.docx";
    
@@ -1264,8 +1265,11 @@ class Arrest
 	
 	public function writeExpungement($inputDir, $outputDir, $person, $attorney, $expungeRegardless, $db)
 	{
-	    
-        $docx = new \PhpOffice\PhpWord\TemplateProcessor($inputDir . Arrest::$expungementTemplate);
+        // act 5 petitions use a different template since the wording is very different
+	    if ($_SESSION['act5Regardless'])
+          $docx = new \PhpOffice\PhpWord\TemplateProcessor($inputDir . Arrest::$act5Template);
+        else
+            $docx = new \PhpOffice\PhpWord\TemplateProcessor($inputDir . Arrest::$expungementTemplate);
 	    
 		if ($GLOBALS['debug'])
 			print ($this->isArrestExpungement() || $this->isArrestSummaryExpungement)?("Performing Expungement"):("Performing Redaction");
@@ -1310,9 +1314,9 @@ class Arrest
 		// set the type of petition
 		// NOTE: Should I just keep the "else clause" and get rid of the if clause?  I think this handles every case for redaction or expungement.  Why not just test
 		// the expungements and then move on to redaction?  Or test the redaction and write "Expungement" otherwise.
-		if (($this->isArrestRedaction() && !$this->isArrestExpungement()) && !$this->isArrestOver70Expungement && !$expungeRegardless)
+		if (($this->isArrestRedaction() && !$this->isArrestExpungement()) && !$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['act5Regardless'])
 			$docx->setValue("EXPUNGEMENT_OR_REDACTION","Redaction");
-		else if ($this->isArrestExpungement() || $this->isArrestSummaryExpungement || $this->isArrestOver70Expungement || $expungeRegardless)
+		else if (!$_SESSION['act5Regardless'] && ($this->isArrestExpungement() || $this->isArrestSummaryExpungement || $this->isArrestOver70Expungement || $expungeRegardless))
 			$docx->setValue("EXPUNGEMENT_OR_REDACTION", "Expungement");
 		
 		if ($attorney->getIFP())
@@ -1366,7 +1370,10 @@ class Arrest
 			$docx->setValue("ARD_EXTRA", "");
 			$docx->setValue("SUMMARY_EXTRA", htmlspecialchars(" and the Petitioner is over 70 years old has been free of arrest or prosecution for ten years following from completion the sentence", ENT_COMPAT, 'UTF-8'));
 		}
-	
+        // these fields don't exist on act5 petitions
+	    else if ($_SESSION['act5Regardless'])
+          ;
+        
 		else if ($this->isArrestSummaryExpungement)
 		{
 			$docx->setValue("DISPOSITION_LIST", htmlspecialchars("summary convictions", ENT_COMPAT, 'UTF-8'));
@@ -1480,20 +1487,22 @@ class Arrest
 		// whether the 490 or 790 rule is the proper one under which to do expungements of summary offenses
 		// that are dropped, not convictions.  But the court wants 490 petitions in that case
 		// so now all SU cases are going to be summary expungements under 490.
-		if ($this->getIsSummaryArrest() || $this->getIsMDJ() == 1)
-			$docx->setValue("490_OR_790", "490");
-		else
-			$docx->setValue("490_OR_790", "790");
+        if (!$_SESSION['act5Regardless'])
+        {
+		    if ($this->getIsSummaryArrest() || $this->getIsMDJ() == 1)
+			    $docx->setValue("490_OR_790", "490");
+		    else   
+			    $docx->setValue("490_OR_790", "790");
 
-
-		// add in extra order information for CREP
-		if ($attorney->getProgramId() == 2)
-		{
-			$crepOrderLanguage = "All criminal justice agencies upon whom this order is served also are enjoined from disseminating to any non-criminal justice agency any and all criminal history record information ordered to be expunged/redacted pursuant to this Order unless otherwise permitted to do so pursuant to the Criminal History Information Records Act.  ";
-			$docx->setValue("CREP_EXTRA_ORDER_LANGUAGE", htmlspecialchars($crepOrderLanguage, ENT_COMPAT, 'UTF-8'));
-		}
-		else
-			$docx->setValue("CREP_EXTRA_ORDER_LANGUAGE", "");
+    		// add in extra order information for CREP
+	    	if ($attorney->getProgramId() == 2)
+		    {
+			    $crepOrderLanguage = "All criminal justice agencies upon whom this order is served also are enjoined from disseminating to any non-criminal justice agency any and all criminal history record information ordered to be expunged/redacted pursuant to this Order unless otherwise permitted to do so pursuant to the Criminal History Information Records Act.  ";
+    			$docx->setValue("CREP_EXTRA_ORDER_LANGUAGE", htmlspecialchars($crepOrderLanguage, ENT_COMPAT, 'UTF-8'));
+	    	}
+		    else
+			    $docx->setValue("CREP_EXTRA_ORDER_LANGUAGE", "");
+        }
 
         // hacky; should create a getExpungeable Charges function instead
 		$i=0;
@@ -1505,7 +1514,7 @@ class Arrest
             // testing!!! xxx
             //print "<br /> " . $charge->getCodeSection() . " | " . $charge->getGrade() . " | " . $charge->getDisposition() . " | " . strval($charge->isSealable()) . " | " . $charge->getSealablePercent();
             
-			if (!$this->isArrestOver70Expungement && !$expungeRegardless)
+			if (!$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['act5Regardless'])
 			{
 				if (!$this->isArrestSummaryExpungement && !$charge->isRedactable())
 					continue;
@@ -1528,7 +1537,7 @@ class Arrest
 		$j = 1;
         foreach ($this->getCharges() as $charge)                                                        
 	    {                                                                                               
-		    if (!$this->isArrestOver70Expungement && !$expungeRegardless)                           
+		    if (!$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['act5Regardless'])                           
 		    {                                                                                      
 			    if (!$this->isArrestSummaryExpungement && !$charge->isRedactable())             
 			        continue;                                                               
@@ -1552,7 +1561,9 @@ class Arrest
 		
 		// save template to file
 		$outputFile = $outputDir . $this->getFirstName() . $this->getLastName() . $this->getFirstDocketNumber();
-		if ($this->isArrestARDExpungement())
+		if ($_SESSION['act5Regardless'])
+            $outputFile .= "Act5Sealing";
+        else if ($this->isArrestARDExpungement())
 			$outputFile .= "ARDExpungement";
 		else if ($this->isArrestExpungement() || $expungeRegardless)
 			$outputFile .= "Expungement";

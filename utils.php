@@ -48,9 +48,9 @@ function printIfSet($key)
       print $_POST[$key];
 }
 
-	// gets a "person" from the getvars
-// @return a hash with each value from the get vars escaped etc... to be html and sql safe
-function getPersonFromGetVars()
+	// gets a "person" from the post vars; adds the person to the session
+    // @return a hash with each value from the get vars escaped etc... to be html and sql safe
+function getPersonFromPostOrSession()
 {
 	//
 	if ($GLOBALS['debug'])
@@ -62,19 +62,40 @@ function getPersonFromGetVars()
 		}
 	}
 	
-	$urlPerson = array();
-	$urlPerson['First'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personFirst"])));
-	$urlPerson['Last'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personLast"])));
-	$urlPerson['Street'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personStreet"])));
-	$urlPerson['City'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personCity"])));
-	$urlPerson['State'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personState"])));
-	$urlPerson['Zip'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personZip"])));
-	$urlPerson['SSN'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personSSN"])));
-	$urlPerson['DOB'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personDOB"])));
-	
-	return $urlPerson;
+    if (isset($_POST["personFirst"]))
+  	    $_SESSION['urlPerson']['First'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personFirst"])));
+    if (isset($_POST["personLast"]))
+        $_SESSION['urlPerson']['Last'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personLast"])));
+    if (isset($_POST["personDOB"]))
+        $_SESSION['urlPerson']['DOB'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personDOB"])));
+
+    if (isset($_POST["personStreet"]))
+        $_SESSION['urlPerson']['Street'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personStreet"])));
+    if (isset($_POST["personStreet"]))
+    	$_SESSION['urlPerson']['City'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personCity"])));
+    if (isset($_POST["personStreet"]))
+    	$_SESSION['urlPerson']['State'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personState"])));
+    if (isset($_POST["personStreet"]))
+    	$_SESSION['urlPerson']['Zip'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personZip"])));
+    if (isset($_POST["personStreet"]))
+    	$_SESSION['urlPerson']['SSN'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personSSN"])));
+    
+	return $_SESSION['urlPerson'];
 }
 
+// there is some informaiton that we want to get from getVars.  The last page of the EG
+// where the cases are displayed allows for a person to click on a result and 
+// output an Act 5 or pardon petition.  The vars used to do that are stored here
+function getInfoFromGetVars()
+{
+    if (isset($_GET['docket']))
+    	$_SESSION['docket'] = explode("|", $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_GET["docket"]))));
+    $_SESSION['act5Regardless'] = isset($_GET['act5Regardless']) || isset($_POST['act5Regardless']);
+    $_SESSION['expungeRegardless'] = isset($_GET['expungeRegardless']) || isset($_POST['expungeRegardless']);
+    $_SESSION['zipOnly'] = isset($_POST['zipOnly']) || isset($_GET['zipOnly']);
+    
+}
+  
 	// gets vars passed in from LS
 // @return a hash with each value from the get vars escaped etc... to be html and sql safe
 function getLSVars()
@@ -106,6 +127,15 @@ function getLSVars()
 	if (isSet($_POST["debug"])) $LSVars['debug'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["debug"])));
 	
 	return $LSVars;
+}
+
+
+// resets all of the EG based session vars except login info
+function resetSession()
+{
+    unset($_SESSION['urlPerson']);
+    unset($_SESSION['docket']);
+    unset($_SESSION['scrapedDockets']);
 }
 
 // print index if exists
