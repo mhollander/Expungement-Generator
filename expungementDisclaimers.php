@@ -26,6 +26,7 @@
 <div class="disclaimer titleMessage">DISCLAIMER!</div>
 <div class="disclaimer">The following is a list of known limitations of the expungement generator:</div>
 <ul>
+<li class='disclaimer item'>Clicking the links for Act 5/Pardon creates petitions that seal/expunge a record.  These petitions do not check whether the case qualifies for these remedies, so make sure you do.</li>
 <li class='disclaimer item'>ARD Expungements do not check for ARD completion</li>
 <li class='disclaimer item'>You must attached an ARD completion letter with ARD expungements</li>
 <li class='disclaimer item'>Expungements are prepared even when fines/costs owed</li>
