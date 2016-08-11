@@ -81,6 +81,10 @@ class CPCMS
         return $status;
     }   
 
+    
+    public function getResults()   { return $this->results; }
+    public function getMDJResults()   { return $this->resultsMDJ; }
+    
     // assumes a result array that looks like this:
     // [1..n]->Docket Number | Active/inactive | OTN | DOB
     //

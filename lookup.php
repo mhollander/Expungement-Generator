@@ -98,7 +98,31 @@ if ($submit)
         //only integrate the summary information if we have a DOB; otherwise what is the point?
         if (!empty($dob))                                                                        
             $cpcms->integrateSummaryInformation();
-         $cpcms->displayResultsInTable(basename(__FILE__), false);
+        
+        // display a small form that will send a quick email to legalserver with the docket numbers
+        // and links to all of the dockets
+        print "
+        		<form action='mail.php' target='_blank' method='post' enctype='multipart/form-data'>
+                    <div class='form-item'>                                                                               
+                        <label for='email'>Legal Server Case #</label>                                                          
+                        <input type='text' name='lsNumber' id='lsnumber' value='' maxlength='10'/>
+               ";
+        
+        // include all of the docket numbers as hidden inputs, including the best docket
+        $bestdocket = $cpcms->findBestSummaryDocketNumber();
+        $dockets = array_merge($cpcms->getResults(), $cpcms->getMDJResults());
+        print "<input type='hidden' name='bestDocket' value='" . $bestdocket . "' />";
+        foreach ($dockets as $docket)
+        {
+            print "<input type='hidden' name='dockets[]' value='" . $docket[0] . "' />";
+        }
+            
+        print "
+            			<input type='submit' name='submit' value='Email Results to Legal Server' />
+                    </div>                                                                                                
+                </form>
+        ";
+        $cpcms->displayResultsInTable(basename(__FILE__), false);
     }
 }
 ?>
