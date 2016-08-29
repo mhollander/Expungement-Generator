@@ -102,7 +102,7 @@ if ($submit)
         // display a small form that will send a quick email to legalserver with the docket numbers
         // and links to all of the dockets
         print "
-        		<form action='mail.php' target='_blank' method='post' enctype='multipart/form-data'>
+        		<form action='mailDockets.php' target='_blank' method='post' enctype='multipart/form-data'>
                     <div class='form-item'>                                                                               
                         <label for='email'>Legal Server Case #</label>                                                          
                         <input type='text' name='lsNumber' id='lsnumber' value='' maxlength='10'/>

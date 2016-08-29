@@ -36,8 +36,9 @@ require_once("Person.php");
 require_once("Attorney.php");
 require_once("utils.php");
 require_once("config.php");
-require_once __DIR__ . '/vendor/phpoffice/phpword/src/PhpWord/Autoloader.php';                              
-\PhpOffice\PhpWord\Autoloader::register();                                                                  
+//require_once __DIR__ . '/vendor/phpoffice/phpword/src/PhpWord/Autoloader.php';                              
+//\PhpOffice\PhpWord\Autoloader::register();
+require "vendor/autoload.php";
 
 
 class Arrest

@@ -9,7 +9,7 @@ This project was created by Michael Hollander of Community Legal Services of Phi
 The vast majority of the program is written in PHP and has been tested on PHP 5.5.12.  It uses a mysql database (tested on 5.6).  
 
 There are three  external dependencies, one of which is bundled with this code in git.
-* PHPWORD (https://github.com/PHPOffice/PHPWord) - a library that allows you to make template DOCX files and then use PHP to modify variables within the templates and generate DOCX files.  I use version .12.  
+* PHPWORD (https://github.com/PHPOffice/PHPWord) - a library that allows you to make template DOCX files and then use PHP to modify variables within the templates and generate DOCX files.  I use version .13.
 I had to modify a line of code in TemplateProcessor.php to allow for multiline edits: 
 in setValueForParts, I added $replace = preg_replace('~\R~u', '</w:t><w:br/><w:t>', $replace); just after the line that sets UTF8 encoding.
 The modified TemplateProcessor.php file is in this repository.  You can replace the one in PHPWord
@@ -17,6 +17,8 @@ The modified TemplateProcessor.php file is in this repository.  You can replace 
 * pdftotext - This is available on both windows and linux systems.  On windows, I use 3.03.  On linux I use .  It is important to use these versions even though they may not be the most up to date.  There was a time when I updated pdftotext on my linux machine and the EG broke.  It seems that different versions of this program parse complex pdfs differently.
 
 * casperscraping - https://bitbucket.org/account/signin/?next=/nate_vogel/casperscraping - admitedly a bad name.  This is a library that uses casper to programatically scrape CPCMS.  CPCMS is a very javascript heavy website and was impossible to scrape without casper.
+
+* sendgrip-php - (https://github.com/sendgrid/sendgrid-php). This is just for mailing the lookup files to legalserver.  If you don't want to use the lookup feature or don't want to allow emailing, don't worry about this.  You also want to play with lookup and mail*php to remove the mailing.  Uses sendgrid to accomplish mailing, although you could use any way to send email.
 
 You can install the template database using database.sql as the structure.
 
