@@ -54,7 +54,7 @@ class CPCMS
     // Returns the sttaus code.
     public function cpcmsSearch($mdj=false)
     {
-        $searchString = " --first=$this->first --last=$this->last";
+        $searchString = " --first='$this->first' --last='$this->last'";
     
         // if a DOB is specified, then search for it.  If not, only return the first page of results
         if (isset($this->dob))
