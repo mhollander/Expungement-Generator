@@ -1320,7 +1320,7 @@ class Arrest
 		else if (!$_SESSION['act5Regardless'] && ($this->isArrestExpungement() || $this->isArrestSummaryExpungement || $this->isArrestOver70Expungement || $expungeRegardless))
 			$docx->setValue("EXPUNGEMENT_OR_REDACTION", "Expungement");
 		
-		if ($attorney->getIFP())
+		if ($attorney->getIFP()==1)
 			$docx->setValue("IFP_MESSAGE", htmlspecialchars($attorney->getIFPMessage(), ENT_COMPAT, 'UTF-8'));
 		else
 			$docx->setValue("IFP_MESSAGE", "");
