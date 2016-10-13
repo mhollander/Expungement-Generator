@@ -18,6 +18,7 @@
 	$db = new mysqli($dbHost,  $dbUser,  $dbPassword, $dbName);
 	if ($db->connect_error) 
 		die('Error connecting to the db: Connect Error (' . $db->connect_errno . ') ' . $db->connect_error);
+    $db->set_charset("utf8");   
 
     // charge database, used to assess Act 5 compliance
     $chargeDB = new mysqli("localhost", "cpcms", "cpcms", "cpcms_aopc_summary");        

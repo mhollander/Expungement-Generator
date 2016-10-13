@@ -1766,8 +1766,8 @@ class Arrest
 	// @param $arrestID - the id of the arrest that we are innserting
 	public function writeChargeToDatabase($charge, $arrestID, $defendantID, $expungementID, $db)
 	{
-		$sql = "INSERT INTO charge (`arrestID`, `defendantID`, `expungementID`, `chargeName`, `disposition`, `codeSection`, `dispDate`, `isARD`, `isExpungeableNow`, `grade`, `arrestDate`) VALUES ('$arrestID', '$defendantID', $expungementID, '" . $db->real_escape_string($charge->getChargeName())  . "', '" . $db->real_escape_string($charge->getDisposition()) . "', '" . $charge->getCodeSection() . "', '" . dateConvert($charge->getDispDate()) . "', '" . $charge->getIsARD() . "', '" . $charge->getIsRedactable() . "', '" . $charge->getGrade() . "', '" . dateConvert($this->getArrestDate()) . "')";
-		
+		$sql = "INSERT INTO charge (`arrestID`, `defendantID`, `expungementID`, `chargeName`, `disposition`, `codeSection`, `dispDate`, `isARD`, `isExpungeableNow`, `grade`, `arrestDate`) VALUES ('$arrestID', '$defendantID', $expungementID, '" . $db->real_escape_string($charge->getChargeName())  . "', '" . $db->real_escape_string($charge->getDisposition()) . "' , '" . utf8_encode($charge->getCodeSection()) . "', '" . dateConvert($charge->getDispDate()) . "', '" . $charge->getIsARD() . "', '" . $charge->getIsRedactable() . "', '" . $charge->getGrade() . "', '" . dateConvert($this->getArrestDate()) . "')";
+
 		if (!$db->query($sql))
 		{
 			if ($GLOBALS['debug'])
