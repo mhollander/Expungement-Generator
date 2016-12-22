@@ -332,8 +332,12 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
 	foreach ($arrests as $arrest)	
 	{
         print "<tr><td>".$arrest->getFirstDocketNumber()."</td><td>";
-        if ($arrest->isArrestOnlyHeldForCourt())
-          print "Held for Court</td><td>--</td></tr>";
+        if ($arrest->isArrestOnlyHeldForCourt() && !$expungeRegardless)
+        {
+            print "Held for Court</td><td>--</td>";
+            print "<td><a href='?expungeRegardless=true&docket=" . implode("|",$arrest->getDocketNumber()) ."' target='_blank'><i>Exp. (rarely used)</i></a></td></tr>";
+            print "</tr>";
+        }
         else
         {
 	  	  if ($arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestExpungement() ||  $arrest->isArrestOver70Expungement($arrests, $person) || $arrest->isArrestRedaction() || $expungeRegardless || $_SESSION['act5Regardless'])
