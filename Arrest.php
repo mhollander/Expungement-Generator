@@ -1273,7 +1273,7 @@ class Arrest
             $docx = new \PhpOffice\PhpWord\TemplateProcessor($inputDir . Arrest::$expungementTemplate);
 	    
 		if ($GLOBALS['debug'])
-			print ($this->isArrestExpungement() || $this->isArrestSummaryExpungement)?("Performing Expungement"):("Performing Redaction");
+			print ($this->isArrestExpungement() || $this->isArrestSummaryExpungement)?("Performing Expungement"):("Performing Partial Expungement");
 		
 		// set attorney variables
 		$docx->setValue("ATTORNEY_HEADER",  htmlspecialchars($attorney->getPetitionHeader(),  ENT_COMPAT, 'UTF-8'));
@@ -1316,7 +1316,7 @@ class Arrest
 		// NOTE: Should I just keep the "else clause" and get rid of the if clause?  I think this handles every case for redaction or expungement.  Why not just test
 		// the expungements and then move on to redaction?  Or test the redaction and write "Expungement" otherwise.
 		if (($this->isArrestRedaction() && !$this->isArrestExpungement()) && !$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['act5Regardless'])
-			$docx->setValue("EXPUNGEMENT_OR_REDACTION","Redaction");
+			$docx->setValue("EXPUNGEMENT_OR_REDACTION","Partial Expungement");
 		else if (!$_SESSION['act5Regardless'] && ($this->isArrestExpungement() || $this->isArrestSummaryExpungement || $this->isArrestOver70Expungement || $expungeRegardless))
 			$docx->setValue("EXPUNGEMENT_OR_REDACTION", "Expungement");
 		
@@ -1571,7 +1571,7 @@ class Arrest
 		else  if ($this->isArrestOver70Expungement)
 			$outputFile .= "ExpungementOver70";
 		else
-			$outputFile .= "Redaction";
+			$outputFile .= "PartialExpungement";
 		$docx->saveAs($outputFile . ".docx");
 		return $outputFile . ".docx";
 

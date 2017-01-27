@@ -359,7 +359,7 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
             else if ($_SESSION['act5Regardless'])
                 print "Act 5 Sealing";
 			else 
-				print "Redaction";
+				print "Partial Expungement";
           }
           else 
             print "No";
@@ -461,7 +461,7 @@ function createOverview($arrests, $templateDir, $dataDir, $person, $sealable)
 	{
 		$expType = "No expungement possible";
 		if ($arrest->isArrestRedaction())
-			$expType = "Redaction";
+			$expType = "Partial Expungement";
 		if ($arrest->isArrestExpungement())
 			$expType = "Expungement";
 		if ($arrest->isArrestARDExpungement())
