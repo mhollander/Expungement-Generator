@@ -1479,7 +1479,7 @@ class Arrest
             $docx->setValue("INCLUDE_CHR", htmlspecialchars("I have attached a copy of my Pennsylvania State Police Criminal History which I have obtained within 60 days before filing this petition.", ENT_COMPAT, 'UTF-8'));
         }
 		else
-			$docx->setValue("INCLUDE_CHR", "");
+			$docx->setValue("INCLUDE_CHR", "Pursuant to local practice, the Commonwealth agrees to waive the requirement of attachment to this Petition of a current copy of the petitioner’s Pennsylvania State Police criminal history report.  This waiver may be revoked by the Commonwealth in any case and at any time prior to the granting of the relief requested.");
 		
 		// if this is a summary arrest or this is an MDJ case,  this is a 490 petition
 		// otherwise it is a 790 petition
