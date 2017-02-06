@@ -65,7 +65,7 @@ else
 		</div> 
 		<div class="form-item">
 		<label for="personDOB">Date of Birth</label>
-			<input type="date" name="personDOB" value="<?php printIfSet('personDOB');?>" maxlength="10"/>
+			<input type="date" name="personDOB" id="date" value="<?php printIfSet('personDOB');?>" maxlength="10"/>
 			<div class="description">MM/DD/YYYY</div>
 		</div>
 		<div class="form-item">

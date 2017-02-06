@@ -164,7 +164,7 @@ print <<<END
             <div class="form-item">                                                                                                                                 
                 <label for="personDOB">Date of Birth</label>                                                                                                            
 END;
-                    print '<input type="date" name="personDOB" value="' . $_SESSION['urlPerson']['DOB'] . '" maxlength="10"/>';
+                    print '<input type="date" id="date" name="personDOB" value="' . $_SESSION['urlPerson']['DOB'] . '" maxlength="10"/>';
 PRINT <<<END
                 <div class="description">MM/DD/YYYY</div>                                                                                                           
             </div>              

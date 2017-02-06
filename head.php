@@ -7,12 +7,19 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/pure/0.6.0/pure-min.css">  
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/pure/0.6.0/grids-responsive-min.css">
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js"></script>
-		<script src="js/eg.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.4.1/jquery.maskedinput.min.js" type="text/javascript"></script>
+		<script src="js/eg.js"></script>		
+        <script src="js/modernizr.js"></script>
 		<title>Expungement Generator</title>
 		<!-- All information, code, css, and otherwise copyright Community Legal Services, Philadelphia.  The expungement generator was made by Michael Hollander, staff attorney at CLS.  -->
 	</head>
 	<body>
+<script>
+// jquery mask for non chrome browsers
+if (!Modernizr.inputtypes.date)
+        jQuery(function($){$('#date').mask('99/99/9999',{placeholder:"mm/dd/yyyy"});})
 
+</script>
 <?php
 /**********************************************
 *	Copyright 2011-2015 Community Legal Services
