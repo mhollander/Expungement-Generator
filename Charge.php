@@ -111,7 +111,7 @@ class Charge
 		$disp = $this->getDisposition();
 		
 		// "waived for court" appears on some MDJ cases.  It means the same as held for court.
-		$nonRedactableDisps = array("Guilty" , "Guilty - Rule 1002", "Guilty Plea", "Guilty Plea - Negotiated", "Guilty Plea - Non-Negotiated", "Guilty Plea (Lower Court)", "Guilty by Trial (Lower Court)", "Held for Court", "Waived for Court", "Waived for Court (Lower Court)", "Held for Court (Lower Court)", "Nolo Contendere");
+		$nonRedactableDisps = array("Guilty" , "Guilty - Rule 1002", "Guilty Plea", "Guilty Plea - Negotiated", "Guilty Plea - Non-Negotiated", "Guilty Plea (Lower Court)", "Guilty by Trial (Lower Court)", "Held for Court", "Waived for Court", "Waived for Court (Lower Court)", "Held for Court (Lower Court)", "Nolo Contendere", "Found in Contempt");
 		if (in_array($disp, $nonRedactableDisps))
 			$this->setIsRedactable(FALSE);
 		else
@@ -125,7 +125,7 @@ class Charge
 		if (isset($this->isSummaryRedactable)) { return $this->getIsSummaryRedactable(); }
 		$disp = $this->getDisposition();
 		
-		$redactableDisps = array("Guilty" , "Guilty - Rule 1002", "Guilty Plea", "Guilty Plea - Negotiated", "Guilty Plea - Non-Negotiated", "Guilty Plea (Lower Court)", "Nolo Contendere");
+		$redactableDisps = array("Guilty" , "Guilty - Rule 1002", "Guilty Plea", "Guilty Plea - Negotiated", "Guilty Plea - Non-Negotiated", "Guilty Plea (Lower Court)", "Nolo Contendere", "Found in Contempt");
 		if (in_array($disp, $redactableDisps))
 			$this->setIsSummaryRedactable(TRUE);
 		else
@@ -135,7 +135,7 @@ class Charge
 
     public function isConviction()
     {
-        if (in_array($this->getDisposition(), array("Guilty" , "Guilty - Rule 1002", "Guilty Plea", "Guilty Plea - Negotiated", "Guilty Plea - Non-Negotiated", "Guilty Plea (Lower Court)", "Nolo Contendere")))
+        if (in_array($this->getDisposition(), array("Guilty" , "Guilty - Rule 1002", "Guilty Plea", "Guilty Plea - Negotiated", "Guilty Plea - Non-Negotiated", "Guilty Plea (Lower Court)", "Nolo Contendere", "Found in Contempt")))
             return true;
         else
             return false;
