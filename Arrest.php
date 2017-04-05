@@ -1570,6 +1570,8 @@ class Arrest
 			$outputFile .= "Expungement";
 		else  if ($this->isArrestOver70Expungement)
 			$outputFile .= "ExpungementOver70";
+        else if ($this->isArrestSummaryExpungement)
+          $outputFile .= "SummaryExpungement";
 		else
 			$outputFile .= "PartialExpungement";
 		$docx->saveAs($outputFile . ".docx");
