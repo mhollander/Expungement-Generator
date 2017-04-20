@@ -152,7 +152,7 @@ function zipFiles($files, $dataDir, $dockets, $fileName)
 	$zip = new ZipArchive();
 	$zipFileName = $dataDir . $fileName . ".zip";
 	
-	if ($zip->open($zipFileName, ZipArchive::OVERWRITE)===TRUE )
+	if ($zip->open($zipFileName, ZipArchive::OVERWRITE|ZipArchive::CREATE)===TRUE )
 	{
 		foreach ($files as $index=>$file)
 		{
