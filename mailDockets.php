@@ -40,7 +40,7 @@ if (!empty($_POST))
     $ch = curl_init(); 
     
     // set url 
-    curl_setopt($ch, CURLOPT_URL, "http://" . $_SERVER['HTTP_HOST'] . "/mail.php");
+    curl_setopt($ch, CURLOPT_URL, "https://" . $_SERVER['HTTP_HOST'] . "/mail.php");
     
     //return the transfer as a string 
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
