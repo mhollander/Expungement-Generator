@@ -45,7 +45,7 @@ if (!empty($_POST))
     //return the transfer as a string 
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 1);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
    // curl_setopt($ch, CURLOPT_NOSIGNAL, 1);
     
     // post request
@@ -60,7 +60,7 @@ if (!empty($_POST))
     
     // $output contains the output string 
     $output = curl_exec($ch); 
-
+    
     // close curl resource to free up system resources 
     curl_close($ch);      
 
