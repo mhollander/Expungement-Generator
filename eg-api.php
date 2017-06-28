@@ -1,14 +1,14 @@
 
 
 <?php
-
+	print("getting started");
 	include('CPCMS.php');
 	include('utils.php');
 	//initialize the response that will get sent back to requester
-	$response = "response not clear yet."
+	$response = "response not clear yet.";
 
 	if(!validAPIkey()) {
-		$response = "403 - bad api key."
+		$response = "403 - bad api key.";
 	} else {
 		// a cpcmsSearch flag can be set to true in the post request
 		// to trigger a cpcms search.
@@ -18,7 +18,7 @@
 			$status = $cpcms->cpcmsSearch();
 			$statusMDJ = $cpcms->cpcmsSearch(true);
 			if (!preg_match("/0/",$status[0]) && !preg_match("/0/", $statusMDJ[0])) {
-				$response = "Your CPCMS search returned no results."
+				$response = "Your CPCMS search returned no results.";
 			} else {
 				//only integrate the summary information if we
         // have a DOB; otherwise what is the point?
@@ -70,7 +70,7 @@
 		if (count($files) > 0) {
 			$response = $baseURL . "data/" . basename($zipFile);
 		} else {
-			$response = "Error. No dockets downloaded. It would be nice if this message were more helpful."
+			$response = "Error. No dockets downloaded. It would be nice if this message were more helpful.";
 		}
 
 
@@ -83,6 +83,6 @@
 		}
 		cleanupFiles($files);
 	}// end of processing req from a valid user
-	print_r($response);
+	print($response);
 
 ?>
