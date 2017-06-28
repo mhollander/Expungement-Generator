@@ -24,14 +24,15 @@ $debug=false;
 
 
 // for a linux system
-$basedir = join(DIRECTORY_SEPARATOR, array("", "opt", "bitnami", "apps", "eg", "htdocs"));
+$basedir = join(DIRECTORY_SEPARATOR, array("", "srv", "EG"));
 $toolsDir = join(DIRECTORY_SEPARATOR, array("", "usr", "local", "bin"));
 $includeDir = join(DIRECTORY_SEPARATOR, array("", "usr", "local", "include"));
 $wwwdir = join(DIRECTORY_SEPARATOR, array ($basedir, "eg-test"));
 $casperScript = join(DIRECTORY_SEPARATOR, array($includeDir, "cpcmsNavigate", "searchCPCMS.js"));
 $casperjsCommand = join(DIRECTORY_SEPARATOR, array($toolsDir, "casperjs"));
-$baseURL = "https://test.expungementgenerator.org";
+$baseURL = "https://eg-test.clsphila.org/";
 $pdftotext = $toolsDir . DIRECTORY_SEPARATOR . "pdftotext";
+$sendGridApiKey = "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";
 
 /*
 // for a windows system
@@ -50,9 +51,9 @@ $docketSheetsDir = join(DIRECTORY_SEPARATOR, array($wwwdir, "docketsheets")) . D
 
 
 // db information
-$dbPassword = "fakePW";
-$dbUser = "fake_user";
-$dbName = "fake_db";
+$dbPassword = "1424ChestnutSt";
+$dbUser = "eg_test";
+$dbName = "eg_test_site";
 $dbHost = "localhost";
 
 // this is only needed in the CLS production environmnet
