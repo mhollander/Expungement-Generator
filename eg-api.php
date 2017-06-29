@@ -1,13 +1,15 @@
 
 
 <?php
-	print("getting started");
+	//print_r("getting started");
 	include('CPCMS.php');
-	include('utils.php');
+	require_once('utils.php');
+	include('expungehelpers.php');
 	//initialize the response that will get sent back to requester
+	//print_r("everything included.");
 	$response = "response not clear yet.";
 
-	if(!validAPIkey()) {
+	if(!validAPIKey()) {
 		$response = "403 - bad api key.";
 	} else {
 		// a cpcmsSearch flag can be set to true in the post request
@@ -84,5 +86,29 @@
 		cleanupFiles($files);
 	}// end of processing req from a valid user
 	print($response);
+
+	function validAPIKey() {
+		print("Testing validity of apikey");
+		print_r($_POST);
+		if (!isset($_POST['useremail']) {
+			print("useremail not included in POST request.");
+			return False;
+		}
+		if (isset($_POST['apikey'])) {
+			print("Hashing " . $_POST['apikey']);
+			$useremail = $db->real_escape_string($_POST['useremail']);
+			$query = "SELECT user.apihash FROM user WHERE user.email = '$useremail'";
+			$result = $db->query($query);
+			if (!$result) {
+				print("could not get api hash for user email from db");
+				return False;
+			};
+			$row = myqli_fetch_assoc($result);
+			if (password_verify($_POST['apikey'], $row['apihash'])) {
+				return True;
+			};
+		}; 
+		return False;
+	};
 
 ?>
