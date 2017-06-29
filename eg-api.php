@@ -4,11 +4,15 @@
 	//print_r("getting started");
 	include('CPCMS.php');
 	require_once('utils.php');
+	require_once('config.php');
+	//require_once('dbconnect.php');
 	include('expungehelpers.php');
 	//initialize the response that will get sent back to requester
 	//print_r("everything included.");
 	$response = "response not clear yet.";
 
+	session_start();
+	
 	if(!validAPIKey()) {
 		$response = "403 - bad api key.";
 	} else {
@@ -90,23 +94,33 @@
 	function validAPIKey() {
 		print("Testing validity of apikey");
 		print_r($_POST);
-		if (!isset($_POST['useremail']) {
+		if (!isset($_POST['useremail'])) {
 			print("useremail not included in POST request.");
 			return False;
 		}
 		if (isset($_POST['apikey'])) {
 			print("Hashing " . $_POST['apikey']);
-			$useremail = $db->real_escape_string($_POST['useremail']);
-			$query = "SELECT user.apihash FROM user WHERE user.email = '$useremail'";
-			$result = $db->query($query);
-			if (!$result) {
-				print("could not get api hash for user email from db");
-				return False;
-			};
-			$row = myqli_fetch_assoc($result);
-			if (password_verify($_POST['apikey'], $row['apihash'])) {
-				return True;
-			};
+			print("\n dbhost: ");
+			if (!isset($dbHost)) {
+				print("\n dbhost is not set");
+			}
+			$db = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
+			if ($db->connect_error) {
+				print("db connect error.\n");
+				print($db->connect_error);
+			}
+			print($db->real_escape_string($_POST['useremail']));
+			//$query = "SELECT user.apihash FROM user WHERE user.email = '$useremail'";
+			//$result = $db->query($query);
+			//if (!$result) {
+			//	print("could not get api hash for user email from db");
+			//	return False;
+			//};
+			//$row = myqli_fetch_assoc($result);
+			//if (password_verify($_POST['apikey'], $row['apikey'])) {
+			//	print("API Key verified!!");
+			//	return False;
+			//};
 		}; 
 		return False;
 	};
