@@ -94,33 +94,34 @@
 	function validAPIKey() {
 		print("Testing validity of apikey");
 		print_r($_POST);
+		$db = $GLOBALS['db'];
+		if (!isset($db)) {
+			print("database still not accessible!");
+		} else {
+			print_r($db);
+		}
 		if (!isset($_POST['useremail'])) {
 			print("useremail not included in POST request.");
 			return False;
 		}
+		$useremail = $_POST['useremail'];
 		if (isset($_POST['apikey'])) {
 			print("Hashing " . $_POST['apikey']);
-			print("\n dbhost: ");
-			if (!isset($dbHost)) {
-				print("\n dbhost is not set");
-			}
-			$db = new mysqli($dbHost, $dbUser, $dbPassword, $dbName);
-			if ($db->connect_error) {
-				print("db connect error.\n");
-				print($db->connect_error);
-			}
 			print($db->real_escape_string($_POST['useremail']));
-			//$query = "SELECT user.apihash FROM user WHERE user.email = '$useremail'";
-			//$result = $db->query($query);
-			//if (!$result) {
-			//	print("could not get api hash for user email from db");
-			//	return False;
-			//};
-			//$row = myqli_fetch_assoc($result);
-			//if (password_verify($_POST['apikey'], $row['apikey'])) {
-			//	print("API Key verified!!");
-			//	return False;
-			//};
+			$query = "SELECT user.apikey FROM user WHERE user.email = '".$useremail."';";
+			print("\n" . $query . "\n");
+			$result = $db->query($query);
+			print_r($result);
+			if (!$result) {
+				print("could not get api hash for user email from db");
+				return False;
+			};
+			$row = mysqli_fetch_assoc($result);
+			print_r($row);
+			if (password_verify($_POST['apikey'], $row['apikey'])) {
+			print("API Key verified!!");
+			return True;
+			};
 		}; 
 		return False;
 	};
