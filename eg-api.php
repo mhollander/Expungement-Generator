@@ -28,14 +28,14 @@
 			} else {
 				//only integrate the summary information if we
         // have a DOB; otherwise what is the point?
-        if (!empty($urlPerson['DOB']))
-            $cpcms->integrateSummaryInformation();
-
+        			if (!empty($urlPerson['DOB'])) {
+            				$cpcms->integrateSummaryInformation();
+				}
         // remove the cpcmsSearch variable from the POST vars and then pass them to
         // a display funciton that will display all of the arrests as a webform, with all
         // of the post vars re-posted as hidden variables.  Also pass this filename as the
         // form action location.
-        unset($_POST['cpcmsSearch']);
+        			unset($_POST['cpcmsSearch']);
 			}
 		} // end of processing cpcmsSearch
 
