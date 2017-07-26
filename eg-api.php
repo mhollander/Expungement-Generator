@@ -35,11 +35,14 @@
             				$cpcms->integrateSummaryInformation();
 				}
 				print_r($cpcms);
-				$docket_nums = $cpcms->getDocketNums();//<- DOES NOT WORK YET
-				//print("Docket numbers:\n");
-				//print_r($docketNums);
-				//TEMP, for testing purposes:
-				//$docketNums = ["MC-51-CR-0005050-2017"];
+				// We need an array of docket numbers, so we take the list of results
+				// and extract only the docket number from each.
+				$docketNums = array();
+				foreach (array_merge($cpcms->getResults(), $cpcms->getMDJResults()) as $result) {
+					$docketNums[] = $result[0];
+				};
+				print("Docket numbers:\n");
+				print_r($docketNums);
         // remove the cpcmsSearch variable from the POST vars and then pass them to
         // a display funciton that will display all of the arrests as a webform, with all
         // of the post vars re-posted as hidden variables.  Also pass this filename as the
@@ -85,7 +88,7 @@
 			}
 		}
 
-		//print_r($docketNums);
+		print_r($docketNums);
 
 		if (count($docketNums)>0) {
 			//if the cpcms search has been run and has found dockets
@@ -93,8 +96,8 @@
 			$arrests = parseDockets($tempFile, $pdftotext, $arrestSummary, $person, $docketFiles);
 			integrateSummaryInformation($arrests, $person, $arrestSummary);
 			$arrests = combineArrests($arrests);
-			//print("Arrests has been set:\n");
-			//print_r($arrests);
+			print("Arrests has been set:\n");
+			print_r($arrests);
 		}
 		$sealable = checkIfSealable($arrests);
 
@@ -122,7 +125,7 @@
 		cleanupFiles($files);
 	}// end of processing req from a valid user
 	
-
+	print("Here is the response:\n");
 	print($response);
 
 	function validAPIKey() {
