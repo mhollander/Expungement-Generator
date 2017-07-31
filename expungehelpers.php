@@ -112,7 +112,9 @@ function checkIfSealable($arrests)
 // arrest object most commonly contains additional information about the judge, but could
 // have other useful information like the OTN or DC number.
 // also integrates information into the Person object if a PPID and SID exist
-function integrateSummaryInformation($arrests, $person, $arrestSummary)
+// Includes an optional $isAPI, default False. The function won't print to the screen if 
+// $isAPI is True.
+function integrateSummaryInformation($arrests, $person, $arrestSummary, $isAPI=False)
 {
 	if ($arrestSummary != null && $arrestSummary->hasValuableInformation())
 	{
@@ -139,7 +141,7 @@ function integrateSummaryInformation($arrests, $person, $arrestSummary)
 		$arrestKeys = array_keys($arrests);
 		$missingDockets = array_diff($summaryKeys, $arrestKeys);
 		
-		if (count($missingDockets) > 0)
+		if ( (count($missingDockets) > 0) && ($isAPI==False) )
 		{
 			print "<b>The following cases appear in the summary docket, but you didn't upload a corresponding docket sheet:</b><br/>";
 			foreach ($missingDockets as $missingDocket)
