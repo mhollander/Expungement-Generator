@@ -7,9 +7,11 @@
 	include('expungehelpers.php');
 	//initialize the response that will get sent back to requester
 	$response = array();
-
-	if(!validAPIKey()) {
-		$response['results']['status'] = "403 - bad api key.";
+	
+	if(!wellFormedRequest($_POST)) {
+		$response['results']['status'] = "Request is not well formed.";
+	} elseif(!validAPIKey()) {
+		$response['results']['status'] = "Request not authenticated.";
 	} else {
 		// a cpcmsSearch flag can be set to true in the post request
 		// to trigger a cpcms search.
@@ -121,13 +123,10 @@
 
 	function validAPIKey() {
 		$db = $GLOBALS['db'];
-		if (!isset($db)) {
-		} else {
-		}
 		if (!isset($_POST['useremail'])) {
 			return False;
 		}
-		$useremail = $_POST['useremail'];
+		$useremail = $db->real_escape_string($_POST['useremail']);
 		if (isset($_POST['apikey'])) {
 			$query = "SELECT user.apikey FROM user WHERE user.email = '".$useremail."';";
 			$result = $db->query($query);
@@ -141,4 +140,17 @@
 		}; 
 		return False;
 	};
+
+	function wellFormedRequest($post) {
+		if ( ($post['useremail'] == "") || (!isset($post['useremail']) ) ) {
+			return False;
+		}
+
+		if ( ($post['cpcmsSearch'] == 'false') && ( (!isset($post['docketNums'])) || ($post['docketNums'] == "") ) ) {
+			return False;
+		}
+
+		return True;
+	};//End of well-formed request
+
 ?>
