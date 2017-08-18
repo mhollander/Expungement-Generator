@@ -8,10 +8,10 @@
 	//initialize the response that will get sent back to requester
 	$response = array();
 	
-	if(!wellFormedRequest($_POST)) {
-		$response['results']['status'] = "Request is not well formed.";
+	if(malformedRequest($_POST)) {
+		$response['results']['status'] = malformedRequest($_POST);
 	} elseif(!validAPIKey()) {
-		$response['results']['status'] = "Request not authenticated.";
+		$response['results']['status'] = "Invalid request.";
 	} else {
 		// a cpcmsSearch flag can be set to true in the post request
 		// to trigger a cpcms search.
@@ -48,12 +48,12 @@
 
 		$urlPerson = getPersonFromPostOrSession();
 		$person = new Person($urlPerson['First'],
-												 $urlPerson['Last'],
-												 $urlPerson['SSN'],
-												 $urlPerson['Street'],
-												 $urlPerson['City'],
-												 $urlPerson['State'],
-												 $urlPerson['Zip']);
+			$urlPerson['Last'],
+			$urlPerson['SSN'],
+			$urlPerson['Street'],
+			$urlPerson['City'],
+			$urlPerson['State'],
+			$urlPerson['Zip']);
 	  	
 		getInfoFromGetVars(); //this sets session variables based on the GET or
 		// POST variables 'docket', 'act5Regardless', 'expungeRegardless', and
@@ -81,6 +81,7 @@
 
 		if (count($docketNums)>0) {
 			//if the cpcms search has been run and has found dockets
+			//or of docket numbers were sent with the request to the api
 			$docketFiles = CPCMS::downloadDockets($docketNums);
 			$arrests = parseDockets($tempFile, $pdftotext, $arrestSummary, $person, $docketFiles);
 			integrateSummaryInformation($arrests, $person, $arrestSummary, True);
@@ -95,12 +96,12 @@
 		// in an OutputBuffer to prevent that.
 		ob_start();
 		$files = doExpungements($arrests, $templateDir, $dataDir, $person,
-														$attorney, $_SESSION['expungeRegardless'],
-														$db, $sealable);
+			$attorney, $_SESSION['expungeRegardless'],
+			$db, $sealable);
 		ob_end_clean();
 		$files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
 		$zipFile = zipFiles($files, $dataDir, $docketFiles,
-								        $person->getFirst() . $person->getLast() . "Expungements");
+			$person->getFirst() . $person->getLast() . "Expungements");
 
 		if (count($files) > 0) {
 			$response['results']['expungeZip'] = $baseURL . "data/" . basename($zipFile);
@@ -141,16 +142,30 @@
 		return False;
 	};
 
-	function wellFormedRequest($post) {
+	function malformedRequest($post) {
+		// Given a dictionary $post
+		// Return false if there are no missing values
+		// 	but return a message if any of certain conditions are true.
+		// This takes advantage of the truthiness of php strings
+		// 	to supply a helpful message.
+
+		// TODO This will only flag one error at a time, though. 
 		if ( ($post['useremail'] == "") || (!isset($post['useremail']) ) ) {
-			return False;
+			return "User email missing from request.";
 		}
 
 		if ( ($post['cpcmsSearch'] == 'false') && ( (!isset($post['docketNums'])) || ($post['docketNums'] == "") ) ) {
-			return False;
+			return "If you do not wish to do a CPCMS search, then you must supply docket numbers.";
 		}
 
-		return True;
+		if ( ($post['createPetitions'] == '') || (!isset($post['createPetitions']) ) ) {	
+			return "Should I create petitions? Please include createPetitions=[0|1] in your request.";
+		}
+
+		if ( ($post['apikey'] == '') || (!isset($post['apikey']) ) ) {
+			return "Key missing from request.";
+		}
+		return False;
 	};//End of well-formed request
 
 ?>
