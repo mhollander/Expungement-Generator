@@ -182,7 +182,7 @@ class Attorney
 		if (!$errorMessages->hasMessages())
 		{
 			// if we get to here, then all is well; register the user
-			$query = "INSERT INTO user (email, password) VALUES('" . $db->real_escape_string($email) . "', '" . $db->real_escape_string(md5($password)) . "')";
+			$query = "INSERT INTO user (email, password) VALUES('" . $db->real_escape_string($email) . "', '" . $db->real_escape_string(password_hash(md5($password), PASSWORD_BCRYPT)) . "')";
 			if (!$db->query($query))
 			{
 				if ($GLOBALS['debug'])
@@ -263,7 +263,8 @@ class Attorney
 			//update the password only if they set a new password
 			if (isset($password) && $password != "")
 			{
-				$password = md5($db->real_escape_string($password));
+				$password = password_hash(md5($password), PASSWORD_BCRYPT); 
+                $password = $db->real_escape_string($password);
 				$query = "UPDATE user SET password='". $password . "' WHERE userid='" . $attorneyID . "'";
 
 				if(!$db->query($query))

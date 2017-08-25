@@ -64,11 +64,11 @@ if(!isset($_GET['register']))
 			<label for="password">Password</label>
 			<input type="password" name="password" id="password" class="form-text" />
 		</div>
-		<div class="form-item">
+<!--		<div class="form-item">
 			<label for="rememberMe">Stay signed in?</label>
 			<input type="checkbox" name="rememberMe" id="rememberMe" CHECKED="checked" />
 		</div>
-
+-->
 		<div class="form-item">
 			<input type="submit" value="Login" />
 		</div>

@@ -34,41 +34,47 @@ if (isset($_POST['username']))
 {
 	// this is a login attempt; run through the login stuff
 	$username = $db->real_escape_string($_POST['username']);
-	$password = md5($db->real_escape_string($_POST['password']));
-	
-	$query = "SELECT userinfo.firstName, userinfo.lastName, user.userid FROM user, userinfo WHERE email='$username' AND password='$password' AND user.userid=userinfo.userid";
-
-	$result = $db->query($query);
+    $query = "SELECT password FROM user WHERE email='$username'";
+    $result = $db->query($query);
 	if (!$result) 
 	{
 		if ($GLOBALS['debug'])
-			die('Could not login:' . $db->error);
+			die('Could not connect to database during login:' . $db->error);
 		else
-			die('Could not login for some strange reason.');
+			die('Could not connect to database during login.');
 	}
 	$row = mysqli_fetch_assoc($result);
-	
-	if ($row['firstName'])
-	{
-		// the login was a success!  grab the username info and start a session
-		
-		// if we want to "remember login"
-		if (isset($_POST['rememberMe']))
-		{
-			// session_set_cookie_params('60000000'); // more than a year.
-			// session_regenerate_id(true); 
-		}
+    $password = $row['password'];
+    
+    // use bcrypt to verify the pw
+    if(!password_verify(md5($_POST['password']),$password))
+    {
+        // there was a problem logging in; let the user know
+		session_destroy();
+		print "There was a problem logging you in.  Return to the login screen to try again: <a href='login.php'>Retry Login</a>";
+    }
+    
+    // successful login
+    else
+    {
+        // gather info about the currently logged in user as the login was successful
+    	$query = "SELECT userinfo.firstName, userinfo.lastName, user.userid FROM user, userinfo WHERE email='$username' AND user.userid=userinfo.userid";
 
-		$_SESSION['loginUserFirst'] = $row['firstName'];
+	    $result = $db->query($query);
+    	if (!$result) 
+	    {
+		    if ($GLOBALS['debug'])
+    			die('Could not properly connect to the database during:' . $db->error);
+	    	else
+		    	die('Could not properly connect to the databse during login.');
+    	}
+	    $row = mysqli_fetch_assoc($result);
+	
+        $_SESSION['loginUserFirst'] = $row['firstName'];
 		$_SESSION['loginUserLast'] = $row['lastName'];
 		$_SESSION['loginUserID'] = $row['userid'];
 	}
-	else
-	{
-		// there was a problem logging in; let the user know
-		session_destroy();
-		print "There was a problem logging you in.  Return to the login screen to try again: <a href='login.php'>Retry Login</a>";
-	}
+
 	$result->close();
 }
 
@@ -131,12 +137,21 @@ else if (isset($_POST['edit']) && $_POST['edit']=="1")
 	// check to see that they entered a valid password; if not, don't allow the edit.
 	if (isset($_POST['registerPassword']) && $_POST['registerPassword'] != '')
 	{
-		$password = md5($db->real_escape_string($_POST['registerPassword']));
-	
-		$query = "SELECT * FROM user WHERE userid='" . $_SESSION["loginUserID"] . "' AND password='$password'";
-
-		$result = $db->query($query);
-		if (!$result || $result->num_rows == 0) 
+        $query = "SELECT password FROM user WHERE userid='" . $_SESSION["loginUserID"] . "';";
+        $result = $db->query($query);           
+        if (!$result)
+        {
+            if ($GLOBALS['debug'])
+                die('Could not connect to database during user edit:' . $db->error);
+            else
+                die('Could not connect to database during user edit.');
+        }
+        
+        $row = mysqli_fetch_assoc($result);
+        $password = $row['password'];
+        
+        // use bcrypt to verify the pw
+        if(!password_verify(md5($_POST['registerPassword']),$password))
 			$errorMessages->addMessage("Edit User Error", "The password you entered was incorrect.");
 		$result->close();
 	}
