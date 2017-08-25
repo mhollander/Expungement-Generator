@@ -1843,7 +1843,7 @@ class Arrest
                 die('Could not get the Police information from the DB:' . $db->error);                 
             else                                            
             {
-                $result->close();
+                //$result->close();
                 return ($this->getCounty() . " County, PA");
             }
         }                                                                                                
