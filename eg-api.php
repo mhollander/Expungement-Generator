@@ -7,6 +7,9 @@
 	include('expungehelpers.php');
 	//initialize the response that will get sent back to requester
 	$response = array();
+
+	//print("printing full _POST\n");
+	//print_r($_POST);
 	
 	if(malformedRequest($_POST)) {
 		$response['results']['status'] = malformedRequest($_POST);
@@ -77,8 +80,17 @@
 				array_push($docketNums, $doc);
 			}
 			$response['results']['dockets'] = $docketNums;
+			//print("posted docketnums:");
+			//print_r( $_POST['docketNums']);
+			//print("\n response docketnums: " );
+			//print_r( $response['results']['dockets'] );
 		}
-
+		// doExpungements prints a table to the screen. 
+		// combineArrests also prints to the screen.
+		// I only want to print a response object to the screen, so I put the 
+		// the functions that print
+		// into an OutputBuffer to prevent that.
+		ob_start();
 		if (count($docketNums)>0) {
 			//if the cpcms search has been run and has found dockets
 			//or of docket numbers were sent with the request to the api
@@ -92,9 +104,7 @@
 			# TODO Could also add a function to insert information about chargeObjects (child of Arrest)
 		}
 		$sealable = checkIfSealable($arrests);
-		// doExpungements prints a table to the screen. That's not desired here, so this method wraps the function 
-		// in an OutputBuffer to prevent that.
-		ob_start();
+
 		$files = doExpungements($arrests, $templateDir, $dataDir, $person,
 			$attorney, $_SESSION['expungeRegardless'],
 			$db, $sealable);
@@ -150,6 +160,10 @@
 		// 	to supply a helpful message.
 
 		// TODO This will only flag one error at a time, though. 
+		//print("In malformedRequest, post is is: \n ");
+		//print_r($post);
+		//print("\n but $_POST is ");
+		//print_r($_POST);
 		if ( ($post['useremail'] == "") || (!isset($post['useremail']) ) ) {
 			return "User email missing from request.";
 		}
