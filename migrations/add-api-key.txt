@@ -1,3 +1,0 @@
-ALTER table user
-ADD apikey text,
-ADD apikey_counter int;

@@ -12,11 +12,11 @@
 	http_response_code(404);
 
 	//print("printing full _POST\n");
-	//print_r($_POST);
+	//print_r($_REQUEST);
 	
-	if(malformedRequest($_POST)) {
+	if(malformedRequest($_REQUEST)) {
 		http_response_code(403);
-		$response['results']['status'] = malformedRequest($_POST);
+		$response['results']['status'] = malformedRequest($_REQUEST);
 	} elseif(!validAPIKey()) {
 		http_response_code(403);
 		$response['results']['status'] = "Invalid request.";
@@ -24,7 +24,7 @@
 		http_response_code(200);
 		// a cpcmsSearch flag can be set to true in the post request
 		// to trigger a cpcms search.
-		if (isset($_POST['cpcmsSearch']) && $_POST['cpcmsSearch']=='true'){
+		if (isset($_REQUEST['cpcmsSearch']) && $_POST['cpcmsSearch']=='true'){
 			$urlPerson = getPersonFromPostOrSession();
 
 			$cpcms = new CPCMS($urlPerson['First'],$urlPerson['Last'], $urlPerson['DOB']);
@@ -48,7 +48,7 @@
         // a display funciton that will display all of the arrests as a webform, with all
         // of the post vars re-posted as hidden variables.  Also pass this filename as the
         // form action location.
-        			unset($_POST['cpcmsSearch']);
+        			unset($_REQUEST['cpcmsSearch']);
 			}
 		} // end of processing cpcmsSearch
 
@@ -70,7 +70,7 @@
 		$response['personFirst'] = $urlPerson['First'];
 		$response['personLast'] = $urlPerson['Last'];
 		$response['dob'] = $urlPerson['DOB'];
-		$attorney = new Attorney($_POST['useremail'], $db);
+		$attorney = new Attorney($_REQUEST['useremail'], $db);
 
 		$docketFiles = $_FILES;
 		
@@ -79,15 +79,18 @@
 			$docketNums = array();
 		}
 
-		if (isset($_POST['docketNums'])) {
+		if (isset($_REQUEST['docketNums'])) {
 			// Add any docket numbers passed in POST request to $docketnums.
 			// POST[docketnums] should be a comma-delimited string like "MC-12345,CP-34566"
-			foreach (explode(",",$_POST['docketNums']) as $doc) {
-				array_push($docketNums, $doc);
+			foreach (explode(",",$_REQUEST['docketNums']) as $doc) {
+				$doc = filter_var($doc, FILTER_SANITIZE_SPECIAL_CHARS); 
+				if ($doc) { //Doc will be false if the filter fails.
+					array_push($docketNums, $doc);
+				}
 			}
 			$response['results']['dockets'] = $docketNums;
 			//print("posted docketnums:");
-			//print_r( $_POST['docketNums']);
+			//print_r( $_REQUEST['docketNums']);
 			//print("\n response docketnums: " );
 			//print_r( $response['results']['dockets'] );
 		}
@@ -116,7 +119,7 @@
 			$db, $sealable);
 		ob_end_clean();
 		$files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
-		if ($_POST['createPetitions']==1) {
+		if ($_REQUEST['createPetitions']==1) {
 			$zipFile = zipFiles($files, $dataDir, $docketFiles,
 				$person->getFirst() . $person->getLast() . "Expungements");
 
@@ -141,18 +144,18 @@
 
 	function validAPIKey() {
 		$db = $GLOBALS['db'];
-		if (!isset($_POST['useremail'])) {
+		if (!isset($_REQUEST['useremail'])) {
 			return False;
 		}
-		$useremail = $db->real_escape_string($_POST['useremail']);
-		if (isset($_POST['apikey'])) {
+		$useremail = $db->real_escape_string($_REQUEST['useremail']);
+		if (isset($_REQUEST['apikey'])) {
 			$query = "SELECT user.apikey FROM user WHERE user.email = '".$useremail."';";
 			$result = $db->query($query);
 			if (!$result) {
 				return False;
 			};
 			$row = mysqli_fetch_assoc($result);
-			if (password_verify($_POST['apikey'], $row['apikey'])) {
+			if (password_verify($_REQUEST['apikey'], $row['apikey'])) {
 			return True;
 			};
 		}; 
@@ -169,8 +172,8 @@
 		// TODO This will only flag one error at a time, though. 
 		//print("In malformedRequest, post is is: \n ");
 		//print_r($post);
-		//print("\n but $_POST is ");
-		//print_r($_POST);
+		//print("\n but $_REQUEST is ");
+		//print_r($_REQUEST);
 		if ( ($post['useremail'] == "") || (!isset($post['useremail']) ) ) {
 			return "User email missing from request.";
 		}
