@@ -149,13 +149,14 @@
 		}
 		$useremail = $db->real_escape_string($_REQUEST['useremail']);
 		if (isset($_REQUEST['apikey'])) {
-			$query = "SELECT user.apikey FROM user WHERE user.email = '".$useremail."';";
+			$query = "SELECT apiKey from user as u left join userinfo as ui on u.userid=ui.userid left join program as p on ui.programID=p.programid WHERE u.email=\"" . $useremail . "\";";
+			//print("\n\n " . $query . "\n");
 			$result = $db->query($query);
 			if (!$result) {
 				return False;
 			};
 			$row = mysqli_fetch_assoc($result);
-			if (password_verify($_REQUEST['apikey'], $row['apikey'])) {
+		if (password_verify($_REQUEST['apikey'], $row['apiKey'])) {
 			return True;
 			};
 		}; 
