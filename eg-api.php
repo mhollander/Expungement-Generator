@@ -7,15 +7,21 @@
 	include('expungehelpers.php');
 	//initialize the response that will get sent back to requester
 	$response = array();
+	
+	//set default response code:
+	http_response_code(404);
 
 	//print("printing full _POST\n");
 	//print_r($_POST);
 	
 	if(malformedRequest($_POST)) {
+		http_response_code(403);
 		$response['results']['status'] = malformedRequest($_POST);
 	} elseif(!validAPIKey()) {
+		http_response_code(403);
 		$response['results']['status'] = "Invalid request.";
 	} else {
+		http_response_code(200);
 		// a cpcmsSearch flag can be set to true in the post request
 		// to trigger a cpcms search.
 		if (isset($_POST['cpcmsSearch']) && $_POST['cpcmsSearch']=='true'){
@@ -110,15 +116,16 @@
 			$db, $sealable);
 		ob_end_clean();
 		$files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
-		$zipFile = zipFiles($files, $dataDir, $docketFiles,
-			$person->getFirst() . $person->getLast() . "Expungements");
+		if ($_POST['createPetitions']==1) {
+			$zipFile = zipFiles($files, $dataDir, $docketFiles,
+				$person->getFirst() . $person->getLast() . "Expungements");
 
-		if (count($files) > 0) {
-			$response['results']['expungeZip'] = $baseURL . "data/" . basename($zipFile);
-		} else {
-			$response['results']['status'] = "Error. No dockets downloaded. It would be nice if this message were more helpful.";
+			if (count($files) > 0) {
+				$response['results']['expungeZip'] = $baseURL . "data/" . basename($zipFile);
+			} else {
+				$response['results']['status'] = "Error. No dockets downloaded. It would be nice if this message were more helpful.";
+			}
 		}
-
 
 		// write everything to the DB as long as this wasn't a "test" upload.
 		// we determine test upload if a SSN is entered.  If there is no SSN, we assume that
