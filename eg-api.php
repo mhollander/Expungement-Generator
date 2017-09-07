@@ -124,7 +124,7 @@
 		$files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
 		if ($_REQUEST['createPetitions']==1) {
 			$zipFile = zipFiles($files, $dataDir, $docketFiles,
-				$person->getFirst() . $person->getLast() . "Expungements");
+				uniqid($person->getFirst() . $person->getLast(), true) . "Expungements");
 
 			if (count($files) > 0) {
 				$response['results']['expungeZip'] = $baseURL . "data/" . basename($zipFile);
