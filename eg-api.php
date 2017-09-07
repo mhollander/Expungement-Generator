@@ -118,6 +118,9 @@
 			$attorney, $_SESSION['expungeRegardless'],
 			$db, $sealable);
 		ob_end_clean();
+		$parsed_results = parseArrests($arrests, $sealable, $person);
+		$response['results']['expungements_redactions'] = $parsed_results['expungements_redactions'];
+		$response['results']['sealing'] = $parsed_results['sealing'];
 		$files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
 		if ($_REQUEST['createPetitions']==1) {
 			$zipFile = zipFiles($files, $dataDir, $docketFiles,
@@ -192,5 +195,72 @@
 		}
 		return False;
 	};//End of well-formed request
+
+
+
+	function parseArrests($arrests, $sealable, $person) {
+		// Similar to createOverview, but without the microsoft word
+		$results = Array();
+		if (sizeof($arrests == 0)) {
+			$results['expungements_redactions'] = ["none"];
+		} else {
+			$results['expungements_redactions'] = Array();
+			$results['sealing'] = Array();
+			foreach($arrests as $arrest) {
+
+				$thisArrest = Array();
+
+				$thisArrest['docket'] = htmlspecialchars(implode(", ", $arrest->getDocketNumber()), ENT_COMPAT, 'UTF-8');
+				$thisArrest['otn'] = htmlspecialchars($arrest->getOTN(), ENT_COMPAT, 'UTF-8');				
+
+				$expType = "No expungement possible";
+				if ($arrest->isArrestRedaction()) {
+					$expType = "Partial Expungement";
+				}
+				if ($arrest->isArrestExpungement()) {
+					$expType = "Expungement";
+				}
+				if ($arrest->isArrestARDExpungement()) {
+					$expType = "ARD Expungement***"; 
+				}
+				if ($arrest->isArrestSummaryExpungement($arrests)) {
+					$expType = "Summary Expungement";
+				}
+				if ($arrest->isArrestOver70Expungement($arrests, $person)) {
+					$expType = "Expungement (over 70)";
+				}
+				// Ignoring act 5 sealing for now
+				$thisArrest['expungement_type'] = $expType;
+				$thisArrest['unpaid_costs'] = htmlspecialchars(number_format($arrest->getCostsTotal() - $arrest->getBailTotal(),2),ENT_COMPAT, 'UTF-8');
+				$thisArrest['bail'] = htmlspecialchars(number_format($arrest->getBailTotalTotal(),2), ENT_COMPAT, 'UTF-8');
+				$results['expungements_redactions'][] = $thisArrest;
+
+				if ($arrest->isArrestSealable()>0) {
+					//then iterate over all the charges
+					foreach ($arrest->getCharges() as $charge) {
+						$thisCharge = Array();
+						// check if the charge is a conviction and if it is sealable (non conviction charges get a 1)
+						if ( $charge->isConviction() && ($charge->isSealable() >0) ) {
+							$thisCharge['case_number'] = htmlspecialchars($arrest->getFirstDocketNumber(), ENT_COMPAT, 'UTF-8');
+							$thisCharge['charge_name'] = htmlspecialchars($arrest->getChargeName(), ENT_COMPAT, 'UTF-8');
+							$thisCharge['code_section'] = htmlspecialchars($arrest->getCodeSection(), ENT_COMPAT, 'UTF-8');
+							if ($charge->isSealable()==1) {
+								$thisCharge['sealable'] = "Yes";
+							} else {
+							 	$thisCharge['sealable'] = "No";
+							}
+							$thisCharge['additional_information'] = htmlspecialchars($arrest->getSealablePercent(), ENT_COMPAT, 'UTF-8');
+							$results['sealing'][] = $thisCharge;
+						} // end processing if a charge is a conviction that is sealable
+					} //end loop over charges for an arrest
+				} // end of checking if arrest is sealable
+
+			}//end of processing arrests
+
+		}// end of processing results
+
+		return $results;
+	}//end of parseArrests
+
 
 ?>
