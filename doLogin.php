@@ -118,7 +118,130 @@ else if (isset($_POST['create']) && $_POST['create']=="1")
 			print "Registration successful!  Please login to start creating expungement petitions.";
 	}
 }
-	
+
+// check to see if someone is trying to create a new program
+else if (isset($_POST['createProgram']) && $_POST['createProgram']==1)
+{
+	// first make sure that this is a superuser
+	if (!isLoggedIn())
+		$errorMessages->addMessage("Create Program Error", "You must be logged in as a superuser to create a program");
+    else
+    {
+		$attorney = new Attorney($_SESSION["loginUserID"], $db);
+		if($GLOBALS['debug'])
+			$attorney->printAttorneyInfo();
+
+		// only the superuser can handle this kind of thing 
+		if ($attorney->getUserLevel() != 1)
+			$errorMessages->addMessage("Create Program Error", "You must be the super user to create a program");
+			
+		// we are a superuser - we can do the creation
+		else
+        {
+            # check to make sure there is a program name.  We probably should check to make sure this
+            # program doesn't already exist in the DB, but that isn't a huge deal so I'm not
+            # going to add it in for now
+            if (!(isset($_POST['createProgramName']) && $_POST['createProgramName'] != ""))
+                $errorMessages->addMessage("Create Error", "You did not enter a program name");
+            else
+            {                           
+                // there is a program name, so do the creation
+                $sql = "INSERT INTO program (programName, ifp, ifpLanguage, apiKey) values ('" . $GLOBALS['db']->real_escape_string($_POST['createProgramName']) . "', " . $GLOBALS['db']->real_escape_string($_POST['createProgramIFP']) . ", '" . $GLOBALS['db']->real_escape_string($_POST['createProgramIFPLanguage']) . "', '" . password_hash($_POST['createProgramAPIKey'], PASSWORD_DEFAULT) . "');";
+                if (!$GLOBALS['db']->query($sql))
+                {                     
+                    if ($GLOBALS['debug'])
+                        die('There was a problem creating the program you entered:' . $GLOBALS['db']->error);  
+                    else
+                      die('There was a problem creating the program you entered.');
+                }                                                                                          
+            }
+        }
+		
+		// if errorMessages is still blank, then we can print out a success message!
+		if (!$errorMessages->hasMessages())
+			print "Registration successful!  You created a program called " . $_POST['createProgramName'] . " with apiKey '" . $_POST['createProgramAPIKey'] . "'.  You should save this key because you will never be able to retrieve it again!  Muwhahahaha.";
+	}
+    
+    
+    
+}
+
+// check to see if someone is trying to create a new program
+else if (isset($_POST['editProgram']) && $_POST['editProgram']==1)
+{
+	// first make sure that this is a superuser
+	if (!isLoggedIn())
+		$errorMessages->addMessage("Edit Program Error", "You must be logged in as a superuser to edit a program");
+    else
+    {
+		$attorney = new Attorney($_SESSION["loginUserID"], $db);
+		if($GLOBALS['debug'])
+			$attorney->printAttorneyInfo();
+
+		// only the superuser can handle this kind of thing 
+		if ($attorney->getUserLevel() != 1)
+			$errorMessages->addMessage("Edit Program Error", "You must be the super user to edit a program");
+			
+		// we are a superuser - we can do the edit
+		else
+        {
+            # check to make sure there is a program name.  We probably should check to make sure this
+            # program doesn't already exist in the DB, but that isn't a huge deal so I'm not
+            # going to add it in for now
+            if (!(isset($_POST['programName']) && $_POST['programName'] != ""))
+                $errorMessages->addMessage("Edit Error", "You did not enter a program name");
+            else
+            {                           
+                // there is a program name, so do the edit
+                $sql = "UPDATE program SET programName='" . $GLOBALS['db']->real_escape_string($_POST['programName']) . "', ifp=" . $GLOBALS['db']->real_escape_string($_POST['programIFP']) . ", ifpLanguage='" . $GLOBALS['db']->real_escape_string($_POST['programIFPLanguage']) . "' WHERE programid=" . $GLOBALS['db']->real_escape_string($_POST['id']) . ";";
+
+                if (!$GLOBALS['db']->query($sql))
+                {                     
+                    if ($GLOBALS['debug'])
+                        die('There was a problem editting the program you entered:' . $GLOBALS['db']->error);  
+                    else
+                      die('There was a problem editting the program you entered.');
+                }
+            }
+        }
+    }
+}
+
+// check if someone is trying to edit an API key
+else if (isset($_POST['editProgramKey']) && $_POST['editProgramKey']==1)
+{
+	// first make sure that this is a superuser
+	if (!isLoggedIn())
+		$errorMessages->addMessage("Reset Program APIKey Error", "You must be logged in as a superuser to edit a program");
+    else
+    {
+		$attorney = new Attorney($_SESSION["loginUserID"], $db);
+		if($GLOBALS['debug'])
+			$attorney->printAttorneyInfo();
+
+		// only the superuser can handle this kind of thing 
+		if ($attorney->getUserLevel() != 1)
+			$errorMessages->addMessage("Edit Program APIKey Error", "You must be the super user to edit a program");
+			
+		// we are a superuser - we can do the edit
+		else
+        {
+            // first generate an API key
+            $newAPIKey = bin2hex(openssl_random_pseudo_bytes(32));
+            
+            // then add it to the database
+            $sql = "UPDATE program SET apiKey='" . password_hash($newAPIKey, PASSWORD_DEFAULT) . "' WHERE programid=" . $GLOBALS['db']->real_escape_string($_POST['id']) . ";";
+
+            if (!$GLOBALS['db']->query($sql))
+                die('There was a problem editting the apiKey:' . $GLOBALS['db']->error);  
+        }
+    }
+    // if errorMessages is still blank, then we can print out a success message!
+    if (!$errorMessages->hasMessages())
+		print "API Key updated.  The new API key is '$newAPIKey'.  Save this key now as you can never again retrieve it.  Muwhahahaha.";
+}
+
+
 // check to see if someone is trying to edit their user account
 else if (isset($_POST['edit']) && $_POST['edit']=="1")
 {	
