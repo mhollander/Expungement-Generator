@@ -233,6 +233,7 @@ function serveFile($filename)
     
     # run basename on filename to make sure we aren't getting any directory input, like ../config.php or something
     $file = $GLOBALS['dataDir'] . basename($filename);
+
     if(!file_exists($file))
     { 
         header ("HTTP/1.0 404 Not Found");
@@ -242,15 +243,14 @@ function serveFile($filename)
     else 
     {
         $size=filesize($file);
-              
         header('HTTP/1.0 200 OK');  
         header('Content-Description: File Transfer');
-        header("Content-Type: application/octet-stream");
         header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
         header('Pragma: no-cache');  
         header('Expires: 0');
         header('Accept-Ranges: bytes');
-        header('Content-Length: $size');
+        header('Content-Length:' . $size);
+        header("Content-Type: application/octet-stream");
         header("Content-Disposition: attachment; filename=" . basename($file));
         header("Content-Transfer-Encoding: binary");
         ob_clean();
