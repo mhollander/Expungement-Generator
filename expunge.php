@@ -180,10 +180,11 @@ function parseDockets($tempFile, $pdftotext, $arrestSummary, $person, $docketFil
 
 			$arrest = new Arrest();
 
-			if ($arrest->isDocketSheet($thisRecord[1]))
+			if ($arrest->isDocketSheet($thisRecord[1]) || $arrest->checkIsJuvenilePhilly($thisRecord[0]))
 			{
 				// if this is a regular docket sheet, use the regular parsing function
 				$arrest->readArrestRecord($thisRecord, $person);
+                var_dump($arrest);
 				
 				// now add the arrest to the arrests array
 				// but don't include arrests that were summary traffic tickets or something
@@ -207,7 +208,7 @@ function parseDockets($tempFile, $pdftotext, $arrestSummary, $person, $docketFil
 	}
 	try
 	{
-		unlink($tempFile);
+#		unlink($tempFile);
 	}
 	catch (Exception $e) {}
 	

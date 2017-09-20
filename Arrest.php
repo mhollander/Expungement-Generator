@@ -48,6 +48,9 @@ class Arrest
 	private $county;
 	private $OTN;
 	private $DC;
+    private $jNumber;
+    private $jDischargeDate;
+    private $SID;
 	private $docketNumber = array();
 	private $arrestingOfficer;
 	private $arrestingAgency;
@@ -91,6 +94,7 @@ class Arrest
 	
 	// isMDJ = 0 if this is not an mdj case at all, 1 if this is an mdj case and 2 if this is a CP case that decended from MDJ
 	private $isMDJ = 0;
+    private $isJuvenilePhilly = false;
 	
 	public static $expungementTemplate = "790ExpungementTemplate.docx";
 	public static $act5Template = "791Act5SealingTemplate.docx";
@@ -107,6 +111,7 @@ class Arrest
 	protected static $mdjCountyAndDispositionDateSearch = "/County:\s+(.*)\s+Disposition Date:\s+(.*)/";
 	protected static $OTNSearch = "/OTN:\s+(\D(\s)?\d+(\-\d)?)/";
 	protected static $DCSearch = "/District Control Number\s+(\d+)/";
+	protected static $juvenileNumberSearch = "/Juvenile Number\s+(\d+)/";
 	protected static $docketSearch = "/Docket Number:\s+((MC|CP)\-\d{2}\-(\D{2})\-\d*\-\d{4})/";
 	protected static $mdjDocketSearch = "/Docket Number:\s+(MJ\-\d{5}\-(\D{2})\-\d*\-\d{4})/";
 	protected static $arrestingAgencyAndOfficerSearch = "/Arresting Agency:\s+(.*)\s+Arresting Officer: (\D+)/";
@@ -132,6 +137,7 @@ class Arrest
 	protected static $judgeSearchOverflow = "/^\s+(\w+\s*\w*)\s*$/";
 	protected static $migratedJudgeSearch = "/migrated/i";
 	protected static $DOBSearch = "/Date Of Birth:?\s+(\d{1,2}\/\d{1,2}\/\d{4})/i";
+	protected static $SIDSearch = "/SID:?\s+(\d{1,3}-\d{1,3}-\d{1,3}-\d{1,3})/i";
 	protected static $nameSearch = "/^Defendant\s+(.*), (.*)/";
 
 	// ($1 = charge, $2 = disposition, $3 = grade, $4 = code section
@@ -171,7 +177,9 @@ class Arrest
 	// 3) for MDJ cases, disposition date appears on a line by itself, so it is easier to find
 	protected static $dispDateSearch = "/(?:Plea|Status|Status of Restitution|Status - Community Court|Status Listing|Migrated Dispositional Event|Trial|Preliminary Hearing|Pre-Trial Conference)\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+Final Disposition/";
 	protected static $dispDateSearch2 = "/(.*)\s(\d{1,2}\/\d{1,2}\/\d{4})/";	
-	
+
+	protected static $dischargeDateSearch = "/^(\d{1,2}\/\d{1,2}\/\d{4})$/";
+
 	// this is a crazy one.  Basically matching whitespace then $xx.xx then whitespace then 
 	// -$xx.xx, etc...  The fields show up as Assesment, Payment, Adjustments, Non-Monetary, Total
 	protected static $costsSearch = "/Totals:\s+\\$([\d\,]+\.\d{2})\s+-?\\$([\d\,]+\.\d{2})\s+-?\\$([\d\,]+\.\d{2})\s+-?\\$([\d\,]+\.\d{2})\s+-?\\$([\d\,]+\.\d{2})/";
@@ -184,6 +192,9 @@ class Arrest
 	public function getCounty() { if (!isset($this->county)) $this->setCounty(self::$unknownInfo); return $this->county; }
 	public function getOTN() { if (!isset($this->OTN)) $this->setOTN(self::$unknownInfo); return $this->OTN; }
 	public function getDC() { if (!isset($this->DC)) $this->setDC(self::$unknownInfo); return $this->DC; }
+	public function getJNumber() { if (!isset($this->jNumber)) $this->setJNumber(self::$unknownInfo); return $this->jNumber; }
+	public function getJDischargeDate() { return $this->jDischargeDate; }
+	public function getSID() { if (!isset($this->SID)) $this->setSID(self::$unknownInfo); return $this->SID; }
 	public function getDocketNumber() { return $this->docketNumber; }
 	public function getArrestingOfficer() { if (!isset($this->arrestingOfficer)) $this->setArrestingOfficer(self::$unknownOfficer); return $this->arrestingOfficer; }
 	public function getArrestingAgency() { return $this->arrestingAgency; }
@@ -218,6 +229,7 @@ class Arrest
 	public function getIsSummaryArrest()  { return $this->isSummaryArrest; }
     public function getSealableMaybeReasons() { return $this->sealableMaybeReasons; }
 	public function getIsMDJ() { return $this->isMDJ; }
+	public function getIsJuvenilePhilly() { return $this->isJuvenilePhilly; }
 	public function getPDFFile() { return $this->pdfFile;}
 	public function getPDFFileName() { return $this->pdfFileName;}
 	public function getAliases() { return $this->aliases; }
@@ -232,6 +244,9 @@ class Arrest
 		$this->OTN = str_replace(" ", "", str_replace("-", "", $OTN));
 	}
 	public function setDC($DC) { $this->DC = $DC; }
+	public function setJNumber($jNumber) { $this->jNumber = $jNumber; }
+	public function setJDischargeDate($jDischargeDate) { $this->jDischargeDate = $jDischargeDate; }
+	public function setSID($SID) { $this->SID = $SID; }
 	public function setDocketNumber($docketNumber) { $this->docketNumber = $docketNumber; }
 	public function setIsSummaryArrest($isSummaryArrest)  { $this->isSummaryArrest = $isSummaryArrest; } 
 	public function setArrestingOfficer($arrestingOfficer) {  $this->arrestingOfficer = ucwords(strtolower($arrestingOfficer)); }
@@ -270,6 +285,7 @@ class Arrest
 	public function setIsHeldForCourt($isHeldForCourt)  {  $this->isHeldForCourt = $isHeldForCourt; }
 	public function setIsOnlyHeldForCourt($isOnlyHeldForCourt)  {  $this->isOnlyHeldForCourt = $isOnlyHeldForCourt; }
 	public function setIsMDJ($isMDJ)  {  $this->isMDJ = $isMDJ; }
+	public function setIsJuvenilePhilly($isJuvenile)  {  $this->isJuvenilePhilly = $isJuvenile; }
 	public function setPDFFile($pdfFile) { $this->pdfFile = $pdfFile; }
 	public function setPDFFileName($pdfFileName) { $this->pdfFileName = $pdfFileName; }
 	public function addAlias($a) { $this->aliases[] = $a; }
@@ -329,6 +345,18 @@ class Arrest
 		else
 			return false;
 	}
+    
+    // sets isJuvenilePhilly = true if the arrest RecordFile is a Philly Juvenile Case
+    public function checkIsJuvenilePhilly($line)
+    {
+        if (preg_match("/Family Court of Philadelphia/i", $line))
+        {
+            $this->setIsJuvenilePhilly(TRUE);
+            return TRUE;
+        }
+        else
+          return FALSE;
+    }
 
 	
 	// reads in a record and sets all of the relevant variable.
@@ -346,7 +374,7 @@ class Arrest
 				$this->setMDJDistrictNumber(trim($matches[1]));
 
 		}
-
+        
 		foreach ($arrestRecordFile as $line_num => $line)
 		{
 			// print "$line_num: $line<br/>";
@@ -471,8 +499,34 @@ class Arrest
 				if (!preg_match(self::$migratedJudgeSearch, $matches[1], $junk) && trim($matches[1]) != "")
 					$this->setJudge(trim($matches[1]));
 			}
-			
-			
+
+            
+            // search for things that only have to do with juvenile cases in philly
+			else if ($this->isJuvenilePhilly)
+            {
+                if (preg_match(self::$juvenileNumberSearch, $line, $matches))
+                {
+                    $this->setJNumber(trim($matches[1]));
+                }
+                
+                else if (preg_match(self::$SIDSearch, $line, $matches))
+                {
+                    $this->setSID(trim($matches[1]));
+                }
+            
+                // this is sort of a funny one.  the very last bare date entry in the docket is the date
+                // that the case was discharged.  It is on a line by itself and there isn't any 
+                // consistent context around the date that could be used to find this final date entry.
+                // So rather than search for it, I am going to search for EVERY bare date entry and store
+                // each as the discharge date.  The final one will override all previous and we will have a 
+                // discharge date!
+                else if (preg_match(self::$dischargeDateSearch, trim($line), $matches))
+                {
+                    $this->setJDischargeDate(trim($matches[1]));
+            
+                }
+            }
+            
 			else if  (preg_match(self::$DOBSearch, $line, $matches))
 				$this->setDOB(trim($matches[1]));
 			
@@ -595,6 +649,7 @@ class Arrest
 				$this->setCostsTotal(doubleval(str_replace(",","",$matches[5])));  // tot final amount, after all adjustments
 			}
 		}
+        
 	}
 		
 	// Compares two arrests to see if they are part of the same case.  Two arrests are part of the 
