@@ -184,7 +184,6 @@ function parseDockets($tempFile, $pdftotext, $arrestSummary, $person, $docketFil
 			{
 				// if this is a regular docket sheet, use the regular parsing function
 				$arrest->readArrestRecord($thisRecord, $person);
-                var_dump($arrest);
 				
 				// now add the arrest to the arrests array
 				// but don't include arrests that were summary traffic tickets or something

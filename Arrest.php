@@ -98,6 +98,7 @@ class Arrest
 	
 	public static $expungementTemplate = "790ExpungementTemplate.docx";
 	public static $act5Template = "791Act5SealingTemplate.docx";
+	public static $juvenileExpungementTemplate = "JuvenileExpungementTemplate.docx";
 	public static $IFPTemplate = "IFPTemplate.docx";
     public static $COSTemplate = "MontcoCertificateofServiceTemplate.docx";
    
@@ -501,32 +502,6 @@ class Arrest
 			}
 
             
-            // search for things that only have to do with juvenile cases in philly
-			else if ($this->isJuvenilePhilly)
-            {
-                if (preg_match(self::$juvenileNumberSearch, $line, $matches))
-                {
-                    $this->setJNumber(trim($matches[1]));
-                }
-                
-                else if (preg_match(self::$SIDSearch, $line, $matches))
-                {
-                    $this->setSID(trim($matches[1]));
-                }
-            
-                // this is sort of a funny one.  the very last bare date entry in the docket is the date
-                // that the case was discharged.  It is on a line by itself and there isn't any 
-                // consistent context around the date that could be used to find this final date entry.
-                // So rather than search for it, I am going to search for EVERY bare date entry and store
-                // each as the discharge date.  The final one will override all previous and we will have a 
-                // discharge date!
-                else if (preg_match(self::$dischargeDateSearch, trim($line), $matches))
-                {
-                    $this->setJDischargeDate(trim($matches[1]));
-            
-                }
-            }
-            
 			else if  (preg_match(self::$DOBSearch, $line, $matches))
 				$this->setDOB(trim($matches[1]));
 			
@@ -648,6 +623,28 @@ class Arrest
 				$this->setCostsAdjusted(doubleval(str_replace(",","",$matches[3])));
 				$this->setCostsTotal(doubleval(str_replace(",","",$matches[5])));  // tot final amount, after all adjustments
 			}
+            
+            // search for things that only have to do with juvenile cases in philly
+            else if ($this->isJuvenilePhilly && preg_match(self::$juvenileNumberSearch, $line, $matches))
+            {
+                $this->setJNumber(trim($matches[1]));
+            }
+                
+            else if ($this->isJuvenilePhilly && preg_match(self::$SIDSearch, $line, $matches))
+            {
+                $this->setSID(trim($matches[1]));
+            }
+            
+            // this is sort of a funny one.  the very last bare date entry in the docket is the date
+            // that the case was discharged.  It is on a line by itself and there isn't any 
+            // consistent context around the date that could be used to find this final date entry.
+            // So rather than search for it, I am going to search for EVERY bare date entry and store
+            // each as the discharge date.  The final one will override all previous and we will have a 
+            // discharge date!
+            else if ($this->isJuvenilePhilly && preg_match(self::$dischargeDateSearch, trim($line), $matches))
+            {
+               $this->setJDischargeDate(trim($matches[1]));
+            }
 		}
         
 	}
@@ -1324,6 +1321,8 @@ class Arrest
         // act 5 petitions use a different template since the wording is very different
 	    if ($_SESSION['act5Regardless'])
           $docx = new \PhpOffice\PhpWord\TemplateProcessor($inputDir . Arrest::$act5Template);
+        else if ($this->isJuvenilePhilly)
+            $docx = new \PhpOffice\PhpWord\TemplateProcessor($inputDir . Arrest::$juvenileExpungementTemplate);
         else
             $docx = new \PhpOffice\PhpWord\TemplateProcessor($inputDir . Arrest::$expungementTemplate);
 	    
