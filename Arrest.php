@@ -51,6 +51,7 @@ class Arrest
     private $jNumber;
     private $jDischargeDate;
     private $SID;
+    private $PID;
 	private $docketNumber = array();
 	private $arrestingOfficer;
 	private $arrestingAgency;
@@ -106,13 +107,14 @@ class Arrest
 	
 	protected static $unknownInfo = "N/A";
 	protected static $unknownOfficer = "Unknown officer";
+	protected static $unknownAgency = "Unknown agency";
 	
 	protected static $mdjDistrictNumberSearch = "/Magisterial District Judge\s(.*)/i";
 	protected static $countySearch = "/\sof\s(\w+)\sCOUNTY/i";
 	protected static $mdjCountyAndDispositionDateSearch = "/County:\s+(.*)\s+Disposition Date:\s+(.*)/";
 	protected static $OTNSearch = "/OTN:\s+(\D(\s)?\d+(\-\d)?)/";
 	protected static $DCSearch = "/District Control Number\s+(\d+)/";
-	protected static $juvenileNumberSearch = "/Juvenile Number\s+(\d+)/";
+	protected static $juvenileNumberSearch = "/Juvenile ID\s+(\d+)/";
 	protected static $docketSearch = "/Docket Number:\s+((MC|CP)\-\d{2}\-(\D{2})\-\d*\-\d{4})/";
 	protected static $mdjDocketSearch = "/Docket Number:\s+(MJ\-\d{5}\-(\D{2})\-\d*\-\d{4})/";
 	protected static $arrestingAgencyAndOfficerSearch = "/Arresting Agency:\s+(.*)\s+Arresting Officer: (\D+)/";
@@ -139,8 +141,10 @@ class Arrest
 	protected static $migratedJudgeSearch = "/migrated/i";
 	protected static $DOBSearch = "/Date Of Birth:?\s+(\d{1,2}\/\d{1,2}\/\d{4})/i";
 	protected static $SIDSearch = "/SID:?\s+(\d{1,3}-\d{1,3}-\d{1,3}-\d{1,3})/i";
+	protected static $PIDSearch = "/PID\s+(\d+)/i";
 	protected static $nameSearch = "/^Defendant\s+(.*), (.*)/";
-
+    protected static $juvenileNameSearch = "/In the interest of:\s+(.*), a Minor/i";
+      
 	// ($1 = charge, $2 = disposition, $3 = grade, $4 = code section
 	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Not Guilty|Guilty|Nolle Prossed|Nolle Prossed \(Case Dismissed\)|Nolle Prosequi - Administrative|Guilty Plea|Guilty Plea - Negotiated|Guilty Plea - Non-Negotiated|Withdrawn|Withdrawn - Administrative|Charge Changed|Held for Court|Community Court Program|Dismissed - Rule 1013 \(Speedy|Dismissed - Rule 600 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed - Rule 546|Dismissed - Rule 586|Dismissed|Demurrer Sustained|ARD - County Open|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Summary Diversion Completed|Judgment of Acquittal \(Prior to)\s+(\w{0,2})\s+(\w{1,2}\s?\247\s?\d+(\-|\247|\w+)*)/"; // removed "Replacement by Information"
 	// explanation: .+? - the "?" means to do a lazy match of .+, so it isn't greedy.  THe match of 12+ spaces handles the large space after the charges and after the disposition before the next line.  The final part is to match the code section that is violated.	
@@ -196,9 +200,10 @@ class Arrest
 	public function getJNumber() { if (!isset($this->jNumber)) $this->setJNumber(self::$unknownInfo); return $this->jNumber; }
 	public function getJDischargeDate() { return $this->jDischargeDate; }
 	public function getSID() { if (!isset($this->SID)) $this->setSID(self::$unknownInfo); return $this->SID; }
+	public function getPID() { if (!isset($this->PID)) $this->setPID(self::$unknownInfo); return $this->PID; }
 	public function getDocketNumber() { return $this->docketNumber; }
 	public function getArrestingOfficer() { if (!isset($this->arrestingOfficer)) $this->setArrestingOfficer(self::$unknownOfficer); return $this->arrestingOfficer; }
-	public function getArrestingAgency() { return $this->arrestingAgency; }
+	public function getArrestingAgency() { if (!isset($this->arrestingAgency)) $this->setArrestingAgency(self::$unknownAgency); return $this->arrestingAgency; }
 	public function getArrestDate() { return $this->arrestDate; }
 	public function getComplaintDate() { return $this->complaintDate; }
 	//  getDispositionDate() exists elsewhere
@@ -248,6 +253,7 @@ class Arrest
 	public function setJNumber($jNumber) { $this->jNumber = $jNumber; }
 	public function setJDischargeDate($jDischargeDate) { $this->jDischargeDate = $jDischargeDate; }
 	public function setSID($SID) { $this->SID = $SID; }
+	public function setPID($PID) { $this->PID = $PID; }
 	public function setDocketNumber($docketNumber) { $this->docketNumber = $docketNumber; }
 	public function setIsSummaryArrest($isSummaryArrest)  { $this->isSummaryArrest = $isSummaryArrest; } 
 	public function setArrestingOfficer($arrestingOfficer) {  $this->arrestingOfficer = ucwords(strtolower($arrestingOfficer)); }
@@ -626,13 +632,19 @@ class Arrest
             
             // search for things that only have to do with juvenile cases in philly
             else if ($this->isJuvenilePhilly && preg_match(self::$juvenileNumberSearch, $line, $matches))
-            {
                 $this->setJNumber(trim($matches[1]));
-            }
                 
             else if ($this->isJuvenilePhilly && preg_match(self::$SIDSearch, $line, $matches))
-            {
                 $this->setSID(trim($matches[1]));
+
+            else if ($this->isJuvenilePhilly && preg_match(self::$PIDSearch, $line, $matches))
+                $this->setPID(trim($matches[1]));
+            
+            else if ($this->isJuvenilePhilly && preg_match(self::$juvenileNameSearch, $line, $matches))
+            {
+                list($first,$last) = explode(" ", trim($matches[1]),2);
+                $this->setFirstName($first);
+                $this->setLastName($last);
             }
             
             // this is sort of a funny one.  the very last bare date entry in the docket is the date
@@ -642,9 +654,7 @@ class Arrest
             // each as the discharge date.  The final one will override all previous and we will have a 
             // discharge date!
             else if ($this->isJuvenilePhilly && preg_match(self::$dischargeDateSearch, trim($line), $matches))
-            {
                $this->setJDischargeDate(trim($matches[1]));
-            }
 		}
         
 	}
@@ -1419,8 +1429,6 @@ class Arrest
 		$docx->setValue("SSN", htmlspecialchars($person->getSSN(), ENT_COMPAT, 'UTF-8'));
 		$docx->setValue("DOB", htmlspecialchars($this->getDOB(), ENT_COMPAT, 'UTF-8'));
 		
-        if ($this->isJuvenilePhilly)
-            $docx->setValue("SID", htmlspecialchars($this->getSID(), ENT_COMPAT, 'UTF-8'));
 		
 		// setting the disposition list is different dependingo on what type of expungement
 		// this is.  An ARD will say that the ard was completed; a summary might say something else
@@ -1637,6 +1645,10 @@ class Arrest
 		    if ($dispDate == null || $dispDate == "")
 		      $dispDate = $this->getDispositionDate();
 
+            // if this is a juvenile case, we just put the discharge date in the matrix
+            if ($this->isJuvenilePhilly)
+              $dispDate = $this->getJDischargeDate();
+
 		    // after cloning, the variables are named CHARGES#1, CHARGES#2, CHARGES#3, etc...
 		    $docx->setValue("CHARGE#" . $j, htmlspecialchars($charge->getChargeName(), ENT_COMPAT, 'UTF-8'));
 		    $docx->setValue("GRADE#" . $j, htmlspecialchars($charge->getGrade(), ENT_COMPAT, 'UTF-8'));
@@ -1653,6 +1665,9 @@ class Arrest
 		    $docx->setValue("JNUMBER", htmlspecialchars($this->jNumber, ENT_COMPAT, 'UTF-8'));
 		    $docx->setValue("AGE", htmlspecialchars($this->getAge(), ENT_COMPAT, 'UTF-8'));
 		    $docx->setValue("JUVENILE_DISCHARGE_DATE", htmlspecialchars($this->getJDischargeDate(), ENT_COMPAT, 'UTF-8'));
+            $docx->setValue("SID", htmlspecialchars($this->getSID(), ENT_COMPAT, 'UTF-8'));
+            $docx->setValue("PPID", htmlspecialchars($this->getPID(), ENT_COMPAT, 'UTF-8'));
+            print "PID: " . $this->getPID();
         }
 		
 		// save template to file
