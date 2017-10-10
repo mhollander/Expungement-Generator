@@ -5,14 +5,11 @@
 	require_once('utils.php');
 	require_once('config.php');
 	include('expungehelpers.php');
+	include('helpers/mail_helper.php');
 	//initialize the response that will get sent back to requester
 	$response = array();
-	
 	//set default response code:
 	http_response_code(404);
-
-	//print("printing full _POST\n");
-	//print_r($_REQUEST);
 
 	$test_headers = $_REQUEST;
 	error_log("Logging an error");
@@ -152,8 +149,20 @@
 
 	//print("\encoded response is");
 	
+	if (isset($_REQUEST['emailPetitions']) && preg_match('/^(t|true|1)$/i', $_REQUEST['emailPetitions'])===1){
+		if (isset($_REQUEST['createPetitions']) && preg_match('/^(t|true|1)$/i', $_REQUEST['createPetitions'])===1) {
+			$file_path = NULL;
+		} else { 
+			$file_path = $response['results']['expungeZip'];
+			unset($response['results']['expungeZip']);
+		} 
+		mailPetition($_REQUEST['useremail'], $_REQUEST['useremail'], $response, $file_path);
+	}
 	print_r(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES, 10));
 
+
+
+//END OF SCRIPT, start of some functions it uses.
 	function validAPIKey() {
 		$db = $GLOBALS['db'];
 		if (!isset($_REQUEST['useremail'])) {
@@ -276,9 +285,9 @@
 			}//end of processing arrests
 
 		}// end of processing results
-		error_log("Returning response:");
-		file_put_contents('php://stderr', print_r($results, TRUE));
-		error_log("-----------");
+		//error_log("Returning response:");
+		//file_put_contents('php://stderr', print_r($results, TRUE));
+		//error_log("-----------");
 		return $results;
 	}//end of parseArrests
 
