@@ -10,7 +10,6 @@
 	$response = array();
 	//set default response code:
 	http_response_code(404);
-
 	$test_headers = $_REQUEST;
 	error_log("Logging an error");
 
