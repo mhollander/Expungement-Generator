@@ -13,6 +13,14 @@
 
 	//print("printing full _POST\n");
 	//print_r($_REQUEST);
+
+	$test_headers = $_REQUEST;
+	error_log("Logging an error");
+
+	unset($test_headers['apikey']);	
+
+	file_put_contents('php://stderr', print_r($test_headers, TRUE));
+
 	
 	if(malformedRequest($_REQUEST)) {
 		http_response_code(403);
@@ -24,7 +32,7 @@
 		http_response_code(200);
 		// a cpcmsSearch flag can be set to true in the post request
 		// to trigger a cpcms search.
-		if (isset($_REQUEST['cpcmsSearch']) && $_POST['cpcmsSearch']=='true'){
+		if (isset($_REQUEST['cpcmsSearch']) && preg_match('/^(t|true|1)$/i', $_POST['cpcmsSearch'])===1){
 			$urlPerson = getPersonFromPostOrSession();
 
 			$cpcms = new CPCMS($urlPerson['First'],$urlPerson['Last'], $urlPerson['DOB']);
@@ -82,17 +90,13 @@
 		if (isset($_REQUEST['docketNums'])) {
 			// Add any docket numbers passed in POST request to $docketnums.
 			// POST[docketnums] should be a comma-delimited string like "MC-12345,CP-34566"
-			foreach (explode(",",$_REQUEST['docketNums']) as $doc) {
-				$doc = filter_var($doc, FILTER_SANITIZE_SPECIAL_CHARS); 
+			$docketNumsRequest = filter_var($_REQUEST['docketNums'], FILTER_SANITIZE_SPECIAL_CHARS);
+			foreach (explode(",",$docketNumsRequest) as $doc) {
 				if ($doc) { //Doc will be false if the filter fails.
 					array_push($docketNums, $doc);
 				}
 			}
 			$response['results']['dockets'] = $docketNums;
-			//print("posted docketnums:");
-			//print_r( $_REQUEST['docketNums']);
-			//print("\n response docketnums: " );
-			//print_r( $response['results']['dockets'] );
 		}
 		// doExpungements prints a table to the screen. 
 		// combineArrests also prints to the screen.
@@ -122,7 +126,7 @@
 		$response['results']['expungements_redactions'] = $parsed_results['expungements_redactions'];
 		$response['results']['sealing'] = $parsed_results['sealing'];
 		$files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
-		if ($_REQUEST['createPetitions']==1) {
+		if (preg_match('/^(t|true|1)$/i', $_REQUEST['createPetitions'])===1) {
 			$zipFile = zipFiles($files, $dataDir, $docketFiles,
 				uniqid($person->getFirst() . $person->getLast(), true) . "Expungements");
 
@@ -142,8 +146,13 @@
 		}
 		cleanupFiles($files);
 	}// end of processing req from a valid user
+
+	//print("\nreturning response:");
+	//print_r($response);
+
+	//print("\encoded response is");
 	
-	print_r(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES, 3));
+	print_r(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES, 10));
 
 	function validAPIKey() {
 		$db = $GLOBALS['db'];
@@ -178,19 +187,24 @@
 		//print_r($post);
 		//print("\n but $_REQUEST is ");
 		//print_r($_REQUEST);
-		if ( ($post['useremail'] == "") || (!isset($post['useremail']) ) ) {
+		
+
+		//if ( ($post['useremail'] == "") || (!isset($post['useremail']) ) ) {
+		if (empty($post['useremail'])) {
 			return "User email missing from request.";
 		}
 
-		if ( ($post['cpcmsSearch'] == 'false') && ( (!isset($post['docketNums'])) || ($post['docketNums'] == "") ) ) {
+		if ( ($post['cpcmsSearch'] == 'false') && empty($post['docketNums']) ) {
 			return "If you do not wish to do a CPCMS search, then you must supply docket numbers.";
 		}
 
-		if ( ($post['createPetitions'] == '') || (!isset($post['createPetitions']) ) ) {	
+		//if ( empty($post['createPetitions'])) {
+		if ( !isset($post['createPetitions']) || ($post['createPetitions'] == '')  ) {	
 			return "Should I create petitions? Please include createPetitions=[0|1] in your request.";
 		}
 
-		if ( ($post['apikey'] == '') || (!isset($post['apikey']) ) ) {
+		if ( empty($post['apikey']) ) {
+		//if ( ($post['apikey'] == '') || (!isset($post['apikey']) ) ) {
 			return "Key missing from request.";
 		}
 		return False;
@@ -201,15 +215,20 @@
 	function parseArrests($arrests, $sealable, $person) {
 		// Similar to createOverview, but without the microsoft word
 		$results = Array();
-		if (sizeof($arrests == 0)) {
+		//print("\nParsing arrests.\n");
+		//print_r($arrests);
+		//print("\n Size of arrests: ");
+		//print(sizeof($arrests));
+		//print("\n");
+		if (sizeof($arrests) == 0) {
 			$results['expungements_redactions'] = ["none"];
 		} else {
 			$results['expungements_redactions'] = Array();
 			$results['sealing'] = Array();
 			foreach($arrests as $arrest) {
-
+			
 				$thisArrest = Array();
-
+					
 				$thisArrest['docket'] = htmlspecialchars(implode(", ", $arrest->getDocketNumber()), ENT_COMPAT, 'UTF-8');
 				$thisArrest['otn'] = htmlspecialchars($arrest->getOTN(), ENT_COMPAT, 'UTF-8');				
 
@@ -234,7 +253,6 @@
 				$thisArrest['unpaid_costs'] = htmlspecialchars(number_format($arrest->getCostsTotal() - $arrest->getBailTotal(),2),ENT_COMPAT, 'UTF-8');
 				$thisArrest['bail'] = htmlspecialchars(number_format($arrest->getBailTotalTotal(),2), ENT_COMPAT, 'UTF-8');
 				$results['expungements_redactions'][] = $thisArrest;
-
 				if ($arrest->isArrestSealable()>0) {
 					//then iterate over all the charges
 					foreach ($arrest->getCharges() as $charge) {
@@ -258,7 +276,9 @@
 			}//end of processing arrests
 
 		}// end of processing results
-
+		error_log("Returning response:");
+		file_put_contents('php://stderr', print_r($results, TRUE));
+		error_log("-----------");
 		return $results;
 	}//end of parseArrests
 
