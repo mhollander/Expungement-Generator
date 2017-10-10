@@ -150,11 +150,13 @@
 	//print("\encoded response is");
 	
 	if (isset($_REQUEST['emailPetitions']) && preg_match('/^(t|true|1)$/i', $_REQUEST['emailPetitions'])===1){
-		if (isset($_REQUEST['createPetitions']) && preg_match('/^(t|true|1)$/i', $_REQUEST['createPetitions'])===1) {
+		if (!(isset($_REQUEST['createPetitions']) && preg_match('/^(t|true|1)$/i', $_REQUEST['createPetitions'])===1)) {
 			$file_path = NULL;
+			unset($response['results']['expungeZip']);
 		} else { 
 			$file_path = $response['results']['expungeZip'];
-			unset($response['results']['expungeZip']);
+			$path_parts = pathinfo($response['results']['expungeZip']);
+			$response['results']['expungeZip'] = $baseURL . "/secureServe.php?serveFile=" . $path_parts['filename']; 
 		} 
 		mailPetition($_REQUEST['useremail'], $_REQUEST['useremail'], $response, $file_path);
 	}
