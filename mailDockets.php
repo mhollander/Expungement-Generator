@@ -60,7 +60,7 @@ if (!empty($_POST))
     
     // $output contains the output string 
     $output = curl_exec($ch); 
-
+    
     // close curl resource to free up system resources 
     curl_close($ch);      
 

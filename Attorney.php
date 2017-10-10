@@ -29,6 +29,7 @@ class Attorney
 	private $petitionSignature;
 	private $userid;
 	private $ifp;
+    private $ifpLanguage;
 	private $email;
 	private $programID;
 	private $programName;
@@ -46,6 +47,7 @@ class Attorney
 	public function setPetitionSignature($petitionSignature) { $this->petitionSignature = $petitionSignature; }
 	public function setUserID($userid) { $this->userid = $userid; }
 	public function setIFP($ifp) { $this->ifp = $ifp; }
+	public function setIFPLanguage($ifpLanguage) { $this->ifpLanguage = $ifpLanguage; }
 	public function setEmail($email) { $this->email = $email; }
 	public function setProgramID($programID) { $this->programID = $programID; }
 	public function setProgramName($programName) { $this->programName = $programName; }
@@ -59,6 +61,7 @@ class Attorney
 	public function getPetitionSignature() { return $this->petitionSignature; }
 	public function getUserID() { return $this->userid; }
 	public function getIFP() { return $this->ifp; }
+    public function getIFPLanguage() { return $this->ifpLanguage; }
 	public function getEmail() { return $this->email; }
 	public function getProgramID() { return $this->programID; }
 	public function getProgramName() { return $this->programName; }
@@ -91,6 +94,7 @@ class Attorney
 				$this->setPetitionHeader("");
 				$this->setPetitionSignature("");
 				$this->setIFP(0);
+                $this->setIFPLanguage("");
 				$this->setEmail($row['email']);			
 				$this->setProgramID($row['programID']);
 				$this->setProgramName($row['programName']);
@@ -103,6 +107,7 @@ class Attorney
 				$this->setPetitionHeader($row['petitionHeader']);
 				$this->setPetitionSignature($row['petitionSignature']);
 				$this->setIFP($row['ifp']);
+                $this->setIFPLanguage($row['ifpLanguage']);
 				$this->setEmail($row['email']);			
 				$this->setProgramID($row['programID']);
 				$this->setProgramName($row['programName']);
@@ -114,7 +119,8 @@ class Attorney
 	
 	public function getIFPMessage()
 	{
-		return $this->getProgramName() . " is a non-profit legal services organization that provides free legal assistance to low-income individuals.  I, attorney for the petitioner, certify that petitioner meets the financial eligibility standards for representation by " . $this->getProgramName() . " and that I am providing free legal service to petitioner.";
+        return $this->getIFPLanguage();
+#		return $this->getProgramName() . " is a non-profit legal services organization that provides free legal assistance to low-income individuals.  I, attorney for the petitioner, certify that petitioner meets the financial eligibility standards for representation by " . $this->getProgramName() . " and that I am providing free legal service to petitioner.";
 	}
 	
 	// prints attorney information to the screen in basic format
@@ -182,7 +188,7 @@ class Attorney
 		if (!$errorMessages->hasMessages())
 		{
 			// if we get to here, then all is well; register the user
-			$query = "INSERT INTO user (email, password) VALUES('" . $db->real_escape_string($email) . "', '" . $db->real_escape_string(md5($password)) . "')";
+			$query = "INSERT INTO user (email, password) VALUES('" . $db->real_escape_string($email) . "', '" . $db->real_escape_string(password_hash(md5($password), PASSWORD_BCRYPT)) . "')";
 			if (!$db->query($query))
 			{
 				if ($GLOBALS['debug'])
@@ -263,7 +269,8 @@ class Attorney
 			//update the password only if they set a new password
 			if (isset($password) && $password != "")
 			{
-				$password = md5($db->real_escape_string($password));
+				$password = password_hash(md5($password), PASSWORD_BCRYPT); 
+                $password = $db->real_escape_string($password);
 				$query = "UPDATE user SET password='". $password . "' WHERE userid='" . $attorneyID . "'";
 
 				if(!$db->query($query))

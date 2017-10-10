@@ -65,24 +65,29 @@ if (!empty($_POST))
     $content = new SendGrid\Content("text/plain", $message);
     $mail = new SendGrid\Mail($from, $subject, $to, $content);                                                
     
-    // attach the dockets to the email
+    // attach the dockets to the email if they have size
     foreach($docketFiles["userFile"]["tmp_name"] as $key => $file) 
     {
-        $attachment = new SendGrid\Attachment();                                                                  
-        $attachment->setContent(base64_encode(file_get_contents($file)));              
-        $attachment->setType("application/pdf");                                                                  
-        $attachment->setFilename($docketFiles['userFile']['name'][$key]);                                                    
-        $attachment->setDisposition("attachment");                                                                
+        if (filesize($file) > 0)
+        {
+            $attachment = new SendGrid\Attachment();                                                                  
+            $attachment->setContent(base64_encode(file_get_contents($file)));              
+            $attachment->setType("application/pdf");                                                                  
+            $attachment->setFilename($docketFiles['userFile']['name'][$key]);                                                    
+            $attachment->setDisposition("attachment");                                                                
 
-        $mail->addAttachment($attachment);
+            $mail->addAttachment($attachment);
+            #error_log($file);
+        }
     }
-                                                                                                              
+       
+    
     $sg = new \SendGrid($sendGridApiKey);
 
     $response = $sg->client->mail()->send()->post($mail);                                                     
-//    echo $response->statusCode();                                                                             
-//    echo $response->headers();                                                                                
-//    echo $response->body();                 
+    #error_log($response->statusCode() . "\n");
+    #error_log($response->headers() . "\n");
+    #error_log($response->body() . "xxx\n");                 
 
 }
 ?>

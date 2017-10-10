@@ -34,41 +34,47 @@ if (isset($_POST['username']))
 {
 	// this is a login attempt; run through the login stuff
 	$username = $db->real_escape_string($_POST['username']);
-	$password = md5($db->real_escape_string($_POST['password']));
-	
-	$query = "SELECT userinfo.firstName, userinfo.lastName, user.userid FROM user, userinfo WHERE email='$username' AND password='$password' AND user.userid=userinfo.userid";
-
-	$result = $db->query($query);
+    $query = "SELECT password FROM user WHERE email='$username'";
+    $result = $db->query($query);
 	if (!$result) 
 	{
 		if ($GLOBALS['debug'])
-			die('Could not login:' . $db->error);
+			die('Could not connect to database during login:' . $db->error);
 		else
-			die('Could not login for some strange reason.');
+			die('Could not connect to database during login.');
 	}
 	$row = mysqli_fetch_assoc($result);
-	
-	if ($row['firstName'])
-	{
-		// the login was a success!  grab the username info and start a session
-		
-		// if we want to "remember login"
-		if (isset($_POST['rememberMe']))
-		{
-			// session_set_cookie_params('60000000'); // more than a year.
-			// session_regenerate_id(true); 
-		}
+    $password = $row['password'];
+    
+    // use bcrypt to verify the pw
+    if(!password_verify(md5($_POST['password']),$password))
+    {
+        // there was a problem logging in; let the user know
+		session_destroy();
+		print "There was a problem logging you in.  Return to the login screen to try again: <a href='login.php'>Retry Login</a>";
+    }
+    
+    // successful login
+    else
+    {
+        // gather info about the currently logged in user as the login was successful
+    	$query = "SELECT userinfo.firstName, userinfo.lastName, user.userid FROM user, userinfo WHERE email='$username' AND user.userid=userinfo.userid";
 
-		$_SESSION['loginUserFirst'] = $row['firstName'];
+	    $result = $db->query($query);
+    	if (!$result) 
+	    {
+		    if ($GLOBALS['debug'])
+    			die('Could not properly connect to the database during:' . $db->error);
+	    	else
+		    	die('Could not properly connect to the databse during login.');
+    	}
+	    $row = mysqli_fetch_assoc($result);
+	
+        $_SESSION['loginUserFirst'] = $row['firstName'];
 		$_SESSION['loginUserLast'] = $row['lastName'];
 		$_SESSION['loginUserID'] = $row['userid'];
 	}
-	else
-	{
-		// there was a problem logging in; let the user know
-		session_destroy();
-		print "There was a problem logging you in.  Return to the login screen to try again: <a href='login.php'>Retry Login</a>";
-	}
+
 	$result->close();
 }
 
@@ -112,7 +118,130 @@ else if (isset($_POST['create']) && $_POST['create']=="1")
 			print "Registration successful!  Please login to start creating expungement petitions.";
 	}
 }
-	
+
+// check to see if someone is trying to create a new program
+else if (isset($_POST['createProgram']) && $_POST['createProgram']==1)
+{
+	// first make sure that this is a superuser
+	if (!isLoggedIn())
+		$errorMessages->addMessage("Create Program Error", "You must be logged in as a superuser to create a program");
+    else
+    {
+		$attorney = new Attorney($_SESSION["loginUserID"], $db);
+		if($GLOBALS['debug'])
+			$attorney->printAttorneyInfo();
+
+		// only the superuser can handle this kind of thing 
+		if ($attorney->getUserLevel() != 1)
+			$errorMessages->addMessage("Create Program Error", "You must be the super user to create a program");
+			
+		// we are a superuser - we can do the creation
+		else
+        {
+            # check to make sure there is a program name.  We probably should check to make sure this
+            # program doesn't already exist in the DB, but that isn't a huge deal so I'm not
+            # going to add it in for now
+            if (!(isset($_POST['createProgramName']) && $_POST['createProgramName'] != ""))
+                $errorMessages->addMessage("Create Error", "You did not enter a program name");
+            else
+            {                           
+                // there is a program name, so do the creation
+                $sql = "INSERT INTO program (programName, ifp, ifpLanguage, apiKey) values ('" . $GLOBALS['db']->real_escape_string($_POST['createProgramName']) . "', " . $GLOBALS['db']->real_escape_string($_POST['createProgramIFP']) . ", '" . $GLOBALS['db']->real_escape_string($_POST['createProgramIFPLanguage']) . "', '" . password_hash($_POST['createProgramAPIKey'], PASSWORD_DEFAULT) . "');";
+                if (!$GLOBALS['db']->query($sql))
+                {                     
+                    if ($GLOBALS['debug'])
+                        die('There was a problem creating the program you entered:' . $GLOBALS['db']->error);  
+                    else
+                      die('There was a problem creating the program you entered.');
+                }                                                                                          
+            }
+        }
+		
+		// if errorMessages is still blank, then we can print out a success message!
+		if (!$errorMessages->hasMessages())
+			print "Registration successful!  You created a program called " . $_POST['createProgramName'] . " with apiKey '" . $_POST['createProgramAPIKey'] . "'.  You should save this key because you will never be able to retrieve it again!  Muwhahahaha.";
+	}
+    
+    
+    
+}
+
+// check to see if someone is trying to create a new program
+else if (isset($_POST['editProgram']) && $_POST['editProgram']==1)
+{
+	// first make sure that this is a superuser
+	if (!isLoggedIn())
+		$errorMessages->addMessage("Edit Program Error", "You must be logged in as a superuser to edit a program");
+    else
+    {
+		$attorney = new Attorney($_SESSION["loginUserID"], $db);
+		if($GLOBALS['debug'])
+			$attorney->printAttorneyInfo();
+
+		// only the superuser can handle this kind of thing 
+		if ($attorney->getUserLevel() != 1)
+			$errorMessages->addMessage("Edit Program Error", "You must be the super user to edit a program");
+			
+		// we are a superuser - we can do the edit
+		else
+        {
+            # check to make sure there is a program name.  We probably should check to make sure this
+            # program doesn't already exist in the DB, but that isn't a huge deal so I'm not
+            # going to add it in for now
+            if (!(isset($_POST['programName']) && $_POST['programName'] != ""))
+                $errorMessages->addMessage("Edit Error", "You did not enter a program name");
+            else
+            {                           
+                // there is a program name, so do the edit
+                $sql = "UPDATE program SET programName='" . $GLOBALS['db']->real_escape_string($_POST['programName']) . "', ifp=" . $GLOBALS['db']->real_escape_string($_POST['programIFP']) . ", ifpLanguage='" . $GLOBALS['db']->real_escape_string($_POST['programIFPLanguage']) . "' WHERE programid=" . $GLOBALS['db']->real_escape_string($_POST['id']) . ";";
+
+                if (!$GLOBALS['db']->query($sql))
+                {                     
+                    if ($GLOBALS['debug'])
+                        die('There was a problem editting the program you entered:' . $GLOBALS['db']->error);  
+                    else
+                      die('There was a problem editting the program you entered.');
+                }
+            }
+        }
+    }
+}
+
+// check if someone is trying to edit an API key
+else if (isset($_POST['editProgramKey']) && $_POST['editProgramKey']==1)
+{
+	// first make sure that this is a superuser
+	if (!isLoggedIn())
+		$errorMessages->addMessage("Reset Program APIKey Error", "You must be logged in as a superuser to edit a program");
+    else
+    {
+		$attorney = new Attorney($_SESSION["loginUserID"], $db);
+		if($GLOBALS['debug'])
+			$attorney->printAttorneyInfo();
+
+		// only the superuser can handle this kind of thing 
+		if ($attorney->getUserLevel() != 1)
+			$errorMessages->addMessage("Edit Program APIKey Error", "You must be the super user to edit a program");
+			
+		// we are a superuser - we can do the edit
+		else
+        {
+            // first generate an API key
+            $newAPIKey = bin2hex(openssl_random_pseudo_bytes(32));
+            
+            // then add it to the database
+            $sql = "UPDATE program SET apiKey='" . password_hash($newAPIKey, PASSWORD_DEFAULT) . "' WHERE programid=" . $GLOBALS['db']->real_escape_string($_POST['id']) . ";";
+
+            if (!$GLOBALS['db']->query($sql))
+                die('There was a problem editting the apiKey:' . $GLOBALS['db']->error);  
+        }
+    }
+    // if errorMessages is still blank, then we can print out a success message!
+    if (!$errorMessages->hasMessages())
+		print "API Key updated.  The new API key is '$newAPIKey'.  Save this key now as you can never again retrieve it.  Muwhahahaha.";
+}
+
+
 // check to see if someone is trying to edit their user account
 else if (isset($_POST['edit']) && $_POST['edit']=="1")
 {	
@@ -131,12 +260,21 @@ else if (isset($_POST['edit']) && $_POST['edit']=="1")
 	// check to see that they entered a valid password; if not, don't allow the edit.
 	if (isset($_POST['registerPassword']) && $_POST['registerPassword'] != '')
 	{
-		$password = md5($db->real_escape_string($_POST['registerPassword']));
-	
-		$query = "SELECT * FROM user WHERE userid='" . $_SESSION["loginUserID"] . "' AND password='$password'";
-
-		$result = $db->query($query);
-		if (!$result || $result->num_rows == 0) 
+        $query = "SELECT password FROM user WHERE userid='" . $_SESSION["loginUserID"] . "';";
+        $result = $db->query($query);           
+        if (!$result)
+        {
+            if ($GLOBALS['debug'])
+                die('Could not connect to database during user edit:' . $db->error);
+            else
+                die('Could not connect to database during user edit.');
+        }
+        
+        $row = mysqli_fetch_assoc($result);
+        $password = $row['password'];
+        
+        // use bcrypt to verify the pw
+        if(!password_verify(md5($_POST['registerPassword']),$password))
 			$errorMessages->addMessage("Edit User Error", "The password you entered was incorrect.");
 		$result->close();
 	}

@@ -53,8 +53,12 @@ else
 	{	
 		// create a new user?
 		displayCreateUser();
+        displayCreateProgram();
 	
-		displayAllUsers();		
+		displayAllUsers();
+        
+        print "<br/>&nbsp;<br /><B>Programs</b><br />&nbsp;<br/>";
+        displayAllOrgs();
 	} 	
 }
 ?>	
@@ -129,7 +133,7 @@ Identification No.: <barid>
 			<label for="createProgram">Program</label>
 			<select name="createProgram" id="createProgram" class="">
 <?php
-	// get all of the programs from the database and list them
+	// get all of the programs from the database and list them "
 	$sql = "SELECT * from program";
 	$result = $GLOBALS['db']->query($sql);
 	if (!$result) 
@@ -154,6 +158,50 @@ Identification No.: <barid>
 	</div>
 <?php
 }
+
+
+function displayCreateProgram()
+{
+    
+    $apiKey = bin2hex(openssl_random_pseudo_bytes(32));
+?>
+	<div class="guideStep guideStepCounter">Create New Program</div>
+	<div class="guideStepDesc">
+		<form action="manage.php" method="post">
+		<div class="form-item">
+			<label for="createProgramName">New Program's Name</label>
+			<div class="form-item-column">
+				<input type="text" name="createProgramName" id="createProgramName" class="form-text" value="" /> 
+			</div>
+			<div class="space-line"></div>
+		</div> 
+		<div class="form-item">
+			<label for="createProgramIFP">IFP Status</label>
+			<select name="createProgramIFP" id="createProgramIFP" class="form-text" >
+                <option value="0">0</option>
+                <option value="1" selected>1</option>
+                <option value="2">2</option>
+            </select>
+		</div> 
+		<div class="form-item">
+			<label for="createProgramIFPLanguage">IFP Language</label>
+			<textarea name="createProgramIFPLanguage" id="createProgramIFPLanguage" class="form-text form-text-area-big">_____  is a non-profit legal services organization that provides free legal assistance to low-income individuals. I, attorney for the petitioner, certify that petitioner meets the financial eligibility standards for representation by ________ and that I am providing free legal service to petitioner.</textarea>
+			<div class="description">This will only be used if IFP is not 0.</div>
+		</div>
+		<div class="form-item">
+			<label for="createProgramAPIKey">API Key</label>
+			<input type="text" name="createProgramAPIKey" id="createProgramAPIKey" style="width: 550px;" class="form-text" value="<?=$apiKey?>"/>
+		</div>
+		
+		<div class="form-item">
+			<input type="hidden" name="createProgram" value="1" />
+			<input type="submit" value="Create Program" />
+		</div>
+		</form>
+	</div>
+<?php
+}
+
 
 // nothing more than the code to display all users in a nice table	
 function displayAllUsers() 
@@ -190,6 +238,38 @@ END;
 		print "</tr>";
 	}
 	$result->close();
+    print "</table>";
 
+}
+
+function displayAllOrgs()
+{
+	// first, do a query of all orgs
+	$query = "SELECT programid, programName, ifp, ifpLanguage FROM program ORDER BY programName";
+	
+    
+    $result = $GLOBALS['db']->query($query);
+	if (!$result) 
+	{
+		if ($GLOBALS['debug'])
+			die('Could not get the program information from the DB:' . $GLOBALS['db']->error);
+		else
+			die('Could not get the program information from the DB');
+	}
+	
+	print <<<END
+	<table>
+	<tr><th>Program Name</th><th>IFP Status</th><th>IFP Language</th></tr>
+END;
+    // now print the results 
+	while ($row = $result->fetch_assoc())
+	{
+		print "<tr>";
+        print "<td><a href='editProgram.php?id={$row['programid']}'>{$row['programName']}</a></td>";
+        print "<td>{$row['ifp']}</td><td>{$row['ifpLanguage']}</td>";
+        print "</tr>";
+	}
+	$result->close();
+    print "</table>";
 }
 ?>
