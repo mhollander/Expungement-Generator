@@ -336,12 +336,15 @@ class Attorney
 	public function updateTotalPetitions($add, $db)
 	{
 		$query = "UPDATE userinfo SET totalPetitions = totalPetitions + $add WHERE userID = " . $this->getUserID();
+		error_log("Using query: " . $query);
 		if(!$db->query($query))
 		{
-			if ($GLOBALS['debug'])
+			if ($GLOBALS['debug']) {
 				die('Could not query the DB for a bar ID during registration:' . $db->error);
-			else
+			} else {
+				error_log("could not check the db for users bar id.");
 				die('Could not check the DB for your bar ID while registering you, for some strange reason.');
+			}
 		}
 		
 		return;

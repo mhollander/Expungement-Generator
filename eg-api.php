@@ -10,14 +10,21 @@
 	$response = array();
 	//set default response code:
 	http_response_code(404);
-	$test_headers = $_REQUEST;
-	error_log("Logging an error");
 
-	unset($test_headers['apikey']);	
+
+	// Log the request, but strip identifying info
+	$test_headers = $_REQUEST;
+	error_log("Logging a request to eg-api.");
+
+	$test_headers['apikey'] = preg_replace('/./', 'x', $test_headers['apikey']);	
+	$test_headers['personFirst'] = preg_replace('/(?!^)./','x',$test_headers['personFirst']);
+	$test_headers['personLast'] = preg_replace('/(?!^)./','x',$test_headers['personLast']);
+	$test_headers['personStreet'] = preg_replace('/(?!^)./','x',$test_headers['personStreet']);
 
 	file_put_contents('php://stderr', print_r($test_headers, TRUE));
 
 	
+	// Test if the quest is well formed.
 	if(malformedRequest($_REQUEST)) {
 		http_response_code(403);
 		$response['results']['status'] = malformedRequest($_REQUEST);
@@ -26,9 +33,10 @@
 		$response['results']['status'] = "Invalid request.";
 	} else {
 		http_response_code(200);
+		error_log("Starting to process a good response.");
 		// a cpcmsSearch flag can be set to true in the post request
 		// to trigger a cpcms search.
-		if (isset($_REQUEST['cpcmsSearch']) && preg_match('/^(t|true|1)$/i', $_POST['cpcmsSearch'])===1){
+		if (isset($_REQUEST['cpcmsSearch']) && preg_match('/^(t|true|1)$/i', $_REQUEST['cpcmsSearch'])===1){
 			$urlPerson = getPersonFromPostOrSession();
 
 			$cpcms = new CPCMS($urlPerson['First'],$urlPerson['Last'], $urlPerson['DOB']);
@@ -55,7 +63,7 @@
         			unset($_REQUEST['cpcmsSearch']);
 			}
 		} // end of processing cpcmsSearch
-
+		error_log("Done processing cpcmsSearch");
 		$arrests = array(); //an array to hold Arrest objects
 		$arrestSummary = new ArrestSummary();
 
@@ -74,7 +82,10 @@
 		$response['personFirst'] = $urlPerson['First'];
 		$response['personLast'] = $urlPerson['Last'];
 		$response['dob'] = $urlPerson['DOB'];
-		$attorney = new Attorney($_REQUEST['useremail'], $db);
+		$attorney = new Attorney(validAPIKey($_REQUEST['current_user']), $db);
+
+		error_log("Figured out the Attorney:");
+		error_log("Attorney " . $_REQUEST['current_user'] . " is " . validApiKey($_REQUEST['current_user'])); 	
 
 		$docketFiles = $_FILES;
 		
@@ -122,6 +133,7 @@
 		$response['results']['expungements_redactions'] = $parsed_results['expungements_redactions'];
 		$response['results']['sealing'] = $parsed_results['sealing'];
 		$files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
+		error_log("beginning to create petitions, if requested.");
 		if (preg_match('/^(t|true|1)$/i', $_REQUEST['createPetitions'])===1) {
 			$zipFile = zipFiles($files, $dataDir, $docketFiles,
 				uniqid($person->getFirst() . $person->getLast(), true) . "Expungements");
@@ -137,16 +149,27 @@
 		// we determine test upload if a SSN is entered.  If there is no SSN, we assume that
 		// there was no expungement either - it was just a test to see whether expungements were
 		// possible or a test of the generator itself by yours truly.
+
+		error_log("starting to write to db");
 		if (isset($urlPerson['SSN']) && $urlPerson['SSN'] != "") {
+			error_log("writing to db:");
+			error_log("arrests:");
+		    	file_put_contents('php://stderr', print_r($arrests), TRUE);
+			error_log("person");
+			file_put_contents('php://stderr', print_r($person), TRUE);
+			error_log("attorney");
+			file_put_contents('php://stderr', print_r($attorney), TRUE);
+	
 			writeExpungementsToDatabase($arrests, $person, $attorney, $db);
+			error_log("wrote to db");
 		}
+		error_log("cleaning up files");
 		cleanupFiles($files);
+		error_log("done writing to db");
 	}// end of processing req from a valid user
 
-	//print("\nreturning response:");
-	//print_r($response);
 
-	//print("\encoded response is");
+	error_log("checking whether to email petitions.");
 	
 	if (isset($_REQUEST['emailPetitions']) && preg_match('/^(t|true|1)$/i', $_REQUEST['emailPetitions'])===1){
 		if (!(isset($_REQUEST['createPetitions']) && preg_match('/^(t|true|1)$/i', $_REQUEST['createPetitions'])===1)) {
@@ -157,8 +180,14 @@
 			$path_parts = pathinfo($response['results']['expungeZip']);
 			$response['results']['expungeZip'] = $baseURL . "/secureServe.php?serveFile=" . $path_parts['filename']; 
 		} 
-		mailPetition($_REQUEST['useremail'], $_REQUEST['useremail'], $response, $file_path);
+	    error_log("current_user" . $_REQUEST['current_user'] . " response:" . $response . " filepath:" . $file_path);
+	    mailPetition($_REQUEST['current_user'], $_REQUEST['current_user'], $response, $file_path);
+
+	} else {
+		error_log("emailPetitions was not set");
 	}
+
+	file_put_contents('php://stderr', print_r(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), TRUE));
 	print_r(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES, 10));
 
 
@@ -166,55 +195,59 @@
 //END OF SCRIPT, start of some functions it uses.
 	function validAPIKey() {
 		$db = $GLOBALS['db'];
-		if (!isset($_REQUEST['useremail'])) {
+		if (!isset($_REQUEST['current_user'])) {
 			return False;
 		}
-		$useremail = $db->real_escape_string($_REQUEST['useremail']);
+		$useremail = $db->real_escape_string($_REQUEST['current_user']);
 		if (isset($_REQUEST['apikey'])) {
-			$query = "SELECT apiKey from user as u left join userinfo as ui on u.userid=ui.userid left join program as p on ui.programID=p.programid WHERE u.email=\"" . $useremail . "\";";
-			//print("\n\n " . $query . "\n");
-			$result = $db->query($query);
-			if (!$result) {
+			$query = $db->prepare("SELECT apiKey from user as u left join userinfo as ui on u.userid=ui.userid left join program as p on ui.programID=p.programid WHERE u.email=?");
+			$query->bind_param("s", $useremail);
+			$query->execute();
+			$query->bind_result($apikey_hashed);
+			$query->fetch();
+			$query->close();
+			if (!$apikey_hashed) {
 				return False;
 			};
-			$row = mysqli_fetch_assoc($result);
-		if (password_verify($_REQUEST['apikey'], $row['apiKey'])) {
-			return True;
+		if (password_verify($_REQUEST['apikey'], $apikey_hashed)) {
+			// The user submitted the correct api key, so now find the userid number.
+			$query = $db->prepare("SELECT userid from user where email = ?");
+			$query->bind_param("s",$useremail);
+			$query->execute();
+			$query->bind_result($userid);
+			$query->fetch();
+			$query->close();
+			if (!$userid) {
+				return False;
+			};
+			return $userid;
 			};
 		}; 
 		return False;
 	};
 
-	function malformedRequest($post) {
-		// Given a dictionary $post
+	function malformedRequest($request) {
+		// Given a dictionary $request
 		// Return false if there are no missing values
 		// 	but return a message if any of certain conditions are true.
 		// This takes advantage of the truthiness of php strings
 		// 	to supply a helpful message.
 
-		// TODO This will only flag one error at a time, though. 
-		//print("In malformedRequest, post is is: \n ");
-		//print_r($post);
-		//print("\n but $_REQUEST is ");
-		//print_r($_REQUEST);
 		
 
-		//if ( ($post['useremail'] == "") || (!isset($post['useremail']) ) ) {
-		if (empty($post['useremail'])) {
+		if (empty($request['current_user'])) {
 			return "User email missing from request.";
 		}
 
-		if ( ($post['cpcmsSearch'] == 'false') && empty($post['docketNums']) ) {
+		if ( ($request['cpcmsSearch'] == 'false') && empty($request['docketNums']) ) {
 			return "If you do not wish to do a CPCMS search, then you must supply docket numbers.";
 		}
 
-		//if ( empty($post['createPetitions'])) {
-		if ( !isset($post['createPetitions']) || ($post['createPetitions'] == '')  ) {	
+		if ( !isset($request['createPetitions']) || ($request['createPetitions'] == '')  ) {	
 			return "Should I create petitions? Please include createPetitions=[0|1] in your request.";
 		}
 
-		if ( empty($post['apikey']) ) {
-		//if ( ($post['apikey'] == '') || (!isset($post['apikey']) ) ) {
+		if ( empty($request['apikey']) ) {
 			return "Key missing from request.";
 		}
 		return False;
@@ -287,7 +320,6 @@
 
 		}// end of processing results
 		//error_log("Returning response:");
-		//file_put_contents('php://stderr', print_r($results, TRUE));
 		//error_log("-----------");
 		return $results;
 	}//end of parseArrests
