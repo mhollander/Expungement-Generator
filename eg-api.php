@@ -29,7 +29,7 @@
 	if(malformedRequest($_REQUEST)) {
 		http_response_code(403);
 		$response['results']['status'] = malformedRequest($_REQUEST);
-	} elseif(!validAPIKey($_REQUEST)) {
+	} elseif(!validAPIKey($_REQUEST, $db)) {
 		http_response_code(403);
 		$response['results']['status'] = "Invalid request.";
 	} else {
@@ -83,10 +83,10 @@
 		$response['personFirst'] = $urlPerson['First'];
 		$response['personLast'] = $urlPerson['Last'];
 		$response['dob'] = $urlPerson['DOB'];
-		$attorney = new Attorney(validAPIKey($_REQUEST), $db);
+		$attorney = new Attorney(validAPIKey($_REQUEST, $db), $db);
 
 		error_log("Figured out the Attorney:");
-		error_log("Attorney " . $_REQUEST['current_user'] . " is " . validApiKey($_REQUEST['current_user'])); 	
+		error_log("Attorney " . $_REQUEST['current_user'] . " is " . validApiKey($_REQUEST['current_user'], $db)); 	
 
 		$docketFiles = $_FILES;
 		
@@ -140,7 +140,7 @@
 				uniqid($person->getFirst() . $person->getLast(), true) . "Expungements");
 
 			if (count($files) > 0) {
-				$response['results']['expungeZip'] = $baseURL . "data/" . basename($zipFile);
+				$response['results']['expungeZip'] = basename($zipFile);
 			} else {
 				$response['results']['status'] = "Error. No dockets downloaded. It would be nice if this message were more helpful.";
 			}

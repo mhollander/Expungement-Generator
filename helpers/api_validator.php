@@ -1,8 +1,13 @@
 <?php 
 
-	function validAPIKey($request) {
-		$db = $GLOBALS['db'];
+	function validAPIKey($request, $db) {
+		//
+		//
+		// Args:
+		// 	$request (Array): An array that looks like the $_REQUEST array
+		//	$db (mysqli): A connection to a mysql database.
 		if (!isset($request['current_user'])) {
+			error_log("invalid b/c current_user isn't set");
 			return False;
 		}
 		$useremail = $db->real_escape_string($request['current_user']);
@@ -26,10 +31,12 @@
 			$query->close();
 			if (!$userid) {
 				return False;
+				error_log("invalid because user id not found");
 			};
 			return $userid;
 			};
 		}; 
+		error_log("invalid because api key did not verify");
 		return False;
 	};
 
