@@ -362,7 +362,6 @@ function writeExpungementsToDatabase($arrests, $person, $attorney, $db)
 	// setup a db connection for CREP users so that we can write remotely
 	$crepDB;
 	
-  	error_log("in writeExpungementsToDatabase");	
 	// if this is a crep lawyer, write this to the crep database
 	if ($attorney->getProgramID() == 2)
 	{
@@ -376,33 +375,26 @@ function writeExpungementsToDatabase($arrests, $person, $attorney, $db)
 	// if this isn't a CLS lawyer, we only update the number of total petitions generated and return
 	else if ($attorney->getProgramID() == 1) {
 		// otherwise, write the defendant into the db if he doesn't already exist
-		error_log("writing to db?");
 		$person->writePersonToDB($db);
 	}
 	
 	$total = 0;
 	// and then for each arrest, write the arrest into the database as well
-	error_log("looping through arrests");
-	error_log("there are " . count($arrests) . " arrests.");
 	foreach ($arrests as $arrest)
 	{
 		// count the number of petitions prepared
 		if ($arrest->isArrestExpungement() || $arrest->isArrestRedaction() || $arrest->isArrestSummaryExpungement($arrests))
 			$total++;
-		error_log("counted arrests.");	
 		// only add this to the db for certain programs
 		if ($attorney->getProgramID() == 1) {
 			$arrest->writeExpungementToDatabase($person, $attorney, $db, true);
-			error_log("wrote cls atty to db");
 		// if this is CREP, add this to a remote CREP database
 		} else {
 			if ($attorney->getProgramID() == 2)
 				$arrest->writeExpungementToDatabase($person, $attorney, $crepDB, false);
 		}
 	}
-	error_log("updating total petitions, total: " . $total);
 	$attorney->updateTotalPetitions($total, $db);
-	error_log("total petitions updated");
 	return;
 }
 

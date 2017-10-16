@@ -1692,11 +1692,9 @@ class Arrest
 		// next insert each charge, which includes the arrest id and the defendant ID
 		// finally insert the expungement, which includes the arrest id, the defendant id, the chargeid, the userid, and a timestamp
 		
-		error_log("In Arrest.php/writeExpungementToDatabase()");
 		$defendantID = $person->getPersonID();
 		$attorneyID = $attorney->getUserID();
 		$arrestID = $this->writeArrestToDatabase($defendantID, $db);
-		error_log("wrote arrest to database");
 		// we only want to write an expungement to the database if this is a redactable arrest
 		if ($this->isArrestExpungement() || $this->isArrestRedaction() || $this->isArrestSummaryExpungement)
 			$expungementID = $this->writeExpungementDataToDatabase($arrestID, $defendantID, $attorneyID, $db);
@@ -1734,7 +1732,6 @@ class Arrest
 	// @param $db - the database handle
 	public function writeArrestToDatabase($defendantID, $db)
 	{
-		error_log("in writeArrestToDatabase");
 		$sql = "INSERT INTO arrest (`defendantID`, `OTN` ,`DC` ,`docketNumPrimary` ,`docketNumRelated`,
 			`arrestingOfficer` ,`arrestDate` ,`dispositionDate` ,`judge` ,`costsTotal` ,`costsPaid` ,
 			`costsCharged` ,`costsAdjusted` ,`bailTotal` ,`bailCharged` ,`bailPaid` ,`bailAdjusted` ,
@@ -1752,8 +1749,6 @@ class Arrest
 			$this->getIsSummaryArrest() . "', '" . $this->getCounty() . "', '" . 
 			$db->real_escape_string($this->getArrestingAgency()) . "')";
 
-		error_log("Logging arrest sql insert statement:");
-		error_log($sql);
 		if ($GLOBALS['debug'])
 			print $sql;
 		if (!$db->query($sql))

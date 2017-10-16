@@ -77,7 +77,6 @@ if (!empty($_POST))
             $attachment->setDisposition("attachment");                                                                
 
             $mail->addAttachment($attachment);
-            #error_log($file);
         }
     }
        
@@ -85,9 +84,6 @@ if (!empty($_POST))
     $sg = new \SendGrid($sendGridApiKey);
 
     $response = $sg->client->mail()->send()->post($mail);                                                     
-    #error_log($response->statusCode() . "\n");
-    #error_log($response->headers() . "\n");
-    #error_log($response->body() . "xxx\n");                 
 
 }
 ?>

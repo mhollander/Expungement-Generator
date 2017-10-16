@@ -80,24 +80,17 @@ class Person
 	public function writePersonToDB($db)
 	{
 		// if the person is already in the DB, then just exist
-		error_log("Trying to write person to db");
 		if ($this->checkInDB($db))
 			return;
 		
-		error_log("person's not already in db");
 		$sql = "INSERT INTO defendant (firstName, lastName, PP, SID, SSN, DOB, street, city, state, zip, alias) VALUES ('" . $this->getFirst() . "', '" . $this->getLast() . "', 0, '', '" . $this->getSSN() . "', '" . dateConvert($this->getDOB()) . "', '" . $this->getStreet() . "', '" . $this->getCity() . "', '" . $this->getState() . "', '" . $this->getZip() . "', '" . $this->getAliasCommaList() . "')";
-	 	error_log("querying db for person now with query: ");	
-		error_log($sql);
 		if (!$db->query($sql))
 		{
-			error_log("could not add defendant to the db. Query was");
-			error_log($sql);
 			if ($GLOBALS['debug'])
 				die('Could not add the Defendant to the DB:' . $db->error);
 			else
 				die('Could not add the Defendant to the DB');
 		}
-		error_log("almost done writing person to db");
 		$this->setPersonID($db->insert_id);
 		return;
 	}

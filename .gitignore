@@ -3,3 +3,4 @@ composer.*
 config.php
 *~
 data/*
+docketsheets/*

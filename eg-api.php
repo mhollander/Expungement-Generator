@@ -21,7 +21,7 @@
 	$test_headers['personLast'] = preg_replace('/(?!^)./','x',$test_headers['personLast']);
 	$test_headers['personStreet'] = preg_replace('/(?!^)./','x',$test_headers['personStreet']);
 
-	file_put_contents('php://stderr', print_r($test_headers, TRUE));
+	//file_put_contents('php://stderr', print_r($test_headers, TRUE));
 
 	
 	// Test if the quest is well formed.
@@ -152,20 +152,20 @@
 
 		error_log("starting to write to db");
 		if (isset($urlPerson['SSN']) && $urlPerson['SSN'] != "") {
-			error_log("writing to db:");
-			error_log("arrests:");
-		    	file_put_contents('php://stderr', print_r($arrests), TRUE);
-			error_log("person");
-			file_put_contents('php://stderr', print_r($person), TRUE);
-			error_log("attorney");
-			file_put_contents('php://stderr', print_r($attorney), TRUE);
+			//error_log("writing to db:");
+			//error_log("arrests:");
+		    	//file_put_contents('php://stderr', print_r($arrests), TRUE);
+			//error_log("person");
+			//file_put_contents('php://stderr', print_r($person), TRUE);
+			//error_log("attorney");
+			//file_put_contents('php://stderr', print_r($attorney), TRUE);
 	
 			writeExpungementsToDatabase($arrests, $person, $attorney, $db);
-			error_log("wrote to db");
+			//error_log("wrote to db");
 		}
-		error_log("cleaning up files");
+		//error_log("cleaning up files");
 		cleanupFiles($files);
-		error_log("done writing to db");
+		//error_log("done writing to db");
 	}// end of processing req from a valid user
 
 
@@ -187,7 +187,7 @@
 		error_log("emailPetitions was not set");
 	}
 
-	file_put_contents('php://stderr', print_r(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), TRUE));
+	//file_put_contents('php://stderr', print_r(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), TRUE));
 	print_r(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES, 10));
 
 
