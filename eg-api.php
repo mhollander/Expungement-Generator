@@ -86,7 +86,7 @@
 		$attorney = new Attorney(validAPIKey($_REQUEST, $db), $db);
 
 		error_log("Figured out the Attorney:");
-		error_log("Attorney " . $_REQUEST['current_user'] . " is " . validApiKey($_REQUEST['current_user'], $db)); 	
+		error_log("Attorney " . $_REQUEST['current_user'] . " is " . validApiKey($_REQUEST, $db)); 	
 
 		$docketFiles = $_FILES;
 		
@@ -181,51 +181,14 @@
 			$path_parts = pathinfo($response['results']['expungeZip']);
 			$response['results']['expungeZip'] = $baseURL . "secureServe.php?serveFile=" . $path_parts['filename']; 
 		} 
-	    error_log("current_user" . $_REQUEST['current_user'] . " response:" . $response . " filepath:" . $file_path);
 	    mailPetition($_REQUEST['current_user'], $_REQUEST['current_user'], $response, $file_path);
 
 	} else {
 		error_log("emailPetitions was not set");
 	}
-
-	//file_put_contents('php://stderr', print_r(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), TRUE));
+	error_log("Finished api request.");
 	print_r(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES, 10));
 
-
-
-//END OF SCRIPT, start of some functions it uses.
-//	function validAPIKey() {
-//		$db = $GLOBALS['db'];
-//		if (!isset($_REQUEST['current_user'])) {
-//			return False;
-//		}
-//		$useremail = $db->real_escape_string($_REQUEST['current_user']);
-//		if (isset($_REQUEST['apikey'])) {
-//			$query = $db->prepare("SELECT apiKey from user as u left join userinfo as ui on u.userid=ui.userid left join program as p on ui.programID=p.programid WHERE u.email=?");
-//			$query->bind_param("s", $useremail);
-//			$query->execute();
-//			$query->bind_result($apikey_hashed);
-//			$query->fetch();
-//			$query->close();
-//			if (!$apikey_hashed) {
-//				return False;
-//			};
-//		if (password_verify($_REQUEST['apikey'], $apikey_hashed)) {
-//			// The user submitted the correct api key, so now find the userid number.
-//			$query = $db->prepare("SELECT userid from user where email = ?");
-//			$query->bind_param("s",$useremail);
-//			$query->execute();
-//			$query->bind_result($userid);
-//			$query->fetch();
-//			$query->close();
-//			if (!$userid) {
-//				return False;
-//			};
-//			return $userid;
-//			};
-//		}; 
-//		return False;
-//	};
 
 	function malformedRequest($request) {
 		// Given a dictionary $request
