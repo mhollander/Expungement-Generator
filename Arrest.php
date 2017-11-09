@@ -48,6 +48,10 @@ class Arrest
 	private $county;
 	private $OTN;
 	private $DC;
+    private $jNumber;
+    private $jDischargeDate;
+    private $SID;
+    private $PID;
 	private $docketNumber = array();
 	private $arrestingOfficer;
 	private $arrestingAgency;
@@ -91,9 +95,11 @@ class Arrest
 	
 	// isMDJ = 0 if this is not an mdj case at all, 1 if this is an mdj case and 2 if this is a CP case that decended from MDJ
 	private $isMDJ = 0;
+    private $isJuvenilePhilly = false;
 	
 	public static $expungementTemplate = "790ExpungementTemplate.docx";
 	public static $act5Template = "791Act5SealingTemplate.docx";
+	public static $juvenileExpungementTemplate = "JuvenileExpungementTemplate.docx";
 	public static $IFPTemplate = "IFPTemplate.docx";
     public static $COSTemplate = "MontcoCertificateofServiceTemplate.docx";
    
@@ -101,12 +107,14 @@ class Arrest
 	
 	protected static $unknownInfo = "N/A";
 	protected static $unknownOfficer = "Unknown officer";
+	protected static $unknownAgency = "Unknown agency";
 	
 	protected static $mdjDistrictNumberSearch = "/Magisterial District Judge\s(.*)/i";
 	protected static $countySearch = "/\sof\s(\w+)\sCOUNTY/i";
 	protected static $mdjCountyAndDispositionDateSearch = "/County:\s+(.*)\s+Disposition Date:\s+(.*)/";
 	protected static $OTNSearch = "/OTN:\s+(\D(\s)?\d+(\-\d)?)/";
 	protected static $DCSearch = "/District Control Number\s+(\d+)/";
+	protected static $juvenileNumberSearch = "/Juvenile ID\s+(\d+)/";
 	protected static $docketSearch = "/Docket Number:\s+((MC|CP)\-\d{2}\-(\D{2})\-\d*\-\d{4})/";
 	protected static $mdjDocketSearch = "/Docket Number:\s+(MJ\-\d{5}\-(\D{2})\-\d*\-\d{4})/";
 	protected static $arrestingAgencyAndOfficerSearch = "/Arresting Agency:\s+(.*)\s+Arresting Officer: (\D+)/";
@@ -132,8 +140,11 @@ class Arrest
 	protected static $judgeSearchOverflow = "/^\s+(\w+\s*\w*)\s*$/";
 	protected static $migratedJudgeSearch = "/migrated/i";
 	protected static $DOBSearch = "/Date Of Birth:?\s+(\d{1,2}\/\d{1,2}\/\d{4})/i";
+	protected static $SIDSearch = "/SID:?\s+(\d{1,3}-\d{1,3}-\d{1,3}-\d{1,3})/i";
+	protected static $PIDSearch = "/PID\s+(\d+)/i";
 	protected static $nameSearch = "/^Defendant\s+(.*), (.*)/";
-
+    protected static $juvenileNameSearch = "/In the interest of:\s+(.*), a Minor/i";
+      
 	// ($1 = charge, $2 = disposition, $3 = grade, $4 = code section
 	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Not Guilty|Guilty|Nolle Prossed|Nolle Prossed \(Case Dismissed\)|Nolle Prosequi - Administrative|Guilty Plea|Guilty Plea - Negotiated|Guilty Plea - Non-Negotiated|Withdrawn|Withdrawn - Administrative|Charge Changed|Held for Court|Community Court Program|Dismissed - Rule 1013 \(Speedy|Dismissed - Rule 600 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed - Rule 546|Dismissed - Rule 586|Dismissed|Demurrer Sustained|ARD - County Open|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Summary Diversion Completed|Judgment of Acquittal \(Prior to)\s+(\w{0,2})\s+(\w{1,2}\s?\247\s?\d+(\-|\247|\w+)*)/"; // removed "Replacement by Information"
 	// explanation: .+? - the "?" means to do a lazy match of .+, so it isn't greedy.  THe match of 12+ spaces handles the large space after the charges and after the disposition before the next line.  The final part is to match the code section that is violated.	
@@ -171,7 +182,9 @@ class Arrest
 	// 3) for MDJ cases, disposition date appears on a line by itself, so it is easier to find
 	protected static $dispDateSearch = "/(?:Plea|Status|Status of Restitution|Status - Community Court|Status Listing|Migrated Dispositional Event|Trial|Preliminary Hearing|Pre-Trial Conference)\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+Final Disposition/";
 	protected static $dispDateSearch2 = "/(.*)\s(\d{1,2}\/\d{1,2}\/\d{4})/";	
-	
+
+	protected static $dischargeDateSearch = "/^(\d{1,2}\/\d{1,2}\/\d{4})$/";
+
 	// this is a crazy one.  Basically matching whitespace then $xx.xx then whitespace then 
 	// -$xx.xx, etc...  The fields show up as Assesment, Payment, Adjustments, Non-Monetary, Total
 	protected static $costsSearch = "/Totals:\s+\\$([\d\,]+\.\d{2})\s+-?\\$([\d\,]+\.\d{2})\s+-?\\$([\d\,]+\.\d{2})\s+-?\\$([\d\,]+\.\d{2})\s+-?\\$([\d\,]+\.\d{2})/";
@@ -184,9 +197,13 @@ class Arrest
 	public function getCounty() { if (!isset($this->county)) $this->setCounty(self::$unknownInfo); return $this->county; }
 	public function getOTN() { if (!isset($this->OTN)) $this->setOTN(self::$unknownInfo); return $this->OTN; }
 	public function getDC() { if (!isset($this->DC)) $this->setDC(self::$unknownInfo); return $this->DC; }
+	public function getJNumber() { if (!isset($this->jNumber)) $this->setJNumber(self::$unknownInfo); return $this->jNumber; }
+	public function getJDischargeDate() { return $this->jDischargeDate; }
+	public function getSID() { if (!isset($this->SID)) $this->setSID(self::$unknownInfo); return $this->SID; }
+	public function getPID() { if (!isset($this->PID)) $this->setPID(self::$unknownInfo); return $this->PID; }
 	public function getDocketNumber() { return $this->docketNumber; }
 	public function getArrestingOfficer() { if (!isset($this->arrestingOfficer)) $this->setArrestingOfficer(self::$unknownOfficer); return $this->arrestingOfficer; }
-	public function getArrestingAgency() { return $this->arrestingAgency; }
+	public function getArrestingAgency() { if (!isset($this->arrestingAgency)) $this->setArrestingAgency(self::$unknownAgency); return $this->arrestingAgency; }
 	public function getArrestDate() { return $this->arrestDate; }
 	public function getComplaintDate() { return $this->complaintDate; }
 	//  getDispositionDate() exists elsewhere
@@ -218,6 +235,7 @@ class Arrest
 	public function getIsSummaryArrest()  { return $this->isSummaryArrest; }
     public function getSealableMaybeReasons() { return $this->sealableMaybeReasons; }
 	public function getIsMDJ() { return $this->isMDJ; }
+	public function getIsJuvenilePhilly() { return $this->isJuvenilePhilly; }
 	public function getPDFFile() { return $this->pdfFile;}
 	public function getPDFFileName() { return $this->pdfFileName;}
 	public function getAliases() { return $this->aliases; }
@@ -232,6 +250,10 @@ class Arrest
 		$this->OTN = str_replace(" ", "", str_replace("-", "", $OTN));
 	}
 	public function setDC($DC) { $this->DC = $DC; }
+	public function setJNumber($jNumber) { $this->jNumber = $jNumber; }
+	public function setJDischargeDate($jDischargeDate) { $this->jDischargeDate = $jDischargeDate; }
+	public function setSID($SID) { $this->SID = $SID; }
+	public function setPID($PID) { $this->PID = $PID; }
 	public function setDocketNumber($docketNumber) { $this->docketNumber = $docketNumber; }
 	public function setIsSummaryArrest($isSummaryArrest)  { $this->isSummaryArrest = $isSummaryArrest; } 
 	public function setArrestingOfficer($arrestingOfficer) {  $this->arrestingOfficer = ucwords(strtolower($arrestingOfficer)); }
@@ -270,6 +292,7 @@ class Arrest
 	public function setIsHeldForCourt($isHeldForCourt)  {  $this->isHeldForCourt = $isHeldForCourt; }
 	public function setIsOnlyHeldForCourt($isOnlyHeldForCourt)  {  $this->isOnlyHeldForCourt = $isOnlyHeldForCourt; }
 	public function setIsMDJ($isMDJ)  {  $this->isMDJ = $isMDJ; }
+	public function setIsJuvenilePhilly($isJuvenile)  {  $this->isJuvenilePhilly = $isJuvenile; }
 	public function setPDFFile($pdfFile) { $this->pdfFile = $pdfFile; }
 	public function setPDFFileName($pdfFileName) { $this->pdfFileName = $pdfFileName; }
 	public function addAlias($a) { $this->aliases[] = $a; }
@@ -329,6 +352,18 @@ class Arrest
 		else
 			return false;
 	}
+    
+    // sets isJuvenilePhilly = true if the arrest RecordFile is a Philly Juvenile Case
+    public function checkIsJuvenilePhilly($line)
+    {
+        if (preg_match("/Family Court of Philadelphia/i", $line))
+        {
+            $this->setIsJuvenilePhilly(TRUE);
+            return TRUE;
+        }
+        else
+          return FALSE;
+    }
 
 	
 	// reads in a record and sets all of the relevant variable.
@@ -346,7 +381,7 @@ class Arrest
 				$this->setMDJDistrictNumber(trim($matches[1]));
 
 		}
-
+        
 		foreach ($arrestRecordFile as $line_num => $line)
 		{
 			// print "$line_num: $line<br/>";
@@ -471,8 +506,8 @@ class Arrest
 				if (!preg_match(self::$migratedJudgeSearch, $matches[1], $junk) && trim($matches[1]) != "")
 					$this->setJudge(trim($matches[1]));
 			}
-			
-			
+
+            
 			else if  (preg_match(self::$DOBSearch, $line, $matches))
 				$this->setDOB(trim($matches[1]));
 			
@@ -594,7 +629,34 @@ class Arrest
 				$this->setCostsAdjusted(doubleval(str_replace(",","",$matches[3])));
 				$this->setCostsTotal(doubleval(str_replace(",","",$matches[5])));  // tot final amount, after all adjustments
 			}
+            
+            // search for things that only have to do with juvenile cases in philly
+            else if ($this->isJuvenilePhilly && preg_match(self::$juvenileNumberSearch, $line, $matches))
+                $this->setJNumber(trim($matches[1]));
+                
+            else if ($this->isJuvenilePhilly && preg_match(self::$SIDSearch, $line, $matches))
+                $this->setSID(trim($matches[1]));
+
+            else if ($this->isJuvenilePhilly && preg_match(self::$PIDSearch, $line, $matches))
+                $this->setPID(trim($matches[1]));
+            
+            else if ($this->isJuvenilePhilly && preg_match(self::$juvenileNameSearch, $line, $matches))
+            {
+                list($first,$last) = explode(" ", trim($matches[1]),2);
+                $this->setFirstName($first);
+                $this->setLastName($last);
+            }
+            
+            // this is sort of a funny one.  the very last bare date entry in the docket is the date
+            // that the case was discharged.  It is on a line by itself and there isn't any 
+            // consistent context around the date that could be used to find this final date entry.
+            // So rather than search for it, I am going to search for EVERY bare date entry and store
+            // each as the discharge date.  The final one will override all previous and we will have a 
+            // discharge date!
+            else if ($this->isJuvenilePhilly && preg_match(self::$dischargeDateSearch, trim($line), $matches))
+               $this->setJDischargeDate(trim($matches[1]));
 		}
+        
 	}
 		
 	// Compares two arrests to see if they are part of the same case.  Two arrests are part of the 
@@ -1269,6 +1331,8 @@ class Arrest
         // act 5 petitions use a different template since the wording is very different
 	    if ($_SESSION['act5Regardless'])
           $docx = new \PhpOffice\PhpWord\TemplateProcessor($inputDir . Arrest::$act5Template);
+        else if ($this->isJuvenilePhilly)
+            $docx = new \PhpOffice\PhpWord\TemplateProcessor($inputDir . Arrest::$juvenileExpungementTemplate);
         else
             $docx = new \PhpOffice\PhpWord\TemplateProcessor($inputDir . Arrest::$expungementTemplate);
 	    
@@ -1288,11 +1352,15 @@ class Arrest
 		$docx->setValue("LAST_NAME", htmlspecialchars($this->getLastName(), ENT_COMPAT, 'UTF-8'));
 		$docx->setValue("REAL_FIRST_NAME", htmlspecialchars($person->getFirst(), ENT_COMPAT, 'UTF-8'));
 		$docx->setValue("REAL_LAST_NAME", htmlspecialchars($person->getLast(), ENT_COMPAT, 'UTF-8'));
-		$docx->setValue("STREET", htmlspecialchars($person->getStreet(), ENT_COMPAT, 'UTF-8'));
-		$docx->setValue("CITY", htmlspecialchars($person->getCity(), ENT_COMPAT, 'UTF-8'));
-		$docx->setValue("STATE", htmlspecialchars($person->getState(), ENT_COMPAT, 'UTF-8'));
-		$docx->setValue("ZIP", htmlspecialchars($person->getZip(), ENT_COMPAT, 'UTF-8'));
-		
+
+        if (!$this->isJuvenilePhilly)
+        {
+    		$docx->setValue("STREET", htmlspecialchars($person->getStreet(), ENT_COMPAT, 'UTF-8'));
+	    	$docx->setValue("CITY", htmlspecialchars($person->getCity(), ENT_COMPAT, 'UTF-8'));
+		    $docx->setValue("STATE", htmlspecialchars($person->getState(), ENT_COMPAT, 'UTF-8'));
+    		$docx->setValue("ZIP", htmlspecialchars($person->getZip(), ENT_COMPAT, 'UTF-8'));
+        }
+        
 		// if we are not an anon petition, we have to modify the petition a bit
 		if (!$attorney->getIsAnon())
 		{
@@ -1315,16 +1383,19 @@ class Arrest
 		// set the type of petition
 		// NOTE: Should I just keep the "else clause" and get rid of the if clause?  I think this handles every case for redaction or expungement.  Why not just test
 		// the expungements and then move on to redaction?  Or test the redaction and write "Expungement" otherwise.
-		if (($this->isArrestRedaction() && !$this->isArrestExpungement()) && !$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['act5Regardless'])
-			$docx->setValue("EXPUNGEMENT_OR_REDACTION","Partial Expungement");
-		else if (!$_SESSION['act5Regardless'] && ($this->isArrestExpungement() || $this->isArrestSummaryExpungement || $this->isArrestOver70Expungement || $expungeRegardless))
-			$docx->setValue("EXPUNGEMENT_OR_REDACTION", "Expungement");
+        
+        if (!$this->isJuvenilePhilly)
+        {
+    		if (($this->isArrestRedaction() && !$this->isArrestExpungement()) && !$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['act5Regardless'])
+	    		$docx->setValue("EXPUNGEMENT_OR_REDACTION","Partial Expungement");
+    		else if (!$_SESSION['act5Regardless'] && ($this->isArrestExpungement() || $this->isArrestSummaryExpungement || $this->isArrestOver70Expungement || $expungeRegardless))
+	    		$docx->setValue("EXPUNGEMENT_OR_REDACTION", "Expungement");
 		
-		if ($attorney->getIFP()==1)
-			$docx->setValue("IFP_MESSAGE", htmlspecialchars($attorney->getIFPMessage(), ENT_COMPAT, 'UTF-8'));
-		else
-			$docx->setValue("IFP_MESSAGE", "");
-
+    		if ($attorney->getIFP()==1)
+	    		$docx->setValue("IFP_MESSAGE", htmlspecialchars($attorney->getIFPMessage(), ENT_COMPAT, 'UTF-8'));
+    		else
+	    		$docx->setValue("IFP_MESSAGE", "");
+        }
 
         // set the docket numbers on the petition and order.  I have four different places where docket
         // numbers live, so I have to clone the CP row four different times.  The setValue command
@@ -1333,25 +1404,31 @@ class Arrest
         $aDocketNumbers = $this->getDocketNumber();
         $docx->cloneRow("CP",count($aDocketNumbers));                                                        
         $docx->cloneRow("CP",count($aDocketNumbers));                                                        
-        $docx->cloneRow("CP",count($aDocketNumbers));                                                        
-        $docx->cloneRow("CP",count($aDocketNumbers));                                                        
+        $docx->cloneRow("CP",count($aDocketNumbers));
+        
+        if (!$this->isJuvenilePhilly)
+            $docx->cloneRow("CP",count($aDocketNumbers));
+        
         for ($i=0; $i < count($aDocketNumbers); $i++)                                                                 
         {                                                                                                       
             $j = $i+1;                                                                                          
             $docx->setValue("CP#" . $j, htmlspecialchars($aDocketNumbers[$i], ENT_COMPAT, 'UTF-8'));
         }             
 	    
-		$aliases = $person->getAliasCommaList();
-		if (trim($aliases) == FALSE)
-			$aliases = "None";
-		$docx->setValue("ALIASES", htmlspecialchars($aliases, ENT_COMPAT, 'UTF-8'));
-				
+        if (!$this->isJuvenilePhilly)
+        {
+    		$aliases = $person->getAliasCommaList();
+	    	if (trim($aliases) == FALSE)
+		    	$aliases = "None";
+    		$docx->setValue("ALIASES", htmlspecialchars($aliases, ENT_COMPAT, 'UTF-8'));
+        }
+        
 		$docx->setValue("OTN", htmlspecialchars($this->getOTN(), ENT_COMPAT, 'UTF-8'));
 		$docx->setValue("DC", htmlspecialchars($this->getDC(), ENT_COMPAT, 'UTF-8'));
 		// $docx->setValue("PP", $person->getPP()); // PP/PID not needed anymore and we lost secure access
 		$docx->setValue("SSN", htmlspecialchars($person->getSSN(), ENT_COMPAT, 'UTF-8'));
 		$docx->setValue("DOB", htmlspecialchars($this->getDOB(), ENT_COMPAT, 'UTF-8'));
-		// $docx->setValue("SID", $person->getSID());  // SID not needed anymore and we lost secure access
+		
 		
 		// setting the disposition list is different dependingo on what type of expungement
 		// this is.  An ARD will say that the ard was completed; a summary might say something else
@@ -1375,6 +1452,10 @@ class Arrest
 	    else if ($_SESSION['act5Regardless'])
           ;
         
+        // these fields don't exist on juvenile expungement petitions
+        else if ($this->isJuvenilePhilly)
+          ;
+        
 		else if ($this->isArrestSummaryExpungement)
 		{
 			$docx->setValue("DISPOSITION_LIST", htmlspecialchars("summary convictions", ENT_COMPAT, 'UTF-8'));
@@ -1391,21 +1472,27 @@ class Arrest
 
 		// for costs, we have to subtract out any effect that bail may have had on the costs and fines.  The rules only require
 		// that we tell the court costs and fines accrued and paid off, not bail accrued and paid off
-		$docx->setValue("TOTAL_FINES", htmlspecialchars("$" . number_format($this->getCostsCharged() - $this->getBailCharged(),2), ENT_COMPAT, 'UTF-8'));
-		$docx->setValue("FINES_PAID", htmlspecialchars("$" . number_format($this->getCostsPaid() + $this->getCostsAdjusted() - $this->getBailPaid() - $this->getBailAdjusted(),2), ENT_COMPAT, 'UTF-8'));
-		
+        if (!$this->isJuvenilePhilly)
+        {
+    		$docx->setValue("TOTAL_FINES", htmlspecialchars("$" . number_format($this->getCostsCharged() - $this->getBailCharged(),2), ENT_COMPAT, 'UTF-8'));
+	    	$docx->setValue("FINES_PAID", htmlspecialchars("$" . number_format($this->getCostsPaid() + $this->getCostsAdjusted() - $this->getBailPaid() - $this->getBailAdjusted(),2), ENT_COMPAT, 'UTF-8'));
+		}
+        
 		// if judge exists, then write "Judge $judge"; otherwise write "Unknown Judge"
 		$tempJudge = (isset($this->judge) && $this->getJudge() != "") ? "Judge " . $this->getJudge() : "Unknown Judge";
 		$docx->setValue("JUDGE", htmlspecialchars($tempJudge, ENT_COMPAT, 'UTF-8'));
 
-        // sometimes there is no arrest date available; if there is a complaint date, use that on the order
-        // otherwise just put in N/A
-		if (!empty($this->arrestDate))
-    		$docx->setValue("ARREST_COMPLAINT_DATE", "Arrest Date: " . htmlspecialchars($this->getArrestDate(), ENT_COMPAT, 'UTF-8'));
-		elseif (!empty($this->complaintDate))
-    		$docx->setValue("ARREST_COMPLAINT_DATE", "Complaint Date: " . htmlspecialchars($this->getComplaintDate(), ENT_COMPAT, 'UTF-8'));
-        else
-    		$docx->setValue("ARREST_COMPLAINT_DATE", "Arrest Date: N/A");
+        if (!$this->isJuvenilePhilly)
+        {
+            // sometimes there is no arrest date available; if there is a complaint date, use that on the order
+            // otherwise just put in N/A
+		    if (!empty($this->arrestDate))
+        		$docx->setValue("ARREST_COMPLAINT_DATE", "Arrest Date: " . htmlspecialchars($this->getArrestDate(), ENT_COMPAT, 'UTF-8'));
+	    	elseif (!empty($this->complaintDate))
+    	    	$docx->setValue("ARREST_COMPLAINT_DATE", "Complaint Date: " . htmlspecialchars($this->getComplaintDate(), ENT_COMPAT, 'UTF-8'));
+            else
+        		$docx->setValue("ARREST_COMPLAINT_DATE", "Arrest Date: N/A");
+        }
           
 
 		$docx->setValue("ARREST_DATE", htmlspecialchars($this->getArrestDate(), ENT_COMPAT, 'UTF-8'));
@@ -1415,8 +1502,10 @@ class Arrest
 //			$docx->setValue("EXPUNGEABLE_CHARGE_LIST", $this->getChargeList(TRUE));
 		
 		
-		$docx->setValue("COUNTY", htmlspecialchars($this->getCounty(), ENT_COMPAT, 'UTF-8'));
-		$docx->setValue("ARRESTING_AGENCY", htmlspecialchars($this->getArrestingAgency(), ENT_COMPAT, 'UTF-8'));
+        if (!$this->isJuvenilePhilly)
+    		$docx->setValue("COUNTY", htmlspecialchars($this->getCounty(), ENT_COMPAT, 'UTF-8'));
+	
+        $docx->setValue("ARRESTING_AGENCY", htmlspecialchars($this->getArrestingAgency(), ENT_COMPAT, 'UTF-8'));
 
         // in montgomery county, we have to put the actual address of the arresting agency, which is 
         // stored in the db.  in other counties, we just need to write the name of the county as the 
@@ -1425,86 +1514,91 @@ class Arrest
     		$docx->setValue("AGENCY_ADDRESS", htmlspecialchars($this->getAgencyAddress(), ENT_COMPAT, 'UTF-8'));
         else
         	$docx->setValue("AGENCY_ADDRESS", htmlspecialchars($this->getCounty(), ENT_COMPAT, 'UTF-8') . " County, PA");
-          
-		$docx->setValue("COMPLAINT_DATE", htmlspecialchars($this->getComplaintDate(), ENT_COMPAT, 'UTF-8'));
+        
+        if (!$this->isJuvenilePhilly)
+    		$docx->setValue("COMPLAINT_DATE", htmlspecialchars($this->getComplaintDate(), ENT_COMPAT, 'UTF-8'));
 
 		$mdjNumberForTemplate = "";
-		if ($this->getIsMDJ() == 1)
-			// if this is an mdj, set the below var so that it inputs onto the shset the district number
-			// if this isn't an mdj, then we set nothing and this field will be blanked out on the petition.
-			$mdjNumberForTemplate = "Magisterial District Number: {$this->getMDJDistrictNumber()}";
-		$docx->setValue("MDJ_DISTRICT_NUMBER", htmlspecialchars($mdjNumberForTemplate, ENT_COMPAT, 'UTF-8'));
+        
+        if (!$this->isJuvenilePhilly)
+        {
+    		if ($this->getIsMDJ() == 1)
+	    		// if this is an mdj, set the below var so that it inputs onto the shset the district number
+		    	// if this isn't an mdj, then we set nothing and this field will be blanked out on the petition.
+			    $mdjNumberForTemplate = "Magisterial District Number: {$this->getMDJDistrictNumber()}";
+    		$docx->setValue("MDJ_DISTRICT_NUMBER", htmlspecialchars($mdjNumberForTemplate, ENT_COMPAT, 'UTF-8'));
 
-		// set the agencies for receiving orders.  As silly as this is, I need to do this through
-		// php since there are different agencies that are notified if this is an mdj case.
-		$agencies = array(	"The Clerk of Courts of {$this->getCounty()} County, Criminal Division",
-							"The {$this->getCounty()} County District Attorney`s Office",
-							"The Pennsylvania State Police, Central Records",
-							"A.O.P.C. Expungement Unit",
-							$this->getArrestingAgency(),
-							"{$this->getCounty()} County Department of Adult Probation and Parole");
-		if ($this->getIsMDJ())
-			// if this is an mdj case, put the MDJ court in the list, right after the clerk of courts
-			array_splice($agencies,1,0,"Magisterial District Court {$this->getMDJDistrictNumber()}");
+	    	// set the agencies for receiving orders.  As silly as this is, I need to do this through
+		    // php since there are different agencies that are notified if this is an mdj case.
+    		$agencies = array(	"The Clerk of Courts of {$this->getCounty()} County, Criminal Division",
+	    						"The {$this->getCounty()} County District Attorney`s Office",
+		    					"The Pennsylvania State Police, Central Records",
+			    				"A.O.P.C. Expungement Unit",
+				    			$this->getArrestingAgency(),
+					    		"{$this->getCounty()} County Department of Adult Probation and Parole");
+    		if ($this->getIsMDJ())
+	    		// if this is an mdj case, put the MDJ court in the list, right after the clerk of courts
+		    	array_splice($agencies,1,0,"Magisterial District Court {$this->getMDJDistrictNumber()}");
 
 		
-        $docx->cloneRow("AGENCY_NAME",count($agencies));
-		for ($i=0; $i < count($agencies); $i++)
-		{
-            $j = $i+1;
-			$docx->setValue("AGENCY_NAME#" . $j, htmlspecialchars($j . ". " . $agencies[$i], ENT_COMPAT, 'UTF-8'));
-		}
+            $docx->cloneRow("AGENCY_NAME",count($agencies));
+	    	for ($i=0; $i < count($agencies); $i++)
+		    {
+                $j = $i+1;
+    			$docx->setValue("AGENCY_NAME#" . $j, htmlspecialchars($j . ". " . $agencies[$i], ENT_COMPAT, 'UTF-8'));
+	    	}
 
 	    
-		$courtInformation = $this->getCourtInformation($db);
+    		$courtInformation = $this->getCourtInformation($db);
         
-        // put all court information together into one block.  If there isn't any court information, 
-        // this allows as few newlines as possible in the petition and order that are generated
-        $formattedCourtInformation = "";
-        if (!empty($courtInformation['courtName'])) 
-        {   
-            $formattedCourtInformation = $courtInformation['courtName'] . "\r\n";
-            $formattedCourtInformation .= $courtInformation['address'] . ' ' . $courtInformation['address2'] . "\r\n";
-            $formattedCourtInformation .= $courtInformation['city'] . ", " . $courtInformation['state'] . ' ' . $courtInformation['zip'];
-        }
-		$docx->setValue("COURT_INFORMATION", htmlspecialchars($formattedCourtInformation, ENT_COMPAT, 'UTF-8')); 
+            // put all court information together into one block.  If there isn't any court information, 
+            // this allows as few newlines as possible in the petition and order that are generated
+            $formattedCourtInformation = "";
+            if (!empty($courtInformation['courtName'])) 
+            {   
+                $formattedCourtInformation = $courtInformation['courtName'] . "\r\n";
+                $formattedCourtInformation .= $courtInformation['address'] . ' ' . $courtInformation['address2'] . "\r\n";
+                $formattedCourtInformation .= $courtInformation['city'] . ", " . $courtInformation['state'] . ' ' . $courtInformation['zip'];
+            }
+    		$docx->setValue("COURT_INFORMATION", htmlspecialchars($formattedCourtInformation, ENT_COMPAT, 'UTF-8')); 
 
 		
-        // if this isn't philadelphia, say that the CHR is attached.  
-		if ($this->getCounty()!="Philadelphia")
-        {
-            // we also don't include the CHR for ARD expungements in Montco
-            if ($this->getCounty()=="Montgomery" && $this->isArrestARDExpungement())
-    			$docx->setValue("INCLUDE_CHR", "");
-            $docx->setValue("INCLUDE_CHR", htmlspecialchars("I have attached a copy of my Pennsylvania State Police Criminal History which I have obtained within 60 days before filing this petition.", ENT_COMPAT, 'UTF-8'));
-        }
-		else
-			$docx->setValue("INCLUDE_CHR", "Pursuant to local practice, the Commonwealth agrees to waive the requirement of attachment to this Petition of a current copy of the petitioner’s Pennsylvania State Police criminal history report.  This waiver may be revoked by the Commonwealth in any case and at any time prior to the granting of the relief requested.");
+            // if this isn't philadelphia, say that the CHR is attached.  
+    		if ($this->getCounty()!="Philadelphia")
+            {
+                // we also don't include the CHR for ARD expungements in Montco
+                if ($this->getCounty()=="Montgomery" && $this->isArrestARDExpungement())
+        			$docx->setValue("INCLUDE_CHR", "");
+                $docx->setValue("INCLUDE_CHR", htmlspecialchars("I have attached a copy of my Pennsylvania State Police Criminal History which I have obtained within 60 days before filing this petition.", ENT_COMPAT, 'UTF-8'));
+            }
+    		else
+    			$docx->setValue("INCLUDE_CHR", "Pursuant to local practice, the Commonwealth agrees to waive the requirement of attachment to this Petition of a current copy of the petitioner’s Pennsylvania State Police criminal history report.  This waiver may be revoked by the Commonwealth in any case and at any time prior to the granting of the relief requested.");
 		
-		// if this is a summary arrest or this is an MDJ case,  this is a 490 petition
-		// otherwise it is a 790 petition
-		// NOTE: 12/2013: Previously the first part of the if statement checked if 
-		// this was a summary expungement, not a summary arrest.  There is some uncertainty regarding
-		// whether the 490 or 790 rule is the proper one under which to do expungements of summary offenses
-		// that are dropped, not convictions.  But the court wants 490 petitions in that case
-		// so now all SU cases are going to be summary expungements under 490.
-        if (!$_SESSION['act5Regardless'])
-        {
-		    if ($this->getIsSummaryArrest() || $this->getIsMDJ() == 1)
-			    $docx->setValue("490_OR_790", "490");
-		    else   
-			    $docx->setValue("490_OR_790", "790");
-
-    		// add in extra order information for CREP
-	    	if ($attorney->getProgramId() == 2)
-		    {
-			    $crepOrderLanguage = "All criminal justice agencies upon whom this order is served also are enjoined from disseminating to any non-criminal justice agency any and all criminal history record information ordered to be expunged/redacted pursuant to this Order unless otherwise permitted to do so pursuant to the Criminal History Information Records Act.  ";
-    			$docx->setValue("CREP_EXTRA_ORDER_LANGUAGE", htmlspecialchars($crepOrderLanguage, ENT_COMPAT, 'UTF-8'));
-	    	}
-		    else
-			    $docx->setValue("CREP_EXTRA_ORDER_LANGUAGE", "");
+	    	// if this is a summary arrest or this is an MDJ case,  this is a 490 petition
+		    // otherwise it is a 790 petition
+    		// NOTE: 12/2013: Previously the first part of the if statement checked if 
+	    	// this was a summary expungement, not a summary arrest.  There is some uncertainty regarding
+    		// whether the 490 or 790 rule is the proper one under which to do expungements of summary offenses
+	    	// that are dropped, not convictions.  But the court wants 490 petitions in that case
+    		// so now all SU cases are going to be summary expungements under 490.
+            if (!$_SESSION['act5Regardless'])
+            {
+	    	    if ($this->getIsSummaryArrest() || $this->getIsMDJ() == 1)
+		    	    $docx->setValue("490_OR_790", "490");
+		        else   
+    			    $docx->setValue("490_OR_790", "790");
+    
+        		// add in extra order information for CREP
+	        	if ($attorney->getProgramId() == 2)
+    		    {
+	    		    $crepOrderLanguage = "All criminal justice agencies upon whom this order is served also are enjoined from disseminating to any non-criminal justice agency any and all criminal history record information ordered to be expunged/redacted pursuant to this Order unless otherwise permitted to do so pursuant to the Criminal History Information Records Act.  ";
+    	    		$docx->setValue("CREP_EXTRA_ORDER_LANGUAGE", htmlspecialchars($crepOrderLanguage, ENT_COMPAT, 'UTF-8'));
+	    	    }
+    		    else
+	    		    $docx->setValue("CREP_EXTRA_ORDER_LANGUAGE", "");
+            }
         }
-
+        
         // hacky; should create a getExpungeable Charges function instead
 		$i=0;
 	    
@@ -1515,7 +1609,7 @@ class Arrest
             // testing!!! xxx
             //print "<br /> " . $charge->getCodeSection() . " | " . $charge->getGrade() . " | " . $charge->getDisposition() . " | " . strval($charge->isSealable()) . " | " . $charge->getSealablePercent();
             
-			if (!$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['act5Regardless'])
+			if (!$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['act5Regardless'] && !$this->isJuvenilePhilly)
 			{
 				if (!$this->isArrestSummaryExpungement && !$charge->isRedactable())
 					continue;
@@ -1538,7 +1632,7 @@ class Arrest
 		$j = 1;
         foreach ($this->getCharges() as $charge)                                                        
 	    {                                                                                               
-		    if (!$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['act5Regardless'])                           
+		    if (!$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['act5Regardless'] && !$this->isJuvenilePhilly)
 		    {                                                                                      
 			    if (!$this->isArrestSummaryExpungement && !$charge->isRedactable())             
 			        continue;                                                               
@@ -1551,6 +1645,10 @@ class Arrest
 		    if ($dispDate == null || $dispDate == "")
 		      $dispDate = $this->getDispositionDate();
 
+            // if this is a juvenile case, we just put the discharge date in the matrix
+            if ($this->isJuvenilePhilly)
+              $dispDate = $this->getJDischargeDate();
+
 		    // after cloning, the variables are named CHARGES#1, CHARGES#2, CHARGES#3, etc...
 		    $docx->setValue("CHARGE#" . $j, htmlspecialchars($charge->getChargeName(), ENT_COMPAT, 'UTF-8'));
 		    $docx->setValue("GRADE#" . $j, htmlspecialchars($charge->getGrade(), ENT_COMPAT, 'UTF-8'));
@@ -1559,6 +1657,18 @@ class Arrest
 		    $docx->setValue("DISP_DATE#" . $j, htmlspecialchars($dispDate, ENT_COMPAT, 'UTF-8'));
 		    $j = $j+1;
 		}
+        
+        
+        // update the variables specific to juvenile cases
+        if ($this->isJuvenilePhilly)
+        {
+		    $docx->setValue("JNUMBER", htmlspecialchars($this->jNumber, ENT_COMPAT, 'UTF-8'));
+		    $docx->setValue("AGE", htmlspecialchars($this->getAge(), ENT_COMPAT, 'UTF-8'));
+		    $docx->setValue("JUVENILE_DISCHARGE_DATE", htmlspecialchars($this->getJDischargeDate(), ENT_COMPAT, 'UTF-8'));
+            $docx->setValue("SID", htmlspecialchars($this->getSID(), ENT_COMPAT, 'UTF-8'));
+            $docx->setValue("PPID", htmlspecialchars($this->getPID(), ENT_COMPAT, 'UTF-8'));
+            print "PID: " . $this->getPID();
+        }
 		
 		// save template to file
 		$outputFile = $outputDir . $this->getFirstName() . $this->getLastName() . $this->getFirstDocketNumber();
@@ -1566,6 +1676,8 @@ class Arrest
             $outputFile .= "Act5Sealing";
         else if ($this->isArrestARDExpungement())
 			$outputFile .= "ARDExpungement";
+        else if ($this->isJuvenilePhilly)
+            $outputFile .= "JuvenileExpungement";
 		else if ($this->isArrestExpungement() || $expungeRegardless)
 			$outputFile .= "Expungement";
 		else  if ($this->isArrestOver70Expungement)

@@ -158,5 +158,3 @@ else
 <?php
 include ('foot.php');
 	
-?>
-	
