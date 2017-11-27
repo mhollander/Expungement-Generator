@@ -27,10 +27,10 @@
 	
 	// Test if the quest is well formed.
 	if(malformedRequest($_REQUEST)) {
-		http_response_code(403);
+		http_response_code(400);
 		$response['results']['status'] = malformedRequest($_REQUEST);
 	} elseif(!validAPIKey($_REQUEST, $db)) {
-		http_response_code(403);
+		http_response_code(401);
 		$response['results']['status'] = "Invalid request.";
 	} else {
 		http_response_code(200);
@@ -181,8 +181,9 @@
 			$path_parts = pathinfo($response['results']['expungeZip']);
 			$response['results']['expungeZip'] = $baseURL . "secureServe.php?serveFile=" . $path_parts['filename']; 
 		} 
-	    mailPetition($_REQUEST['current_user'], $_REQUEST['current_user'], $response, $file_path);
-
+	    //mailPetition($_REQUEST['current_user'], $_REQUEST['current_user'], $response, $file_path);
+	    error_log("Mailing to " . mailDestination($_REQUEST));
+	    mailPetition(mailDestination($_REQUEST), mailDestination($_REQUEST), $response, $file_path);
 	} else {
 		error_log("emailPetitions was not set");
 	}
