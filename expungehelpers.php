@@ -99,7 +99,7 @@ function checkIfSealable($arrests)
             // if there are more than 4 convictions, then we can't seal
             if ($convictions > 3)
             {
-              $sealable == 0;
+              $sealable = 0;
               break;
             }
         }
@@ -338,10 +338,26 @@ function createOverview($arrests, $templateDir, $dataDir, $person, $sealable)
                     $docx->setValue("CHARGE_CODESECTION#".$j, htmlspecialchars(utf8_encode($charge->getCodeSection()), ENT_COMPAT, 'UTF-8'));
                     $docx->setValue("SEALABLE_INFO#".$j, htmlspecialchars($charge->getSealablePercent(), ENT_COMPAT, 'UTF-8'));
 
+                    $text = "Yes"; //default if sealable==1
+
                     if ($charge->isSealable()==1)
-                      $docx->setValue("SEALABLE#".$j, "Yes");
+                    {
+                      if ($sealable==0)                                                                                  
+                        $text = "Yes, but excluded by other cases";                                                        
+                      if ($sealable>1)                                                                                   
+                        $text = "Yes, but maybe excluded by other cases";   
+                    }
                     else
-                      $docx->setValue("SEALABLE#".$j, "Maybe");
+                    {
+                      if ($sealable==0)                                                                                  
+                          $text = "Maybe, but excluded by other cases";
+                      if ($sealable==1)
+                          $text = "Maybe";
+                      if ($sealable>1)                                                                                   
+                          $text = "Maybe, but maybe excluded by other cases";   
+                    }
+                    $docx->setValue("SEALABLE#".$j, $text);
+
                     $j++;
 
                 }
