@@ -183,7 +183,7 @@ class Arrest
 	protected static $dispDateSearch = "/(?:Plea|Status|Status of Restitution|Status - Community Court|Status Listing|Migrated Dispositional Event|Trial|Preliminary Hearing|Pre-Trial Conference)\s+(\d{1,2}\/\d{1,2}\/\d{4})\s+Final Disposition/";
 	protected static $dispDateSearch2 = "/(.*)\s(\d{1,2}\/\d{1,2}\/\d{4})/";	
 
-	protected static $dischargeDateSearch = "/^(\d{1,2}\/\d{1,2}\/\d{4})$/";
+	protected static $dischargeDateSearch = "/^\d?\s*(\d{1,2}\/\d{1,2}\/\d{4})$/";
 
 	// this is a crazy one.  Basically matching whitespace then $xx.xx then whitespace then 
 	// -$xx.xx, etc...  The fields show up as Assesment, Payment, Adjustments, Non-Monetary, Total
@@ -1667,7 +1667,7 @@ class Arrest
 		    $docx->setValue("JUVENILE_DISCHARGE_DATE", htmlspecialchars($this->getJDischargeDate(), ENT_COMPAT, 'UTF-8'));
             $docx->setValue("SID", htmlspecialchars($this->getSID(), ENT_COMPAT, 'UTF-8'));
             $docx->setValue("PPID", htmlspecialchars($this->getPID(), ENT_COMPAT, 'UTF-8'));
-            print "PID: " . $this->getPID();
+            //print "PID: " . $this->getPID();
         }
 		
 		// save template to file
