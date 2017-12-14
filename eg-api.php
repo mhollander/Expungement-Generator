@@ -15,7 +15,7 @@
 
 	// Log the request, but strip identifying info
 	$test_headers = $_REQUEST;
-	error_log("Logging a request to eg-api.");
+        error_log("Logging a request to eg-api.");
 
 	$test_headers['apikey'] = preg_replace('/./', 'x', $test_headers['apikey']);	
 	$test_headers['personFirst'] = preg_replace('/(?!^)./','x',$test_headers['personFirst']);
@@ -132,7 +132,7 @@
 		ob_end_clean();
 		$parsed_results = parseArrests($arrests, $sealable, $person);
 		$response['results']['expungements_redactions'] = $parsed_results['expungements_redactions'];
-		$response['results']['sealing'] = $parsed_results['sealing'];
+		//$response['results']['sealing'] = $parsed_results['sealing'];
 		$files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
 		error_log("beginning to create petitions, if requested.");
 		if (preg_match('/^(t|true|1)$/i', $_REQUEST['createPetitions'])===1) {
@@ -268,14 +268,14 @@
 						// check if the charge is a conviction and if it is sealable (non conviction charges get a 1)
 						if ( $charge->isConviction() && ($charge->isSealable() >0) ) {
 							$thisCharge['case_number'] = htmlspecialchars($arrest->getFirstDocketNumber(), ENT_COMPAT, 'UTF-8');
-							$thisCharge['charge_name'] = htmlspecialchars($arrest->getChargeName(), ENT_COMPAT, 'UTF-8');
-							$thisCharge['code_section'] = htmlspecialchars($arrest->getCodeSection(), ENT_COMPAT, 'UTF-8');
+							$thisCharge['charge_name'] = htmlspecialchars($charge->getChargeName(), ENT_COMPAT, 'UTF-8');
+							$thisCharge['code_section'] = htmlspecialchars($charge->getCodeSection(), ENT_COMPAT, 'UTF-8');
 							if ($charge->isSealable()==1) {
 								$thisCharge['sealable'] = "Yes";
 							} else {
 							 	$thisCharge['sealable'] = "No";
 							}
-							$thisCharge['additional_information'] = htmlspecialchars($arrest->getSealablePercent(), ENT_COMPAT, 'UTF-8');
+							$thisCharge['additional_information'] = htmlspecialchars($charge->getSealablePercent(), ENT_COMPAT, 'UTF-8');
 							$results['sealing'][] = $thisCharge;
 						} // end processing if a charge is a conviction that is sealable
 					} //end loop over charges for an arrest

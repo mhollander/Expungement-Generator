@@ -32,7 +32,7 @@ $casperScript = join(DIRECTORY_SEPARATOR, array($includeDir, "cpcmsNavigate", "s
 $casperjsCommand = join(DIRECTORY_SEPARATOR, array($toolsDir, "casperjs"));
 $baseURL = "https://eg-test.clsphila.org/";
 $pdftotext = $toolsDir . DIRECTORY_SEPARATOR . "pdftotext";
-$sendGridApiKey = "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";
+$sendGridApiKey = "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";
 
 /*
 // for a windows system
@@ -51,7 +51,7 @@ $docketSheetsDir = join(DIRECTORY_SEPARATOR, array($wwwdir, "docketsheets")) . D
 
 
 // db information
-$dbPassword = "1424ChestnutSt";
+$dbPassword = "Wanda fish taco";
 $dbUser = "eg_test";
 $dbName = "eg_test_site";
 $dbHost = "localhost";
