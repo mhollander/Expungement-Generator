@@ -32,7 +32,7 @@ $casperScript = join(DIRECTORY_SEPARATOR, array($includeDir, "cpcmsNavigate", "s
 $casperjsCommand = join(DIRECTORY_SEPARATOR, array($toolsDir, "casperjs"));
 $baseURL = "https://eg-test.clsphila.org/";
 $pdftotext = $toolsDir . DIRECTORY_SEPARATOR . "pdftotext";
-$sendGridApiKey = "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";
+$sendGridApiKey = "somekey";
 
 /*
 // for a windows system
@@ -51,9 +51,9 @@ $docketSheetsDir = join(DIRECTORY_SEPARATOR, array($wwwdir, "docketsheets")) . D
 
 
 // db information
-$dbPassword = "Wanda fish taco";
-$dbUser = "eg_test";
-$dbName = "eg_test_site";
+$dbPassword = "somepass;
+$dbUser = "someuser";
+$dbName = "somedb";
 $dbHost = "localhost";
 
 // this is only needed in the CLS production environmnet
