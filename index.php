@@ -118,6 +118,10 @@ else
     			<input name="userFile[]" type="file" multiple="true" name="userFile1"/>
     		</div>
     		<div class="space-line">&nbsp;</div>
+            <div class="form-item">
+                <input type="checkbox" name="expungeRegardless" value="true" />File expungements regardless of expungeability? (Pardons, etc...)
+            </div>
+    		<div class="space-line">&nbsp;</div>
         </div>
     	<div class="form-item">
 			<input type="submit" value="Start Expunging" />
