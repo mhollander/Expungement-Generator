@@ -15,15 +15,16 @@ function mailPetition($addr, $username, $response, $file_name) {
 	//require_once("config.php");
 	global $sendGridApiKey;
 	global $dataDir;
-	$msg = "Thank you for using the Expungement Generator.\r\n";
-	$msg .= json_encode($response);
+	$msg = createHumanReadableExpungementResponseFromJSON(json_encode($response));
 	$from = new SendGrid\Email("Expungement Generator API", "mhollander@clsphila.org");
 	$subject = "EG API Generator Search";
 	$to = new SendGrid\Email($username, $addr);
 	$content = new SendGrid\Content("text/plain", $msg);
 	$mail = new SendGrid\Mail($from, $subject, $to, $content);
 	$file_path = join(DIRECTORY_SEPARATOR, array($dataDir, $file_name));
-	if ( !is_null($file_name) && file_exists($file_path) ) {
+
+	// if we already created petitions, then we should be uploading those petitions.
+    if ( !is_null($file_name) && file_exists($file_path) ) {
 		$petition = new SendGrid\Attachment();
 		$petition->setContent(base64_encode(file_get_contents($file_path)));
 		$petition->setType("application/zip");
@@ -31,6 +32,32 @@ function mailPetition($addr, $username, $response, $file_name) {
 		$petition->setDisposition("attachment");
 		$mail->addAttachment($petition);
 	}
+    
+    // otherwise we should upload the downloaded dockets.  
+    else 
+    {
+        // get each arrest grouping
+        foreach ($response['results']['expungements_redactions'] as $arrest)
+        {
+            // now explode all of the docket numbers
+            $dockets = explode(",", $arrest['docket']);
+            foreach ($dockets as $docket)
+            {
+                // and find the pdf for each of the dockets and attach it to the email
+                $file_path = join(DIRECTORY_SEPARATOR, array($dataDir, trim($docket))) . ".pdf";
+                if(!is_null($file_path) && file_exists($file_path))
+                {
+                    $pdf = new SendGrid\Attachment();                                                                   
+                    $pdf->setContent(base64_encode(file_get_contents($file_path)));                                     
+                    $pdf->setType("application/pdf");                                                                   
+                    $pdf->setFilename(trim($docket) . ".pdf");                                                             
+                    $pdf->setDisposition("attachment");                                                                 
+                    $mail->addAttachment($pdf);
+                }
+            }
+        }
+    }
+    
 	$sg = new \SendGrid($sendGridApiKey);
 	if ( is_null($sg) ) {throw new Exception("sg is null");}
 	if ( is_null($sg->client) ) {throw new Exception("sg->client is null");}

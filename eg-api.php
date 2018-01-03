@@ -189,8 +189,7 @@
 	}
 	error_log("Finished api request.");
 	print_r(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES, 10));
-
-
+    
 	function malformedRequest($request) {
 		// Given a dictionary $request
 		// Return false if there are no missing values

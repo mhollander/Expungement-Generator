@@ -428,4 +428,26 @@ function screenDisplayExpungements($arrests)
 	}
 }
 
+// Takes the json response object andcreates a human readable message to send to the email address associated with an api request.
+function createHumanReadableExpungementResponseFromJSON($response)
+{
+    $expungementInfo = json_decode($response, true);
+    
+    $msg = "The Expungement Generator ";
+    $msg .= "searched CPCMS for _{$expungementInfo['personFirst']} {$expungementInfo['personLast']}_ with DOB _{$expungementInfo['dob']}_ and found _{$expungementInfo['results']['arrestCount']}_ arrests.";
+    
+    $msg .= "\r\n\r\n\r\n";
+    
+    // for each arrest in the expungementInfo array, add on the docket number and the expungement type.
+    // we probably need error checking code to see if there are any results!
+    foreach ($expungementInfo['results']['expungements_redactions'] as $arrest)
+    {
+        // we may want to split the docket at the first comma and just include anything before the comma
+        // if there are multiple docket numbers associated with one case, they all show up under docket and 
+        // the response could be sort of long on a line/line basis.
+        $msg .= "{$arrest['docket']} | {$arrest['expungement_type']}\r\n";
+    }
+   
+    return $msg;
+}
 
