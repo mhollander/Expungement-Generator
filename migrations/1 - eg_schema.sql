@@ -240,7 +240,11 @@ CREATE TABLE `user` (
   `password` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`userid`),
   UNIQUE KEY `email` (`email`)
+<<<<<<< HEAD
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+=======
+) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8;
+>>>>>>> moved around a couple things to make dockerizing easier
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -262,7 +266,11 @@ CREATE TABLE `userinfo` (
   `totalPetitions` mediumint(9) NOT NULL DEFAULT '0' COMMENT 'Created 9/14/2012 - tracks total petitions prepared by individual',
   `anonymous` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`userid`)
+<<<<<<< HEAD
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+=======
+) ENGINE=InnoDB AUTO_INCREMENT=62 DEFAULT CHARSET=utf8;
+>>>>>>> moved around a couple things to make dockerizing easier
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
