@@ -4,7 +4,7 @@
 * configuration settings for the expungement generator
 *
 *	Copyright 2011-2015 Community Legal Services
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -34,15 +34,7 @@ $baseURL = "https://eg-test.clsphila.org/";
 $pdftotext = $toolsDir . DIRECTORY_SEPARATOR . "pdftotext";
 $sendGridApiKey = "somekey";
 
-/*
-// for a windows system
-$basedir = join(DIRECTORY_SEPARATOR, array("c:", "wamp"));
-$toolsDir = join(DIRECTORY_SEPARATOR, array($basedir, "tools"));
-$wwwdir = join(DIRECTORY_SEPARATOR, array ($basedir, "www", "eg"));
-$baseURL = "http://localhost/eg/";
-// windows version of pdftotext must be 3.03.  Although it may work with a later version, I have actually run into problems where the parser parses pdfs differently in the newer version
-$pdftotext = "\"" . $toolsDir . DIRECTORY_SEPARATOR . "pdftotext.exe\"";
-*/
+
 
 // these shouldn't ever need to change
 $dataDir = join(DIRECTORY_SEPARATOR, array($wwwdir, "data")) . DIRECTORY_SEPARATOR;
