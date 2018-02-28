@@ -7,6 +7,7 @@
 	include('expungehelpers.php');
 	include('helpers/mail_helper.php');
 	include('helpers/api_validator.php');
+	include('helpers/loggers.php');
 	//initialize the response that will get sent back to requester
 	$response = array();
 	//set default response code:
@@ -22,22 +23,28 @@
 	$test_headers['personLast'] = preg_replace('/(?!^)./','x',$test_headers['personLast']);
 	$test_headers['personStreet'] = preg_replace('/(?!^)./','x',$test_headers['personStreet']);
 
-	//file_put_contents('php://stderr', print_r($test_headers, TRUE));
+	file_put_contents('php://stderr', print_r($test_headers, TRUE));
 
+	$log_trail = "";
 	
 	// Test if the quest is well formed.
 	if(malformedRequest($_REQUEST)) {
 		http_response_code(400);
 		$response['results']['status'] = malformedRequest($_REQUEST);
+		$log_trail .= "malformed request";
 	} elseif(!validAPIKey($_REQUEST, $db)) {
 		http_response_code(401);
 		$response['results']['status'] = "Invalid request.";
+		$log_trail .= "invalid request";
 	} else {
 		http_response_code(200);
 		error_log("Starting to process a good response.");
+		$log_trail .= "valid request"; //build a string that shows how the request moved through the script. 
+					     //Return it at the end in write_to_resource_log()
 		// a cpcmsSearch flag can be set to true in the post request
 		// to trigger a cpcms search.
 		if (isset($_REQUEST['cpcmsSearch']) && preg_match('/^(t|true|1)$/i', $_REQUEST['cpcmsSearch'])===1){
+			$log_trail .= ",cpcmsSearch";
 			$urlPerson = getPersonFromPostOrSession();
 
 			$cpcms = new CPCMS($urlPerson['First'],$urlPerson['Last'], $urlPerson['DOB']);
@@ -67,7 +74,6 @@
 		error_log("Done processing cpcmsSearch");
 		$arrests = array(); //an array to hold Arrest objects
 		$arrestSummary = new ArrestSummary();
-
 		$urlPerson = getPersonFromPostOrSession();
 		$person = new Person($urlPerson['First'],
 			$urlPerson['Last'],
@@ -87,7 +93,6 @@
 
 		error_log("Figured out the Attorney:");
 		error_log("Attorney " . $_REQUEST['current_user'] . " is " . validApiKey($_REQUEST, $db)); 	
-
 		$docketFiles = $_FILES;
 		
 		if (!isset($docketNums)) {
@@ -98,6 +103,7 @@
 		if (isset($_REQUEST['docketNums'])) {
 			// Add any docket numbers passed in POST request to $docketnums.
 			// POST[docketnums] should be a comma-delimited string like "MC-12345,CP-34566"
+			$log_trail .= ",requsted docket numbers";
 			$docketNumsRequest = filter_var($_REQUEST['docketNums'], FILTER_SANITIZE_SPECIAL_CHARS);
 			foreach (explode(",",$docketNumsRequest) as $doc) {
 				if ($doc) { //Doc will be false if the filter fails.
@@ -173,6 +179,7 @@
 	error_log("checking whether to email petitions.");
 	
 	if (isset($_REQUEST['emailPetitions']) && preg_match('/^(t|true|1)$/i', $_REQUEST['emailPetitions'])===1){
+		$log_trail .= ",emailing results";
 		if (!(isset($_REQUEST['createPetitions']) && preg_match('/^(t|true|1)$/i', $_REQUEST['createPetitions'])===1)) {
 			$file_path = NULL;
 			unset($response['results']['expungeZip']);
@@ -188,6 +195,11 @@
 		error_log("emailPetitions was not set");
 	}
 	error_log("Finished api request.");
+	if (validAPIKey($_REQUEST, $db)) {
+		writeToResourceLog(validAPIKey($_REQUEST, $db),"eg-api.php",$log_trail);
+	} else {
+		writeToResourceLog("unknown user","eg-api.php",$log_trail);
+	}
 	print_r(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES, 10));
     
 	function malformedRequest($request) {

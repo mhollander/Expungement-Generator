@@ -14,13 +14,13 @@
 //Returns:
 //  Nothing.
 //
-function writeToResourceLog($userid, $resource, $action, $timestamp) {
+function writeToResourceLog($userid, $resource, $action) {
 	$stmt = $GLOBALS['db']->prepare("INSERT INTO resource_calls (userid, resource, action) VALUES (?, ?, ?)");
 	$stmt->bind_param("sss",$userid,$resource,$action);
 	if( $stmt->execute() ) {
 		error_log("Resource call successfully logged.");
 	} else {
-		error_log("Resource call log failed."
+		error_log("Resource call log failed.");
 	}
 	$stmt->close();
 	
