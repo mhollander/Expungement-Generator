@@ -22,8 +22,8 @@
 	$test_headers['personFirst'] = preg_replace('/(?!^)./','x',$test_headers['personFirst']);
 	$test_headers['personLast'] = preg_replace('/(?!^)./','x',$test_headers['personLast']);
 	$test_headers['personStreet'] = preg_replace('/(?!^)./','x',$test_headers['personStreet']);
-
 	file_put_contents('php://stderr', print_r($test_headers, TRUE));
+
 
 	$log_trail = "";
 	
