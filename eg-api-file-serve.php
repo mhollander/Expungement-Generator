@@ -4,14 +4,17 @@
 
 	include('utils.php');
 	include('helpers/api_validator.php');
+	include('helpers/loggers.php');
 	include_once('config.php');
 	//Validate api key
 	//If api key is valid for the user making the request, then return the requested file. 
 	//error_log("Logging a request for a file.");
 	if(!validAPIKey($_REQUEST, $db)) {
 		http_response_code(403);
+		writeToResourceLog("invalid user","eg-api-file-serve.php","unauthorized file request");
 	} else {
 		http_response_code(200);
+		writeToResourceLog(validAPIKey($_REQUEST, $db), "eg-api-file-serve.php", "served file");
 		serveFile(cleanFilename($_REQUEST['filename']));
 		exit;
 	}
