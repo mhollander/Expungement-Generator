@@ -22,7 +22,7 @@
 	$test_headers['personFirst'] = preg_replace('/(?!^)./','x',$test_headers['personFirst']);
 	$test_headers['personLast'] = preg_replace('/(?!^)./','x',$test_headers['personLast']);
 	$test_headers['personStreet'] = preg_replace('/(?!^)./','x',$test_headers['personStreet']);
-	file_put_contents('php://stderr', print_r($test_headers, TRUE));
+	//file_put_contents('php://stderr', print_r($test_headers, TRUE));
 
 
 	$log_trail = "";
@@ -37,6 +37,7 @@
 		$response['results']['status'] = "Invalid request.";
 		$log_trail .= "invalid request";
 	} else {
+		$user_id = validAPIKey($_REQUEST, $db);
 		http_response_code(200);
 		error_log("Starting to process a good response.");
 		$log_trail .= "valid request"; //build a string that shows how the request moved through the script. 
@@ -89,10 +90,10 @@
 		$response['personFirst'] = $urlPerson['First'];
 		$response['personLast'] = $urlPerson['Last'];
 		$response['dob'] = $urlPerson['DOB'];
-		$attorney = new Attorney(validAPIKey($_REQUEST, $db), $db);
+		$attorney = new Attorney($user_id, $db);
 
 		error_log("Figured out the Attorney:");
-		error_log("Attorney " . $_REQUEST['current_user'] . " is " . validApiKey($_REQUEST, $db)); 	
+		error_log("Attorney " . $_REQUEST['current_user'] . " is " . $user_id); 	
 		$docketFiles = $_FILES;
 		
 		if (!isset($docketNums)) {
@@ -103,7 +104,7 @@
 		if (isset($_REQUEST['docketNums'])) {
 			// Add any docket numbers passed in POST request to $docketnums.
 			// POST[docketnums] should be a comma-delimited string like "MC-12345,CP-34566"
-			$log_trail .= ",requsted docket numbers";
+			$log_trail .= ",requested docket numbers";
 			$docketNumsRequest = filter_var($_REQUEST['docketNums'], FILTER_SANITIZE_SPECIAL_CHARS);
 			foreach (explode(",",$docketNumsRequest) as $doc) {
 				if ($doc) { //Doc will be false if the filter fails.
@@ -195,10 +196,10 @@
 		error_log("emailPetitions was not set");
 	}
 	error_log("Finished api request.");
-	if (validAPIKey($_REQUEST, $db)) {
-		writeToResourceLog(validAPIKey($_REQUEST, $db),"eg-api.php",$log_trail);
+	if (isset($user_id)) {
+		writeToResourceLog($user_id,"eg-api.php",$log_trail);
 	} else {
-		writeToResourceLog("unknown user","eg-api.php",$log_trail);
+		writeToResourceLog(-1,"eg-api.php",$log_trail);
 	}
 	print_r(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES, 10));
     
