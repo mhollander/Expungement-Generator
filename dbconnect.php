@@ -1,7 +1,7 @@
 <?php
 /*************************
 *	Copyright 2011-2015 Community Legal Services
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -16,13 +16,13 @@
 ***********************************/
 	require_once("config.php");
 	$db = new mysqli($dbHost,  $dbUser,  $dbPassword, $dbName);
-	if ($db->connect_error) 
+	if ($db->connect_error)
 		die('Error connecting to the db: Connect Error (' . $db->connect_errno . ') ' . $db->connect_error);
-    $db->set_charset("utf8");   
+    $db->set_charset("utf8");
 
     // charge database, used to assess Act 5 compliance
-    $chargeDB = new mysqli("localhost", "cpcms", "cpcms", "cpcms_aopc_summary");        
-    if ($chargeDB->connect_error)                  
+    $chargeDB = new mysqli($chargeDBHost, $chargeDBUser, $chargeDBPassword, $chargeDBName);        
+    if ($chargeDB->connect_error)
        die('Error connecting to the charge db: Connect Error (' . $chargeDB->connect_errno . ') ' . $chargeDB->connect_error);
 
 ?>
