@@ -23,6 +23,8 @@
         $userid = $db->insert_id;
         $db->query("UPDATE `userinfo` SET `userLevel` = 1 WHERE `userid` = " . $userid . ";");
         print("Created initial admin account.");
+    } else {
+        print("Did not create initial admin account.");
     }
 
  ?>
