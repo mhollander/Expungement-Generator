@@ -22,6 +22,7 @@
         Attorney::createNewAttorneyInDatabase($first, $last, $email, $barID, $password, $retypePassword, $header, $signature, $program, $errorMessages, $db)
         $userid = $db->insert_id;
         $db->query("UPDATE `userinfo` SET `userLevel` = 1 WHERE `userid` = " . $userid . ";");
+        print("Created initial admin account.")
     }
 
  ?>
