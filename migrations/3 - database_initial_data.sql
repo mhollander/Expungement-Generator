@@ -17,12 +17,14 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `eg_test_site`
+-- Database: `eg_db`
 --
 
 --
 -- Dumping data for table `mdjcourt`
 --
+
+use `eg_db`;
 
 INSERT INTO `mdjcourt` (`courtID`, `district`, `courtName`, `judge`, `address`, `city`, `state`, `zip`, `phone`, `fax`, `address2`) VALUES
 (1, '51-3-04', 'Magisterial District Court 51-3-04', 'Mark D. Beauchat', '2267 Fairfield Road', 'Gettysburg', 'PA', '17325', '717-337-3870', '717-337-0934', ''),
