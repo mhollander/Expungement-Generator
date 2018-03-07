@@ -335,7 +335,7 @@ function createOverview($arrests, $templateDir, $dataDir, $person, $sealable)
                 {
                     $docx->setValue("SEAL_DOCKET#".$j, htmlspecialchars($arrest->getFirstDocketNumber(), ENT_COMPAT, 'UTF-8'));
                     $docx->setValue("CHARGE_NAME#".$j, htmlspecialchars($charge->getChargeName(), ENT_COMPAT, 'UTF-8'));
-                    $docx->setValue("CHARGE_CODESECTION#".$j, htmlspecialchars(utf8_encode($charge->getCodeSection()), ENT_COMPAT, 'UTF-8'));
+                    $docx->setValue("CHARGE_CODESECTION#".$j, htmlspecialchars($charge->getCodeSection(), ENT_COMPAT, 'UTF-8'));
                     $docx->setValue("SEALABLE_INFO#".$j, htmlspecialchars($charge->getSealablePercent(), ENT_COMPAT, 'UTF-8'));
 
                     $text = "Yes"; //default if sealable==1
