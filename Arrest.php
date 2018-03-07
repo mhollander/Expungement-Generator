@@ -146,7 +146,7 @@ class Arrest
     protected static $juvenileNameSearch = "/In the interest of:\s+(.*), a Minor/i";
       
 	// ($1 = charge, $2 = disposition, $3 = grade, $4 = code section
-	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Not Guilty|Guilty|Nolle Prossed|Nolle Prossed \(Case Dismissed\)|Nolle Prosequi - Administrative|Guilty Plea|Guilty Plea - Negotiated|Guilty Plea - Non-Negotiated|Withdrawn|Withdrawn - Administrative|Charge Changed|Held for Court|Community Court Program|Dismissed - Rule 1013 \(Speedy|Dismissed - Rule 600 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed - Rule 546|Dismissed - Rule 586|Dismissed|Demurrer Sustained|ARD - County Open|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Summary Diversion Completed|Judgment of Acquittal \(Prior to)\s+(\w{0,2})\s+(\w{1,2}\s?\247\s?\d+(\-|\247|\w+)*)/"; // removed "Replacement by Information"
+	protected static $chargesSearch = "/\d\s+\/\s+(.*[^Not])\s+(Not Guilty|Guilty|Nolle Prossed|Nolle Prossed \(Case Dismissed\)|Nolle Prosequi - Administrative|Guilty Plea|Guilty Plea - Negotiated|Guilty Plea - Non-Negotiated|Withdrawn|Withdrawn - Administrative|Charge Changed|Held for Court|Community Court Program|Dismissed - Rule 1013 \(Speedy|Dismissed - Rule 600 \(Speedy|Dismissed - LOP|Dismissed - LOE|Dismissed - Rule 546|Dismissed - Rule 586|Dismissed|Demurrer Sustained|ARD - County Open|ARD - County|ARD|Transferred to Another Jurisdiction|Transferred to Juvenile Division|Quashed|Summary Diversion Completed|Judgment of Acquittal \(Prior to)\s+(\w{0,2})\s+(\w{1,2}\s?\x{A7}\s?\d+(\-|\x{A7}|\w+)*)/u"; // removed "Replacement by Information"
 	// explanation: .+? - the "?" means to do a lazy match of .+, so it isn't greedy.  THe match of 12+ spaces handles the large space after the charges and after the disposition before the next line.  The final part is to match the code section that is violated.	
 	/* longer explanation
 		\d\s+\/\s+ - matches "1 / "
@@ -159,17 +159,17 @@ class Arrest
 		
 		\w{0,2})\s+ - If there is a grading, it will be caught here.  If there isn't, this area will be ignored
 		
-		(\w{1,2}\s?\247\s? - 1-2 word characters followed by the section symbol, potentially with spaces around the section symbol.  This is to capture the beginning of a statute - "18 s "
+		(\w{1,2}\s?\x{A7}\s? - 1-2 word characters followed by the section symbol, potentially with spaces around the section symbol.  This is to capture the beginning of a statute - "18 s "
 		
 		\d+ - a number or series of numbers
 		
-		(\-|\247|\w+)*) - followed by either a "-" a section symbol, or a series of word characters, all 0+ times.  This is the clean up at the end of the code section, for example, a code section may be listed as 18 § 2701 §§ A.  This would capture the final ss and the A
+		(\-|\x{A7}|\w+)*) - followed by either a "-" a section symbol, or a series of word characters, all 0+ times.  This is the clean up at the end of the code section, for example, a code section may be listed as 18 § 2701 §§ A.  This would capture the final ss and the A
 	*/ 
-	protected static $chargesSearch2 = "/\d\s+\/\s+(.+)\s{12,}(\w.+?)(?=\s\s)\s{12,}(\w{0,2})\s+(\w{1,2}\s?\247\s?\d+(\-|\247|\w+)*)/";
+	protected static $chargesSearch2 = "/\d\s+\/\s+(.+)\s{12,}(\w.+?)(?=\s\s)\s{12,}(\w{0,2})\s+(\w{1,2}\s?\x{A7}\s?\d+(\-|\x{A7}|\w+)*)/u";
 	protected static $ignoreDisps = array("Proceed to Court", "Proceed to Court (Complaint", "Proceed to Court (Complaint Refiled)", "Proceed to Court (SDP)");	
 	
 	// $1 = code section, $3 = grade, $4 = charge, $5 = offense date, $6 = disposition
-	protected static $mdjChargesSearch = "/^\s*\d\s+((\w|\d|\s(?!\s)|\-|\247|\*)+)\s{2,}(\w{0,2})\s{2,}([\d|\D]+)\s{2,}(\d{1,2}\/\d{1,2}\/\d{4})\s{2,}(\D{2,})/";
+	protected static $mdjChargesSearch = "/^\s*\d\s+((\w|\d|\s(?!\s)|\-|\x{A7}|\*)+)\s{2,}(\w{0,2})\s{2,}([\d|\D]+)\s{2,}(\d{1,2}\/\d{1,2}\/\d{4})\s{2,}(\D{2,})/u";
 	
 	protected static $chargesSearchOverflow = "/^\s+(\w+\s*\w*)\s*$/";
 	// disposition date can appear in two different ways (that I have found) and a third for MDJ cases:
@@ -1652,7 +1652,7 @@ class Arrest
 		    // after cloning, the variables are named CHARGES#1, CHARGES#2, CHARGES#3, etc...
 		    $docx->setValue("CHARGE#" . $j, htmlspecialchars($charge->getChargeName(), ENT_COMPAT, 'UTF-8'));
 		    $docx->setValue("GRADE#" . $j, htmlspecialchars($charge->getGrade(), ENT_COMPAT, 'UTF-8'));
-		    $docx->setValue("CODE_SEC#" . $j, htmlspecialchars(utf8_encode($charge->getCodeSection()), ENT_COMPAT, 'UTF-8'));
+		    $docx->setValue("CODE_SEC#" . $j, htmlspecialchars($charge->getCodeSection(), ENT_COMPAT, 'UTF-8'));
 		    $docx->setValue("DISP#" . $j, htmlspecialchars($charge->getDisposition(), ENT_COMPAT, 'UTF-8'));
 		    $docx->setValue("DISP_DATE#" . $j, htmlspecialchars($dispDate, ENT_COMPAT, 'UTF-8'));
 		    $j = $j+1;
