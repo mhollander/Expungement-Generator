@@ -4,4 +4,3 @@ config.php
 *~
 data/*
 docketsheets/*
-migrations/2 - cpcms_aopc_summary.sql
