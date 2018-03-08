@@ -622,6 +622,26 @@ INSERT INTO `police` (`name`, `street`, `city`, `state`, `zip`, `phone`) VALUES
 ('Whitemarsh Police Department', '616 Germantown Pike', 'Lafayette Hill', 'PA', '19444', '215-362-2324'),
 ('Whitpain Police Department', '960 Wentz Road', 'Blue Bell', 'PA', '19422', '215-362-2325');
 
+LOCK TABLES `program` WRITE;
+/*!40000 ALTER TABLE `program` DISABLE KEYS */;
+INSERT INTO `program` VALUES (1,'Example Program',1,NULL,NULL);
+/*!40000 ALTER TABLE `program` ENABLE KEYS */;
+UNLOCK TABLES;
+
+
+LOCK TABLES `user` WRITE;
+/*!40000 ALTER TABLE `user` DISABLE KEYS */;
+INSERT INTO `user` VALUES (1,'admin@admin.com','$2y$10$ulBBSxWMJmGE5m1MBf4t4ejt55q0vPRf7vtWvZAhDY86RS0pQR.NG');
+/*!40000 ALTER TABLE `user` ENABLE KEYS */;
+UNLOCK TABLES;
+
+LOCK TABLES `userinfo` WRITE;
+/*!40000 ALTER TABLE `userinfo` DISABLE KEYS */;
+INSERT INTO `userinfo` VALUES (1,'admin','admin','none','none',12345,1,1,0,0);
+/*!40000 ALTER TABLE `userinfo` ENABLE KEYS */;
+UNLOCK TABLES;
+
+
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
