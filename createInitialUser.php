@@ -11,13 +11,14 @@
     $retypePassword = 'admin';
     $header='none';
     $signature='none';
-    $program=0;
     $errorMessages = new Message();
     $db = $GLOBALS['db'];
 
     //Check if there are any users in the db yet.
     $users = $db->query("select * from user;");
     if ($users->num_rows===0) {
+        $db->query("INSERT INTO `program` (`programName`,`ifp`) VALUES ('Example Program', 1);");
+        $program = $db->insert_id;
         Attorney::createNewAttorneyInDatabase($first, $last, $email, $barID, $password, $retypePassword, $header, $signature, $program, $errorMessages, $db);
         $userid = $db->insert_id;
         $db->query("UPDATE `userinfo` SET `userLevel` = 1 WHERE `userid` = " . $userid . ";");
