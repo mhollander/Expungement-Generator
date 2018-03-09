@@ -26,9 +26,6 @@
 	require_once("utils.php");
 	require_once("Attorney.php");
 
-?>
-
-<?php
 // if the user is logged in, tell them they they are already logged in
 if (!isLoggedIn())
 {
