@@ -1587,14 +1587,16 @@ class Arrest
 		    	    $docx->setValue("490_OR_790", "490");
 		        else   
     			    $docx->setValue("490_OR_790", "790");
-    
+    /*
         		// add in extra order information for CREP
 	        	if ($attorney->getProgramId() == 2)
     		    {
 	    		    $crepOrderLanguage = "All criminal justice agencies upon whom this order is served also are enjoined from disseminating to any non-criminal justice agency any and all criminal history record information ordered to be expunged/redacted pursuant to this Order unless otherwise permitted to do so pursuant to the Criminal History Information Records Act.  ";
     	    		$docx->setValue("CREP_EXTRA_ORDER_LANGUAGE", htmlspecialchars($crepOrderLanguage, ENT_COMPAT, 'UTF-8'));
 	    	    }
+     
     		    else
+     */
 	    		    $docx->setValue("CREP_EXTRA_ORDER_LANGUAGE", "");
             }
         }

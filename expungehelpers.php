@@ -375,21 +375,12 @@ function createOverview($arrests, $templateDir, $dataDir, $person, $sealable)
 // @return none
 function writeExpungementsToDatabase($arrests, $person, $attorney, $db)
 {
-	// setup a db connection for CREP users so that we can write remotely
-	$crepDB;
 	
-	// if this is a crep lawyer, write this to the crep database
-	if ($attorney->getProgramID() == 2)
-	{
-		$crepDB = new mysqli($GLOBALS['crepDBHost'], $GLOBALS['crepDBUser'], $GLOBALS['crepDBPassword'], $GLOBALS['crepDBName']);
-		if ($crepDB->connect_error) 
-			die('Error connecting to the db: Connect Error (' . $crepDB->connect_errno . ') ' . $crepDB->connect_error);
-		
-		$person->writePersonToDB($crepDB);
-	}
-	
-	// if this isn't a CLS lawyer, we only update the number of total petitions generated and return
-	else if ($attorney->getProgramID() == 1) {
+	// we only record some information in the database. For 
+	// a host program we write everything to the DB. For other programs
+	// that use the EG, we only want to update the number of total 
+	// petitions generated and return
+	if ($attorney->getSaveCIToDatabase()==1) {
 		// otherwise, write the defendant into the db if he doesn't already exist
 		$person->writePersonToDB($db);
 	}
@@ -402,13 +393,8 @@ function writeExpungementsToDatabase($arrests, $person, $attorney, $db)
 		if ($arrest->isArrestExpungement() || $arrest->isArrestRedaction() || $arrest->isArrestSummaryExpungement($arrests))
 			$total++;
 		// only add this to the db for certain programs
-		if ($attorney->getProgramID() == 1) {
+		if ($attorney->getSaveCIToDatabase()==1)
 			$arrest->writeExpungementToDatabase($person, $attorney, $db, true);
-		// if this is CREP, add this to a remote CREP database
-		} else {
-			if ($attorney->getProgramID() == 2)
-				$arrest->writeExpungementToDatabase($person, $attorney, $crepDB, false);
-		}
 	}
 	$attorney->updateTotalPetitions($total, $db);
 	return;
