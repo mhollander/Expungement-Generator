@@ -34,6 +34,7 @@ class Attorney
 	private $programID;
 	private $programName;
 	private $userLevel;
+        private $saveCIToDatabase;
 	
 	public function __construct($userid, $db) 
 	{
@@ -53,6 +54,7 @@ class Attorney
 	public function setProgramName($programName) { $this->programName = $programName; }
 	public function setUserLevel($userLevel) { $this->userLevel = $userLevel; }
 	public function setIsAnon($anon) { $this->anon = $anon; }
+        private function setSaveCIToDatabase($save) { $this->saveCIToDatabase = $save; }
 	
 	// getters
 	public function getFirstName() { return $this->firstName; }
@@ -67,6 +69,7 @@ class Attorney
 	public function getProgramName() { return $this->programName; }
 	public function getUserLevel() { return $this->userLevel; }
 	public function getIsAnon() { return $this->anon; }
+        public function getSaveCIToDatabase() { return $this->saveCIToDatabase; }
 	
 	// Sets the attorney information by taking a userID, connecting to the database, and pulling
 	// the attorney information from the database.  Requires a db handle to be passed in.
@@ -112,6 +115,7 @@ class Attorney
 				$this->setProgramID($row['programID']);
 				$this->setProgramName($row['programName']);
 				$this->setUserLevel($row['userLevel']);
+  			        $this->setSaveCIToDatabase($row['saveCIToDatabase']);
 			}			
 			$result->close();
 		}
