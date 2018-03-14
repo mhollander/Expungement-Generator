@@ -15,7 +15,6 @@
     $errorMessages = new Message();
     $db = $GLOBALS['db'];
 
-
     //Check if there are any users in the db yet.
     $users = $db->query("select * from user;");
     if ($users->num_rows===0) {
@@ -26,5 +25,4 @@
     } else {
         print("Did not create initial admin account.");
     }
-
- ?>
+?>
