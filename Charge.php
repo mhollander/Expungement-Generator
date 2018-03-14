@@ -172,7 +172,7 @@ class Charge
         if ($this->isRedactable() || !$this->isConviction()) { $this->setIsSealable(1); return 1; }
 
         // if this case falls into a series of non sealable case types, then return 0
-        $codeSection = preg_split("/\247+/", $this->getCodeSection(), -1, PREG_SPLIT_NO_EMPTY);
+        $codeSection = preg_split("/\x{A7}+/u", $this->getCodeSection(), -1, PREG_SPLIT_NO_EMPTY);
         if (count($codeSection) == 1)
         {
           // this means that therew as a problem splitting the codeSection, so return 2
