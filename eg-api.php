@@ -17,7 +17,7 @@
 	// Log the request, but strip identifying info
 	$test_headers = $_REQUEST;
         error_log("Logging a request to eg-api.");
-
+	
 	$test_headers['apikey'] = preg_replace('/./', 'x', $test_headers['apikey']);	
 	$test_headers['personFirst'] = preg_replace('/(?!^)./','x',$test_headers['personFirst']);
 	$test_headers['personLast'] = preg_replace('/(?!^)./','x',$test_headers['personLast']);
@@ -190,7 +190,9 @@
 		$log_trail .= ",emailing results";
 		if (!(isset($_REQUEST['createPetitions']) && preg_match('/^(t|true|1)$/i', $_REQUEST['createPetitions'])===1)) {
 			$file_path = NULL;
-			unset($response['results']['expungeZip']);
+			if (isset($response['results']['expungeZip'])) {
+				unset($response['results']['expungeZip']);
+			}
 		} else { 
 			$file_path = $response['results']['expungeZip'];
 			$path_parts = pathinfo($response['results']['expungeZip']);

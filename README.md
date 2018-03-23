@@ -14,9 +14,9 @@ I had to modify a line of code in TemplateProcessor.php to allow for multiline e
 in setValueForParts, I added $replace = preg_replace('~\R~u', '</w:t><w:br/><w:t>', $replace); just after the line that sets UTF8 encoding.
 The modified TemplateProcessor.php file is in this repository.  You can replace the one in PHPWord
 
-* pdftotext - This is available on both windows and linux systems.  On windows, I use 3.03.  On linux I use 3.03.  It is important to use these versions even though they may not be the most up to date.  There was a time when I updated pdftotext on my linux machine and the EG broke.  It seems that different versions of this program parse complex pdfs differently.
+* pdftotext - This is available on both windows and linux systems.  This can be found in the poppler-utils package on linux.
 
-* casperscraping - https://bitbucket.org/account/signin/?next=/nate_vogel/casperscraping - admitedly a bad name.  This is a library that uses casper to programatically scrape CPCMS.  CPCMS is a very javascript heavy website and was impossible to scrape without casper.
+* casperscraping - https://github.com/CLSPhila/casperscraping - admitedly a bad name.  This is a library that uses casper to programatically scrape CPCMS.  CPCMS is a very javascript heavy website and was impossible to scrape without casper.
 
 * sendgrip-php - (https://github.com/sendgrid/sendgrid-php). This is just for mailing the lookup files to legalserver.  If you don't want to use the lookup feature or don't want to allow emailing, don't worry about this.  You also want to play with lookup and mail*php to remove the mailing.  Uses sendgrid to accomplish mailing, although you could use any way to send email.
 
@@ -31,4 +31,4 @@ Expungements are the most effective way to help an individual with a criminal re
 If you are interested in contributing, please email mhollander@clsphila.org.
 
 ## License
-Copyright Community Legal Services 2011-2016
+Copyright Community Legal Services 2011-2018
