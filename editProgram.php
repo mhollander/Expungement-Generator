@@ -76,6 +76,13 @@ else
                 </select> 
 		</div>
 		<div class="form-item">
+			<label for="programWriteToDB">Write Expungement Information to the Database? (0 = No)</label>
+				<select name="programWriteToDB" id="programWriteToDB" class="form-text">
+                    <option value="0" <?php if($program['saveCIToDatabase']=="0") print "selected";?>>0</option>
+                    <option value="1" <?php if($program['saveCIToDatabase']=="1") print "selected";?>>1</option>
+                </select> 
+		</div>
+		<div class="form-item">
 			<label for="programIFPLanguage">IFP Language for petitions from this program</label>
 			<textarea name="programIFPLanguage" id="programIFPLanguage" class="form-text form-text-area-big"><?php print $program['ifpLanguage'];;?></textarea>
 			<div class="description">Change the text if you want to change the IFP language put on all petitions created under this program.</div>

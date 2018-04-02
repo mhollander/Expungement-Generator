@@ -146,7 +146,7 @@ else if (isset($_POST['createProgram']) && $_POST['createProgram']==1)
             else
             {                           
                 // there is a program name, so do the creation
-                $sql = "INSERT INTO program (programName, ifp, ifpLanguage, apiKey) values ('" . $GLOBALS['db']->real_escape_string($_POST['createProgramName']) . "', " . $GLOBALS['db']->real_escape_string($_POST['createProgramIFP']) . ", '" . $GLOBALS['db']->real_escape_string($_POST['createProgramIFPLanguage']) . "', '" . password_hash($_POST['createProgramAPIKey'], PASSWORD_DEFAULT) . "');";
+                $sql = "INSERT INTO program (programName, ifp, saveCIToDatabase, ifpLanguage, apiKey) values ('" . $GLOBALS['db']->real_escape_string($_POST['createProgramName']) . "', " . $GLOBALS['db']->real_escape_string($_POST['createProgramIFP']) . ", " . $GLOBALS['db']->real_escape_string($_POST['createProgramWriteToDB']) . ", '" . $GLOBALS['db']->real_escape_string($_POST['createProgramIFPLanguage']) . "', '" . password_hash($_POST['createProgramAPIKey'], PASSWORD_DEFAULT) . "');";
                 if (!$GLOBALS['db']->query($sql))
                 {                     
                     if ($GLOBALS['debug'])
@@ -193,7 +193,7 @@ else if (isset($_POST['editProgram']) && $_POST['editProgram']==1)
             else
             {                           
                 // there is a program name, so do the edit
-                $sql = "UPDATE program SET programName='" . $GLOBALS['db']->real_escape_string($_POST['programName']) . "', ifp=" . $GLOBALS['db']->real_escape_string($_POST['programIFP']) . ", ifpLanguage='" . $GLOBALS['db']->real_escape_string($_POST['programIFPLanguage']) . "' WHERE programid=" . $GLOBALS['db']->real_escape_string($_POST['id']) . ";";
+                $sql = "UPDATE program SET programName='" . $GLOBALS['db']->real_escape_string($_POST['programName']) . "', ifp=" . $GLOBALS['db']->real_escape_string($_POST['programIFP']) . ", saveCIToDatabase=" . $GLOBALS['db']->real_escape_string($_POST['programWriteToDB']) . ", ifpLanguage='" . $GLOBALS['db']->real_escape_string($_POST['programIFPLanguage']) . "' WHERE programid=" . $GLOBALS['db']->real_escape_string($_POST['id']) . ";";
 
                 if (!$GLOBALS['db']->query($sql))
                 {                     
