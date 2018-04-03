@@ -184,6 +184,13 @@ function displayCreateProgram()
             </select>
 		</div> 
 		<div class="form-item">
+			<label for="createProgramWriteToDB">Write Expungement Info to the Database for this Program?</label>
+			<select name="createProgramWriteToDB" id="createProgramWriteToDB" class="form-text" >
+                <option value="0">No</option>
+                <option value="1" selected>Yes</option>
+            </select>
+		</div> 
+		<div class="form-item">
 			<label for="createProgramIFPLanguage">IFP Language</label>
 			<textarea name="createProgramIFPLanguage" id="createProgramIFPLanguage" class="form-text form-text-area-big">_____  is a non-profit legal services organization that provides free legal assistance to low-income individuals. I, attorney for the petitioner, certify that petitioner meets the financial eligibility standards for representation by ________ and that I am providing free legal service to petitioner.</textarea>
 			<div class="description">This will only be used if IFP is not 0.</div>
