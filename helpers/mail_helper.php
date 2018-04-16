@@ -28,7 +28,7 @@ function mailPetition($addr, $username, $response, $file_name) {
 		$petition = new SendGrid\Attachment();
 		$petition->setContent(base64_encode(file_get_contents($file_path)));
 		$petition->setType("application/zip");
-		$petition->setFilename("GeneratedPetition");
+		$petition->setFilename("GeneratedPetitions.zip");
 		$petition->setDisposition("attachment");
 		$mail->addAttachment($petition);
 	}

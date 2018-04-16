@@ -8,6 +8,7 @@
 	include('helpers/mail_helper.php');
 	include('helpers/api_validator.php');
 	include('helpers/loggers.php');
+	include('helpers/request_builder.php');
 	//initialize the response that will get sent back to requester
 	$response = array();
 	//set default response code:
@@ -23,30 +24,38 @@
 	$test_headers['personLast'] = preg_replace('/(?!^)./','x',$test_headers['personLast']);
 	$test_headers['personStreet'] = preg_replace('/(?!^)./','x',$test_headers['personStreet']);
 	//file_put_contents('php://stderr', print_r($test_headers, TRUE));
-
-
+	//error_log("Logging the results of the request_builder helper");
+	//file_put_contents('php://stderr',print_r(file_get_contents('php://input'), true));
+	//error_log("---");
 	$log_trail = "";
+   	$data = json_decode(file_get_contents('php://input'), true);
+        //file_put_contents('php://stderr',print_r($data));
+        //error_log($data['id']);
+        //error_log("\n That was the data");
+	$request = request_builder();
+
+
 	
 	// Test if the quest is well formed.
-	if(malformedRequest($_REQUEST)) {
+	if(malformedRequest($request)) {
 		http_response_code(400);
-		$response['results']['status'] = malformedRequest($_REQUEST);
+		$response['results']['status'] = malformedRequest($request);
 		$log_trail .= "malformed request";
-	} elseif(!validAPIKey($_REQUEST, $db)) {
+	} elseif(!validAPIKey($request, $db)) {
 		http_response_code(401);
 		$response['results']['status'] = "Invalid request.";
 		$log_trail .= "invalid request";
 	} else {
-		$user_id = validAPIKey($_REQUEST, $db);
+		$user_id = validAPIKey($request, $db);
 		http_response_code(200);
 		error_log("Starting to process a good response.");
 		$log_trail .= "valid request"; //build a string that shows how the request moved through the script. 
 					     //Return it at the end in write_to_resource_log()
 		// a cpcmsSearch flag can be set to true in the post request
 		// to trigger a cpcms search.
-		if (isset($_REQUEST['cpcmsSearch']) && preg_match('/^(t|true|1)$/i', $_REQUEST['cpcmsSearch'])===1){
+		if (isset($request['cpcmsSearch']) && preg_match('/^(t|true|1)$/i', $request['cpcmsSearch'])===1){
 			$log_trail .= ",cpcmsSearch";
-			$urlPerson = getPersonFromPostOrSession();
+			$urlPerson = getPersonFromPostOrSession($request);
 
 			$cpcms = new CPCMS($urlPerson['First'],$urlPerson['Last'], $urlPerson['DOB']);
 			$status = $cpcms->cpcmsSearch();
@@ -69,13 +78,13 @@
         // a display funciton that will display all of the arrests as a webform, with all
         // of the post vars re-posted as hidden variables.  Also pass this filename as the
         // form action location.
-        			unset($_REQUEST['cpcmsSearch']);
+        			unset($request['cpcmsSearch']);
 			}
 		} // end of processing cpcmsSearch
 		error_log("Done processing cpcmsSearch");
 		$arrests = array(); //an array to hold Arrest objects
 		$arrestSummary = new ArrestSummary();
-		$urlPerson = getPersonFromPostOrSession();
+		$urlPerson = getPersonFromPostOrSession($request);
 		$person = new Person($urlPerson['First'],
 			$urlPerson['Last'],
 			$urlPerson['SSN'],
@@ -83,8 +92,9 @@
 			$urlPerson['City'],
 			$urlPerson['State'],
 			$urlPerson['Zip']);
-	  	
-		getInfoFromGetVars(); //this sets session variables based on the GET or
+	  
+		// TODO get rid of this?	
+		getInfoFromGetVars($request); //this sets session variables based on the GET or
 		// POST variables 'docket', 'act5Regardless', 'expungeRegardless', and
 		// 'zipOnly'
 		$response['personFirst'] = $urlPerson['First'];
@@ -93,7 +103,7 @@
 		$attorney = new Attorney($user_id, $db);
 
 		error_log("Figured out the Attorney:");
-		error_log("Attorney " . $_REQUEST['current_user'] . " is " . $user_id); 	
+		error_log("Attorney " . $request['current_user'] . " is " . $user_id); 	
 		$docketFiles = $_FILES;
 		
 		if (!isset($docketNums)) {
@@ -101,11 +111,11 @@
 			$docketNums = array();
 		}
 
-		if (isset($_REQUEST['docketNums'])) {
+		if (isset($request['docketNums'])) {
 			// Add any docket numbers passed in POST request to $docketnums.
 			// POST[docketnums] should be a comma-delimited string like "MC-12345,CP-34566"
 			$log_trail .= ",requested docket numbers";
-			$docketNumsRequest = filter_var($_REQUEST['docketNums'], FILTER_SANITIZE_SPECIAL_CHARS);
+			$docketNumsRequest = filter_var($request['docketNums'], FILTER_SANITIZE_SPECIAL_CHARS);
 			foreach (explode(",",$docketNumsRequest) as $doc) {
 				if ($doc) { //Doc will be false if the filter fails.
 					array_push($docketNums, $doc);
@@ -136,7 +146,7 @@
         $files=[];
         
 		error_log("beginning to create petitions, if requested.");
-		if (preg_match('/^(t|true|1)$/i', $_REQUEST['createPetitions'])===1) {
+		if (preg_match('/^(t|true|1)$/i', $request['createPetitions'])===1) {
     		$files = doExpungements($arrests, $templateDir, $dataDir, $person,
 	    		$attorney, $_SESSION['expungeRegardless'],
 		    	$db, $sealable);
@@ -186,9 +196,9 @@
 
 	error_log("checking whether to email petitions.");
 	
-	if (isset($_REQUEST['emailPetitions']) && preg_match('/^(t|true|1)$/i', $_REQUEST['emailPetitions'])===1){
+	if (isset($request['emailPetitions']) && preg_match('/^(t|true|1)$/i', $request['emailPetitions'])===1){
 		$log_trail .= ",emailing results";
-		if (!(isset($_REQUEST['createPetitions']) && preg_match('/^(t|true|1)$/i', $_REQUEST['createPetitions'])===1)) {
+		if (!(isset($request['createPetitions']) && preg_match('/^(t|true|1)$/i', $request['createPetitions'])===1)) {
 			$file_path = NULL;
 			if (isset($response['results']['expungeZip'])) {
 				unset($response['results']['expungeZip']);
@@ -199,8 +209,8 @@
 			$response['results']['expungeZip'] = $baseURL . "secureServe.php?serveFile=" . $path_parts['filename']; 
 		} 
 	    //mailPetition($_REQUEST['current_user'], $_REQUEST['current_user'], $response, $file_path);
-	    error_log("Mailing to " . mailDestination($_REQUEST));
-	    mailPetition(mailDestination($_REQUEST), mailDestination($_REQUEST), $response, $file_path);
+	    error_log("Mailing to " . mailDestination($request));
+	    mailPetition(mailDestination($request), mailDestination($request), $response, $file_path);
 	} else {
 		error_log("emailPetitions was not set");
 	}
