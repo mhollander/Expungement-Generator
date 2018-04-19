@@ -13,29 +13,21 @@
 	$response = array();
 	//set default response code:
 	http_response_code(404);
+	
 
+	$request = request_builder();
 
 	// Log the request, but strip identifying info
-	$test_headers = $_REQUEST;
+	$test_headers = $request;
         error_log("Logging a request to eg-api.");
 	
 	$test_headers['apikey'] = preg_replace('/./', 'x', $test_headers['apikey']);	
 	$test_headers['personFirst'] = preg_replace('/(?!^)./','x',$test_headers['personFirst']);
 	$test_headers['personLast'] = preg_replace('/(?!^)./','x',$test_headers['personLast']);
 	$test_headers['personStreet'] = preg_replace('/(?!^)./','x',$test_headers['personStreet']);
-	//file_put_contents('php://stderr', print_r($test_headers, TRUE));
-	//error_log("Logging the results of the request_builder helper");
-	//file_put_contents('php://stderr',print_r(file_get_contents('php://input'), true));
-	//error_log("---");
 	$log_trail = "";
-   	$data = json_decode(file_get_contents('php://input'), true);
-        //file_put_contents('php://stderr',print_r($data));
-        //error_log($data['id']);
-        //error_log("\n That was the data");
-	$request = request_builder();
 
 
-	
 	// Test if the quest is well formed.
 	if(malformedRequest($request)) {
 		http_response_code(400);
@@ -143,7 +135,7 @@
 		}
 		$sealable = checkIfSealable($arrests);
 
-        $files=[];
+        	$files=[];
         
 		error_log("beginning to create petitions, if requested.");
 		if (preg_match('/^(t|true|1)$/i', $request['createPetitions'])===1) {
@@ -151,8 +143,8 @@
 	    		$attorney, $_SESSION['expungeRegardless'],
 		    	$db, $sealable);
 	    	//$response['results']['sealing'] = $parsed_results['sealing'];
-		    $files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
-        }
+		$files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
+        	}//end of creating petitions if createPetitions was set.
         
 		ob_end_clean();
         
@@ -191,29 +183,30 @@
 		//error_log("cleaning up files");
 		cleanupFiles($files);
 		//error_log("done writing to db");
-	}// end of processing req from a valid user
 
 
-	error_log("checking whether to email petitions.");
+		error_log("checking whether to email petitions.");
+		
+		if (isset($request['emailPetitions']) && preg_match('/^(t|true|1)$/i', $request['emailPetitions'])===1){
+			$log_trail .= ",emailing results";
+			if (!(isset($request['createPetitions']) && preg_match('/^(t|true|1)$/i', $request['createPetitions'])===1)) {
+				$file_path = NULL;
+				if (isset($response['results']['expungeZip'])) {
+					unset($response['results']['expungeZip']);
+				}
+			} else { 
+				$file_path = $response['results']['expungeZip'];
+				$path_parts = pathinfo($response['results']['expungeZip']);
+				$response['results']['expungeZip'] = $baseURL . "secureServe.php?serveFile=" . $path_parts['filename']; 
+			} 
+		    //mailPetition($_REQUEST['current_user'], $_REQUEST['current_user'], $response, $file_path);
+		    error_log("Mailing to " . mailDestination($request));
+		    mailPetition(mailDestination($request), mailDestination($request), $response, $file_path);
+		} else {
+			error_log("emailPetitions was not set");
+		}
 	
-	if (isset($request['emailPetitions']) && preg_match('/^(t|true|1)$/i', $request['emailPetitions'])===1){
-		$log_trail .= ",emailing results";
-		if (!(isset($request['createPetitions']) && preg_match('/^(t|true|1)$/i', $request['createPetitions'])===1)) {
-			$file_path = NULL;
-			if (isset($response['results']['expungeZip'])) {
-				unset($response['results']['expungeZip']);
-			}
-		} else { 
-			$file_path = $response['results']['expungeZip'];
-			$path_parts = pathinfo($response['results']['expungeZip']);
-			$response['results']['expungeZip'] = $baseURL . "secureServe.php?serveFile=" . $path_parts['filename']; 
-		} 
-	    //mailPetition($_REQUEST['current_user'], $_REQUEST['current_user'], $response, $file_path);
-	    error_log("Mailing to " . mailDestination($request));
-	    mailPetition(mailDestination($request), mailDestination($request), $response, $file_path);
-	} else {
-		error_log("emailPetitions was not set");
-	}
+	}// end of processing req from a valid user
 	error_log("Finished api request.");
 	if (isset($user_id)) {
 		writeToResourceLog($user_id,"eg-api.php",$log_trail);
@@ -229,7 +222,15 @@
 		// This takes advantage of the truthiness of php strings
 		// 	to supply a helpful message.
 
-		
+		// apikey should get checked first for a complicated reason. The requestbuilder also 
+		// checks if an apikey is missing, and will assume the request data was json if the api key
+		// was missing. So if the request was HTTP, but missing an apikey, $request will be based on 
+		// the input json data, which is empty and has _no_ keys. Putting apikey key first here will 
+		// tell the user that the api key is missing, which is accurate, and gives them the right instruction
+		// for correcting the issue.
+		if ( empty($request['apikey']) ) {
+			return "Key missing from request.";
+		}	
 
 		if (empty($request['current_user'])) {
 			return "User email missing from request.";
@@ -243,9 +244,7 @@
 			return "Should I create petitions? Please include createPetitions=[0|1] in your request.";
 		}
 
-		if ( empty($request['apikey']) ) {
-			return "Key missing from request.";
-		}
+		
 		return False;
 	};//End of well-formed request
 
