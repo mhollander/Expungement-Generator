@@ -50,9 +50,11 @@ function printIfSet($key)
 
 	// gets a "person" from the post vars; adds the person to the session
     // @return a hash with each value from the get vars escaped etc... to be html and sql safe
-function getPersonFromPostOrSession()
+function getPersonFromPostOrSession($data = FALSE)
 {
-	//
+        if($data===FALSE)
+           $data = $_POST;
+    
 	if ($GLOBALS['debug'])
 	{
 		print "POST VARS: <br />";
@@ -62,23 +64,23 @@ function getPersonFromPostOrSession()
 		}
 	}
 	
-    if (isset($_POST["personFirst"]))
-  	    $_SESSION['urlPerson']['First'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personFirst"])));
-    if (isset($_POST["personLast"]))
-        $_SESSION['urlPerson']['Last'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personLast"])));
-    if (isset($_POST["personDOB"]))
-        $_SESSION['urlPerson']['DOB'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personDOB"])));
+    if (isset($data["personFirst"]))
+  	    $_SESSION['urlPerson']['First'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($data["personFirst"])));
+    if (isset($data["personLast"]))
+        $_SESSION['urlPerson']['Last'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($data["personLast"])));
+    if (isset($data["personDOB"]))
+        $_SESSION['urlPerson']['DOB'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($data["personDOB"])));
 
-    if (isset($_POST["personStreet"]))
-        $_SESSION['urlPerson']['Street'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personStreet"])));
-    if (isset($_POST["personStreet"]))
-    	$_SESSION['urlPerson']['City'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personCity"])));
-    if (isset($_POST["personStreet"]))
-    	$_SESSION['urlPerson']['State'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personState"])));
-    if (isset($_POST["personStreet"]))
-    	$_SESSION['urlPerson']['Zip'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personZip"])));
-    if (isset($_POST["personStreet"]))
-    	$_SESSION['urlPerson']['SSN'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_POST["personSSN"])));
+    if (isset($data["personStreet"]))
+        $_SESSION['urlPerson']['Street'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($data["personStreet"])));
+    if (isset($data["personStreet"]))
+    	$_SESSION['urlPerson']['City'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($data["personCity"])));
+    if (isset($data["personStreet"]))
+    	$_SESSION['urlPerson']['State'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($data["personState"])));
+    if (isset($data["personStreet"]))
+    	$_SESSION['urlPerson']['Zip'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($data["personZip"])));
+    if (isset($data["personStreet"]))
+    	$_SESSION['urlPerson']['SSN'] = $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($data["personSSN"])));
     
 	return $_SESSION['urlPerson'];
 }
@@ -86,13 +88,16 @@ function getPersonFromPostOrSession()
 // there is some informaiton that we want to get from getVars.  The last page of the EG
 // where the cases are displayed allows for a person to click on a result and 
 // output an Act 5 or pardon petition.  The vars used to do that are stored here
-function getInfoFromGetVars()
+function getInfoFromGetVars($data = FALSE)
 {
+    if($data===FALSE)
+      $data = $_POST;
+
     if (isset($_GET['docket']))
     	$_SESSION['docket'] = explode("|", $GLOBALS['db']->real_escape_string(htmlspecialchars(stripslashes($_GET["docket"]))));
-    $_SESSION['act5Regardless'] = isset($_GET['act5Regardless']) || isset($_POST['act5Regardless']);
-    $_SESSION['expungeRegardless'] = isset($_GET['expungeRegardless']) || isset($_POST['expungeRegardless']);
-    $_SESSION['zipOnly'] = isset($_POST['zipOnly']) || isset($_GET['zipOnly']);
+    $_SESSION['act5Regardless'] = isset($_GET['act5Regardless']) || isset($data['act5Regardless']);
+    $_SESSION['expungeRegardless'] = isset($_GET['expungeRegardless']) || isset($data['expungeRegardless']);
+    $_SESSION['zipOnly'] = isset($data['zipOnly']) || isset($_GET['zipOnly']);
     
 }
   

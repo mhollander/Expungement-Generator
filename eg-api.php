@@ -8,45 +8,46 @@
 	include('helpers/mail_helper.php');
 	include('helpers/api_validator.php');
 	include('helpers/loggers.php');
+	include('helpers/request_builder.php');
 	//initialize the response that will get sent back to requester
 	$response = array();
 	//set default response code:
 	http_response_code(404);
+	
 
+	$request = request_builder();
 
 	// Log the request, but strip identifying info
-	$test_headers = $_REQUEST;
+	$test_headers = $request;
         error_log("Logging a request to eg-api.");
 	
 	$test_headers['apikey'] = preg_replace('/./', 'x', $test_headers['apikey']);	
 	$test_headers['personFirst'] = preg_replace('/(?!^)./','x',$test_headers['personFirst']);
 	$test_headers['personLast'] = preg_replace('/(?!^)./','x',$test_headers['personLast']);
 	$test_headers['personStreet'] = preg_replace('/(?!^)./','x',$test_headers['personStreet']);
-	//file_put_contents('php://stderr', print_r($test_headers, TRUE));
-
-
 	$log_trail = "";
-	
+
+
 	// Test if the quest is well formed.
-	if(malformedRequest($_REQUEST)) {
+	if(malformedRequest($request)) {
 		http_response_code(400);
-		$response['results']['status'] = malformedRequest($_REQUEST);
+		$response['results']['status'] = malformedRequest($request);
 		$log_trail .= "malformed request";
-	} elseif(!validAPIKey($_REQUEST, $db)) {
+	} elseif(!validAPIKey($request, $db)) {
 		http_response_code(401);
 		$response['results']['status'] = "Invalid request.";
 		$log_trail .= "invalid request";
 	} else {
-		$user_id = validAPIKey($_REQUEST, $db);
+		$user_id = validAPIKey($request, $db);
 		http_response_code(200);
 		error_log("Starting to process a good response.");
 		$log_trail .= "valid request"; //build a string that shows how the request moved through the script. 
 					     //Return it at the end in write_to_resource_log()
 		// a cpcmsSearch flag can be set to true in the post request
 		// to trigger a cpcms search.
-		if (isset($_REQUEST['cpcmsSearch']) && preg_match('/^(t|true|1)$/i', $_REQUEST['cpcmsSearch'])===1){
+		if (isset($request['cpcmsSearch']) && preg_match('/^(t|true|1)$/i', $request['cpcmsSearch'])===1){
 			$log_trail .= ",cpcmsSearch";
-			$urlPerson = getPersonFromPostOrSession();
+			$urlPerson = getPersonFromPostOrSession($request);
 
 			$cpcms = new CPCMS($urlPerson['First'],$urlPerson['Last'], $urlPerson['DOB']);
 			$status = $cpcms->cpcmsSearch();
@@ -69,13 +70,13 @@
         // a display funciton that will display all of the arrests as a webform, with all
         // of the post vars re-posted as hidden variables.  Also pass this filename as the
         // form action location.
-        			unset($_REQUEST['cpcmsSearch']);
+        			unset($request['cpcmsSearch']);
 			}
 		} // end of processing cpcmsSearch
 		error_log("Done processing cpcmsSearch");
 		$arrests = array(); //an array to hold Arrest objects
 		$arrestSummary = new ArrestSummary();
-		$urlPerson = getPersonFromPostOrSession();
+		$urlPerson = getPersonFromPostOrSession($request);
 		$person = new Person($urlPerson['First'],
 			$urlPerson['Last'],
 			$urlPerson['SSN'],
@@ -83,8 +84,9 @@
 			$urlPerson['City'],
 			$urlPerson['State'],
 			$urlPerson['Zip']);
-	  	
-		getInfoFromGetVars(); //this sets session variables based on the GET or
+	  
+		// TODO get rid of this?	
+		getInfoFromGetVars($request); //this sets session variables based on the GET or
 		// POST variables 'docket', 'act5Regardless', 'expungeRegardless', and
 		// 'zipOnly'
 		$response['personFirst'] = $urlPerson['First'];
@@ -93,7 +95,7 @@
 		$attorney = new Attorney($user_id, $db);
 
 		error_log("Figured out the Attorney:");
-		error_log("Attorney " . $_REQUEST['current_user'] . " is " . $user_id); 	
+		error_log("Attorney " . $request['current_user'] . " is " . $user_id); 	
 		$docketFiles = $_FILES;
 		
 		if (!isset($docketNums)) {
@@ -101,11 +103,11 @@
 			$docketNums = array();
 		}
 
-		if (isset($_REQUEST['docketNums'])) {
+		if (isset($request['docketNums'])) {
 			// Add any docket numbers passed in POST request to $docketnums.
 			// POST[docketnums] should be a comma-delimited string like "MC-12345,CP-34566"
 			$log_trail .= ",requested docket numbers";
-			$docketNumsRequest = filter_var($_REQUEST['docketNums'], FILTER_SANITIZE_SPECIAL_CHARS);
+			$docketNumsRequest = filter_var($request['docketNums'], FILTER_SANITIZE_SPECIAL_CHARS);
 			foreach (explode(",",$docketNumsRequest) as $doc) {
 				if ($doc) { //Doc will be false if the filter fails.
 					array_push($docketNums, $doc);
@@ -133,16 +135,16 @@
 		}
 		$sealable = checkIfSealable($arrests);
 
-        $files=[];
+        	$files=[];
         
 		error_log("beginning to create petitions, if requested.");
-		if (preg_match('/^(t|true|1)$/i', $_REQUEST['createPetitions'])===1) {
+		if (preg_match('/^(t|true|1)$/i', $request['createPetitions'])===1) {
     		$files = doExpungements($arrests, $templateDir, $dataDir, $person,
 	    		$attorney, $_SESSION['expungeRegardless'],
 		    	$db, $sealable);
 	    	//$response['results']['sealing'] = $parsed_results['sealing'];
-		    $files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
-        }
+		$files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
+        	}//end of creating petitions if createPetitions was set.
         
 		ob_end_clean();
         
@@ -181,29 +183,30 @@
 		//error_log("cleaning up files");
 		cleanupFiles($files);
 		//error_log("done writing to db");
-	}// end of processing req from a valid user
 
 
-	error_log("checking whether to email petitions.");
+		error_log("checking whether to email petitions.");
+		
+		if (isset($request['emailPetitions']) && preg_match('/^(t|true|1)$/i', $request['emailPetitions'])===1){
+			$log_trail .= ",emailing results";
+			if (!(isset($request['createPetitions']) && preg_match('/^(t|true|1)$/i', $request['createPetitions'])===1)) {
+				$file_path = NULL;
+				if (isset($response['results']['expungeZip'])) {
+					unset($response['results']['expungeZip']);
+				}
+			} else { 
+				$file_path = $response['results']['expungeZip'];
+				$path_parts = pathinfo($response['results']['expungeZip']);
+				$response['results']['expungeZip'] = $baseURL . "secureServe.php?serveFile=" . $path_parts['filename']; 
+			} 
+		    //mailPetition($_REQUEST['current_user'], $_REQUEST['current_user'], $response, $file_path);
+		    error_log("Mailing to " . mailDestination($request));
+		    mailPetition(mailDestination($request), mailDestination($request), $response, $file_path);
+		} else {
+			error_log("emailPetitions was not set");
+		}
 	
-	if (isset($_REQUEST['emailPetitions']) && preg_match('/^(t|true|1)$/i', $_REQUEST['emailPetitions'])===1){
-		$log_trail .= ",emailing results";
-		if (!(isset($_REQUEST['createPetitions']) && preg_match('/^(t|true|1)$/i', $_REQUEST['createPetitions'])===1)) {
-			$file_path = NULL;
-			if (isset($response['results']['expungeZip'])) {
-				unset($response['results']['expungeZip']);
-			}
-		} else { 
-			$file_path = $response['results']['expungeZip'];
-			$path_parts = pathinfo($response['results']['expungeZip']);
-			$response['results']['expungeZip'] = $baseURL . "secureServe.php?serveFile=" . $path_parts['filename']; 
-		} 
-	    //mailPetition($_REQUEST['current_user'], $_REQUEST['current_user'], $response, $file_path);
-	    error_log("Mailing to " . mailDestination($_REQUEST));
-	    mailPetition(mailDestination($_REQUEST), mailDestination($_REQUEST), $response, $file_path);
-	} else {
-		error_log("emailPetitions was not set");
-	}
+	}// end of processing req from a valid user
 	error_log("Finished api request.");
 	if (isset($user_id)) {
 		writeToResourceLog($user_id,"eg-api.php",$log_trail);
@@ -219,7 +222,15 @@
 		// This takes advantage of the truthiness of php strings
 		// 	to supply a helpful message.
 
-		
+		// apikey should get checked first for a complicated reason. The requestbuilder also 
+		// checks if an apikey is missing, and will assume the request data was json if the api key
+		// was missing. So if the request was HTTP, but missing an apikey, $request will be based on 
+		// the input json data, which is empty and has _no_ keys. Putting apikey key first here will 
+		// tell the user that the api key is missing, which is accurate, and gives them the right instruction
+		// for correcting the issue.
+		if ( empty($request['apikey']) ) {
+			return "Key missing from request.";
+		}	
 
 		if (empty($request['current_user'])) {
 			return "User email missing from request.";
@@ -233,9 +244,7 @@
 			return "Should I create petitions? Please include createPetitions=[0|1] in your request.";
 		}
 
-		if ( empty($request['apikey']) ) {
-			return "Key missing from request.";
-		}
+		
 		return False;
 	};//End of well-formed request
 
