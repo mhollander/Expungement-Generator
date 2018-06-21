@@ -1,5 +1,4 @@
 vendor/*
-composer.*
 config.php
 *~
 data/*
