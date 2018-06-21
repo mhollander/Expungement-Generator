@@ -1,7 +1,0 @@
-{
-    "require": {
-        "phpoffice/phpword": "v0.13.*",
-        "sendgrid/php-http-client": "3.*",
-        "sendgrid/sendgrid": "~5.0.4"
-    }
-}
