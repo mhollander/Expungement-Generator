@@ -14,6 +14,16 @@ This project was created by Michael Hollander of Community Legal Services of Phi
 
 This project has been modified from the original expungment generator to more easily integrate with docker.
 
+### Frontend
+
+### Database
+
+The db_dockerfile describes a container that will host the database backend of the expungement generator.
+
+Use with the docker image natev/eg-docker-frontend.
+
+It initializes with a single admin user, admin@example.fake, password admin. Change this before using your Expungement Generator for anything.
+
 ## Installation and Dependencies
 
 The vast majority of the program is written in PHP and has been tested on PHP 5.5.12. It uses a mysql database (tested on 5.6).
