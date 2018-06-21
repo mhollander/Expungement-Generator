@@ -16,6 +16,18 @@ This project has been modified from the original expungment generator to more ea
 
 ### Frontend
 
+The dockerfile `Dockerfile` describes a container holding the frontend of the Expungement Generator.
+
+The frontend container image is hosted on dockerhub at https://hub.docker.com/r/natev/eg-docker-frontend/
+
+Basic usage of the frontend:
+
+```
+docker run natev/eg-docker-frontend -p 8080:80
+```
+
+You won't be able to accomplish much without a database, though, inluding logging in. So you'll need a database container running as well. natev/eg-docker-db provides a container with the right schema, and you cah check out compose files int this repository for examples of how to set up containers to run a full EG.
+
 ### Database
 
 The db_dockerfile describes a container that will host the database backend of the expungement generator.
@@ -24,7 +36,7 @@ Use with the docker image natev/eg-docker-frontend.
 
 It initializes with a single admin user, admin@example.fake, password admin. Change this before using your Expungement Generator for anything.
 
-## Installation and Dependencies
+## Installation w/out Docker and Dependencies
 
 The vast majority of the program is written in PHP and has been tested on PHP 5.5.12. It uses a mysql database (tested on 5.6).
 

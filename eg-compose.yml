@@ -1,0 +1,37 @@
+version: '3' #this refers to the version of the dockerfile format.
+
+# Version 3 of the docker-compose format:
+# https://docs.docker.com/compose/compose-file/
+
+services:
+    expungement_generator:
+        image: eg_front #natev/eg-docker-frontend:latest
+        environment:
+            BASE_URL: "http://localhost:9090/"
+            CHARGE_DB_HOST: db
+            CHARGE_DB_USER: eg_user
+            CHARGE_DB_PASS: somerandompassword
+            CHARGE_DB_NAME: cpcms_aopc_summary
+            DB_HOST: db
+            DB_NAME: eg_db
+            DB_USER: eg_user
+            DB_PASS: somerandompassword
+            SENDGRID_KEY: somerandomkey
+        networks:
+            - eg-net
+        ports:
+            - "9090:80"
+    db:
+        image: eg_db #natev/eg-docker-db:latest
+        restart: always
+        environment:
+            MYSQL_ROOT_PASSWORD: someBigOleComplexPassword
+            MYSQL_DATABASE: eg_db
+            MYSQL_USER: eg_user
+            MYSQL_PASSWORD: somerandompassword
+        networks:
+            - eg-net
+        expose:
+            - "3306"
+networks:
+    eg-net:
