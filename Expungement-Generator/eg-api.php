@@ -133,24 +133,31 @@
 		}
 		$sealable = checkIfSealable($arrests);
 
-		$files = doExpungements($arrests, $templateDir, $dataDir, $person,
-			$attorney, $_SESSION['expungeRegardless'],
-			$db, $sealable);
-		ob_end_clean();
-		$parsed_results = parseArrests($arrests, $sealable, $person);
-		$response['results']['expungements_redactions'] = $parsed_results['expungements_redactions'];
-		//$response['results']['sealing'] = $parsed_results['sealing'];
-		$files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
+        $files=[];
+        
 		error_log("beginning to create petitions, if requested.");
 		if (preg_match('/^(t|true|1)$/i', $_REQUEST['createPetitions'])===1) {
-			$zipFile = zipFiles($files, $dataDir, $docketFiles,
+    		$files = doExpungements($arrests, $templateDir, $dataDir, $person,
+	    		$attorney, $_SESSION['expungeRegardless'],
+		    	$db, $sealable);
+	    	//$response['results']['sealing'] = $parsed_results['sealing'];
+		    $files[] = createOverview($arrests, $templateDir, $dataDir, $person, $sealable);
+        }
+        
+		ob_end_clean();
+        
+		$parsed_results = parseArrests($arrests, $sealable, $person);
+   		$response['results']['expungements_redactions'] = $parsed_results['expungements_redactions'];
+
+        // create the zip file.  The $files array contains the petitions; it will be empty if createPetitions
+        // isn't set to 1 or t or true
+		$zipFile = zipFiles($files, $dataDir, $docketFiles,
 				uniqid($person->getFirst() . $person->getLast(), true) . "Expungements");
 
-			if (count($files) > 0) {
-				$response['results']['expungeZip'] = basename($zipFile);
-			} else {
-				$response['results']['status'] = "Error. No dockets downloaded. It would be nice if this message were more helpful.";
-			}
+		if (count($docketNums) > 0) {
+			$response['results']['expungeZip'] = basename($zipFile);
+		} else {
+			$response['results']['status'] = "Error. No dockets downloaded. It would be nice if this message were more helpful.";
 		}
 
 		// write everything to the DB as long as this wasn't a "test" upload.
