@@ -28,7 +28,7 @@ function mailPetition($addr, $username, $response, $file_name) {
 		$petition = new SendGrid\Attachment();
 		$petition->setContent(base64_encode(file_get_contents($file_path)));
 		$petition->setType("application/zip");
-		$petition->setFilename("GeneratedPetition");
+		$petition->setFilename("GeneratedPetitions.zip");
 		$petition->setDisposition("attachment");
 		$mail->addAttachment($petition);
 	}
@@ -72,7 +72,7 @@ function mailDestination($request) {
 	// emailDomainField are set and have valid characters,
 	// use them to build an email address. Otherwise return the 'current_user' from the request object.
 	//error_log("building email");
-	if ( isset($request['emailAddressField']) && preg_match( '/^[a-z]{0,20}$/i', $request['emailAddressField'] )===1 
+	if ( isset($request['emailAddressField']) && preg_match( '/^[a-z]{0,20}$/i', $request['emailAddressField'] )===1
 			&& isset($request[$request['emailAddressField']]) ) {
 		//error_log("emailaddressfield is " . $request['emailAddressField']);
 		//emailAddressField is valid, so we can use it for the emailAddress
