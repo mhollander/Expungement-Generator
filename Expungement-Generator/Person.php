@@ -37,7 +37,7 @@ class Person
 	{
 		$this->setFirst($first);
 		$this->setLast($last);
-		$this->setSSN("00-000-0000");
+		$this->setSSN($SSN);
 		$this->setStreet($street);
 		$this->setCity($city);
 		$this->setState($state);
@@ -83,7 +83,7 @@ class Person
 		if ($this->checkInDB($db))
 			return;
 
-		$sql = "INSERT INTO defendant (firstName, lastName, PP, SID, SSN, DOB, street, city, state, zip, alias) VALUES ('" . $this->getFirst() . "', '" . $this->getLast() . "', 0, '', '" . $this->getSSN() . "', '" . dateConvert($this->getDOB()) . "', '" . $this->getStreet() . "', '" . $this->getCity() . "', '" . $this->getState() . "', '" . $this->getZip() . "', '" . $this->getAliasCommaList() . "')";
+		$sql = "INSERT INTO defendant (firstName, lastName, PP, SID, SSN, DOB, street, city, state, zip, alias) VALUES ('" . $this->getFirst() . "', '" . $this->getLast() . "', 0, '', '" . "000-00-0000" . "', '" . dateConvert($this->getDOB()) . "', '" . $this->getStreet() . "', '" . $this->getCity() . "', '" . $this->getState() . "', '" . $this->getZip() . "', '" . $this->getAliasCommaList() . "')";
 		if (!$db->query($sql))
 		{
 			if ($GLOBALS['debug'])
