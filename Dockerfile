@@ -30,14 +30,16 @@ RUN chmod 0644 /etc/cron.d/eg-cron && \
     rm /var/www/html/*
 
 COPY Expungement-Generator/ /var/www/html/
+COPY ./php.ini /usr/local/etc/php/php.ini
+COPY ./docker-config.php /var/www/html/config.php
 
 RUN mkdir -p /var/www/html/data && \
     mkdir -p /var/www/html/docketsheets && \
     chown www-data:www-data /var/www/html/data && \
     chown www-data:www-data /var/www/html/docketsheets && \
-    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
-    composer install && \
-    cp /var/www/html/TemplateProcessor.php /var/www/html/vendor/phpoffice/phpword/src/PhpWord/
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-COPY ./php.ini /usr/local/etc/php/php.ini
-COPY ./docker-config.php /var/www/html/config.php
+USER www-data:www-data
+
+RUN composer install && \
+    cp /var/www/html/TemplateProcessor.php /var/www/html/vendor/phpoffice/phpword/src/PhpWord/

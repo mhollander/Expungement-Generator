@@ -5,7 +5,10 @@ version: '3' #this refers to the version of the dockerfile format.
 
 services:
     expungement_generator:
-        image: eg_front #natev/eg-docker-frontend:latest
+        image: eg_front # or natev/eg-docker-frontend:latest
+        build:
+            context: .
+            dockerfile: Dockerfile
         environment:
             BASE_URL: "http://localhost:9090/"
             CHARGE_DB_HOST: db
@@ -22,7 +25,10 @@ services:
         ports:
             - "9090:80"
     db:
-        image: eg_db #natev/eg-docker-db:latest
+        image: eg_db # or natev/eg-docker-db:latest
+        build:
+            context: .
+            dockerfile: db_dockerfile
         restart: always
         environment:
             MYSQL_ROOT_PASSWORD: someBigOleComplexPassword
