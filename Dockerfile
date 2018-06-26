@@ -1,6 +1,6 @@
 # Dockerfile for Expungement Generator's frontend.
 
-FROM php:7.2.2-apache-stretch
+FROM php:7.2-apache-stretch
 
 RUN apt-get update && \
     apt-get upgrade -y && \
@@ -35,11 +35,24 @@ COPY ./docker-config.php /var/www/html/config.php
 
 RUN mkdir -p /var/www/html/data && \
     mkdir -p /var/www/html/docketsheets && \
-    chown www-data:www-data /var/www/html/data && \
-    chown www-data:www-data /var/www/html/docketsheets && \
-    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    useradd -ms /bin/bash eg_user && \
+    chown eg_user:eg_user /var/www/html/data && \
+    chown eg_user:eg_user /var/www/html/docketsheets && \
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
+    mkdir /var/www/html/vendor && \
+    chown eg_user:eg_user /var/www/html/vendor
 
-USER www-data:www-data
+USER eg_user:eg_user
 
-RUN composer install && \
-    cp /var/www/html/TemplateProcessor.php /var/www/html/vendor/phpoffice/phpword/src/PhpWord/
+RUN composer install
+
+USER root
+
+RUN cp /var/www/html/TemplateProcessor.php /var/www/html/vendor/phpoffice/phpword/src/PhpWord/ && \
+    sed -i s/*:80/*:9090/ /etc/apache2/sites-available/000-default.conf && \
+    sed -i s/80/9090/ /etc/apache2/ports.conf && \
+    touch /var/run/apache2/apache2.pid && \
+    chown eg_user:eg_user /var/run/apache2
+
+
+USER eg_user:eg_user

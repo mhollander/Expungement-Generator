@@ -23,7 +23,7 @@ services:
         networks:
             - eg-net
         ports:
-            - "9090:80"
+            - "9090:9090"
     db:
         image: eg_db # or natev/eg-docker-db:latest
         build:
