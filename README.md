@@ -61,11 +61,13 @@ You can install the template database using database.sql as the structure.
 
 You can set up a docker container specially configured to let you edit Expungement Generator files locally.
 
+Follow these steps on your local machine (you need docker and docker-compose installed.)
+
 1.  Install php composer. You can run `curl -sS https://getcomposer.org/installer | php -- --install-dir ~/.local/bin/ --filename=composer` to install it to your local user account.
 
 2.  Set up the config.php file with `cp docker-config.php Expungement-Generator/config.php`
 
-3.  Start the docker container with `docker-compose -f local-def-compose.yml up`.
+3.  Start the docker container with `docker-compose -f local-dev-compose.yml up`.
     This file starts a database and a frontend container. But the frontend container that it uses mounts your local Expungment-Generator directory (sub-directory in this repository). SO changes you make on your host computer will be reflected in the running container.
 
 4.  Run the composer to install the EG's dependencies inside the mounted Expungement-Generator directory.
