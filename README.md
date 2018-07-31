@@ -57,6 +57,22 @@ There are three external dependencies, one of which is bundled with this code in
 
 You can install the template database using database.sql as the structure.
 
+## Development
+
+You can set up a docker container specially configured to let you edit Expungement Generator files locally.
+
+1.  Install php composer. You can run `curl -sS https://getcomposer.org/installer | php -- --install-dir ~/.local/bin/ --filename=composer` to install it to your local user account.
+
+2.  Set up the config.php file with `cp docker-config.php Expungement-Generator/config.php`
+
+3.  Start the docker container with `docker-compose -f local-def-compose.yml up`.
+    This file starts a database and a frontend container. But the frontend container that it uses mounts your local Expungment-Generator directory (sub-directory in this repository). SO changes you make on your host computer will be reflected in the running container.
+
+4.  Run the composer to install the EG's dependencies inside the mounted Expungement-Generator directory.
+
+5.  Copy the php template processor into the PhpWord vendor directory:
+    `cp TemplateProcessor.php vendor/phpoffice/phpword/src/PhpWord/`
+
 ## Motivation
 
 Expungements are the most effective way to help an individual with a criminal record to find employment. It is near impossible to find decent work if you have a record that is visible to the world. Expungements are both time consuming and require the attention of a lawyer to properly prepare. But they are also very boring for lawyers to prepare. In an organization like CLS where we prepare thousands of expungement petitions a year, it is critical to speed up the process and remove much of the rote work from the lawyers working on expungements. The EG does both of those things. I am currently working on EG 2.0, which will be more accessible to non-lawyer petitioners.
