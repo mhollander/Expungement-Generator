@@ -4,7 +4,7 @@ FROM php:7.2-apache-stretch
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y git nano wget python2.7 libfontconfig poppler-utils cron zlib1g-dev nano && \
+    apt-get install -y git nano wget python2.7 libfontconfig poppler-utils cron zlib1g-dev nano unattended-upgrades apt-listchanges && \
     ln -s /usr/bin/pdftotext /usr/local/bin/pdftotext && \
     wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2 && \
     tar -xvjf phantomjs-2.1.1-linux-x86_64.tar.bz2 && \
