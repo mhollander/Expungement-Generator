@@ -38,15 +38,7 @@ RUN mkdir -p /var/www/html/data && \
     useradd -ms /bin/bash eg_user && \
     chown eg_user:eg_user /var/www/html/data && \
     chown eg_user:eg_user /var/www/html/docketsheets && \
-    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
-    mkdir -p /var/www/html/vendor && \
-    chown eg_user:eg_user /var/www/html/vendor
-
-USER eg_user:eg_user
-
-RUN composer install
-
-USER root
+    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 RUN cp /var/www/html/TemplateProcessor.php /var/www/html/vendor/phpoffice/phpword/src/PhpWord/ && \
     sed -i s/*:80/*:9090/ /etc/apache2/sites-available/000-default.conf && \

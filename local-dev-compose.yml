@@ -6,7 +6,7 @@ services:
       image: eg_front
       build:
           context: .
-          dockerfile: Dockerfile
+          dockerfile: local-dev-frontend
       environment:
           BASE_URL: "http://localhost:9090/"
           CHARGE_DB_HOST: db

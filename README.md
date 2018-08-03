@@ -67,13 +67,13 @@ Follow these steps on your local machine (you need docker and docker-compose ins
 
 2.  Set up the config.php file with `cp docker-config.php Expungement-Generator/config.php`
 
-3.  Start the docker container with `docker-compose -f local-dev-compose.yml up`.
-    This file starts a database and a frontend container. But the frontend container that it uses mounts your local Expungment-Generator directory (sub-directory in this repository). SO changes you make on your host computer will be reflected in the running container.
+3.  Run the composer to install the EG's dependencies inside the mounted Expungement-Generator directory.
 
-4.  Run the composer to install the EG's dependencies inside the mounted Expungement-Generator directory.
-
-5.  Copy the php template processor into the PhpWord vendor directory:
+4.  Copy the php template processor into the PhpWord vendor directory:
     `cp TemplateProcessor.php vendor/phpoffice/phpword/src/PhpWord/`
+
+5.  Start the docker container with `docker-compose -f local-dev-compose.yml up`.
+    This file starts a database and a frontend container. But the frontend container that it uses mounts your local Expungment-Generator directory (sub-directory in this repository). SO changes you make on your host computer will be reflected in the running container.
 
 ## Motivation
 
