@@ -63,16 +63,18 @@ You can set up a docker container specially configured to let you edit Expungeme
 
 Follow these steps on your local machine (you need docker and docker-compose installed.)
 
-1.  Install php composer. You can run `curl -sS https://getcomposer.org/installer | php -- --install-dir ~/.local/bin/ --filename=composer` to install it to your local user account.
+1. Clone the EG repository, and `cd` into the root of the repository.
 
-2.  Set up the config.php file with `cp docker-config.php Expungement-Generator/config.php`
+2.  Install php composer. You can run `curl -sS https://getcomposer.org/installer | php -- --install-dir ~/.local/bin/ --filename=composer` to install it to your local user account.
 
-3.  Run the composer to install the EG's dependencies inside the mounted Expungement-Generator directory.
+3.  Set up the config.php file with `cp docker-config.php Expungement-Generator/config.php`
 
-4.  Copy the php template processor into the PhpWord vendor directory:
+4.  Run the composer to install the EG's dependencies inside the mounted Expungement-Generator directory.
+
+5.  Copy the php template processor into the PhpWord vendor directory:
     `cp TemplateProcessor.php vendor/phpoffice/phpword/src/PhpWord/`
 
-5.  Start the docker container with `docker-compose -f local-dev-compose.yml up`.
+6.  Start the docker container with `docker-compose -f local-dev-compose.yml up`.
     This file starts a database and a frontend container. But the frontend container that it uses mounts your local Expungment-Generator directory (sub-directory in this repository). SO changes you make on your host computer will be reflected in the running container.
 
 ## Motivation
