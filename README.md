@@ -28,7 +28,7 @@ docker run natev/eg-docker-frontend -p 8080:9090
 
 **Note that apache in the container does not run on port 80.**
 
-You won't be able to accomplish much without a database, though, including logging in. So you'll need a database container running as well. natev/eg-docker-db provides a container with the right schema, and you cah check out compose files int this repository for examples of how to set up containers to run a full EG.
+You won't be able to accomplish much without a database, though, including logging in. So you'll need a database container running as well. natev/eg-docker-db provides a container with the right schema, and you can check out compose files int this repository for examples of how to set up containers to run a full EG.
 
 ### Database
 
@@ -36,7 +36,7 @@ The db_dockerfile describes a container that will host the database backend of t
 
 Use with the docker image natev/eg-docker-frontend.
 
-It initializes with a single admin user, admin@example.fake, password admin. Change this before using your Expungement Generator for anything.
+It initializes with a single admin user, `admin@example.fake`, password `admin`. Change this before using your Expungement Generator for anything.
 
 ## Installation w/out Docker and Dependencies
 
@@ -63,7 +63,7 @@ You can set up a docker container specially configured to let you edit Expungeme
 
 Follow these steps on your local machine (you need docker and docker-compose installed.)
 
-1. Clone the EG repository, and `cd` into the root of the repository.
+1.  Clone the EG repository, and `cd` into the root of the repository.
 
 2.  Install php composer on your host computer. If you're running linux, you can run `curl -sS https://getcomposer.org/installer | php -- --install-dir ~/.local/bin/ --filename=composer` to install it to your local user account.
 
@@ -76,6 +76,20 @@ Follow these steps on your local machine (you need docker and docker-compose ins
 
 6.  Start the docker container with `docker-compose -f local-dev-compose.yml up`.
     This file starts a database and a frontend container. But the frontend container that it uses mounts your local Expungment-Generator directory (sub-directory in this repository). SO changes you make on your host computer will be reflected in the running container.
+
+## Configuration and administration
+
+### Configuration variables
+
+See `docker-config.php` and `Expungement-Generator/config.php.example` for samples of how to configure the Expungement Generator. The latter demonstrates how to create a config file that includes necessary settings such as the database connection string and password. The former demonstrates that it is also simple to configure the EG with environment variables.
+
+### Multiple organizations in a single instance of the EG
+
+It is possible for a single instance of the EG to be available to users from multiple organizations. Configuring this in the user management page is probably self-explanatory.
+
+However, if your instance of the EG has users from multiple organizations, only the hosting organization's "organization" in the EG should be configured to write expungements to the database.
+
+If a guest organization needs to record their expungements, they should host their own instance of the EG.
 
 ## Motivation
 
