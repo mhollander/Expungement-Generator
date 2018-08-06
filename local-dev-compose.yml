@@ -1,0 +1,45 @@
+version: '3.2'
+
+
+services:
+  expungement_generator:
+      image: eg_front
+      build:
+          context: .
+          dockerfile: local-dev-frontend
+      environment:
+          BASE_URL: "http://localhost:9090/"
+          CHARGE_DB_HOST: db
+          CHARGE_DB_USER: eg_user
+          CHARGE_DB_PASS: somerandompassword
+          CHARGE_DB_NAME: cpcms_aopc_summary
+          DB_HOST: db
+          DB_NAME: eg_db
+          DB_USER: eg_user
+          DB_PASS: somerandompassword
+          SENDGRID_KEY: somerandomkey
+      volumes:
+          - type: bind
+            source: "./Expungement-Generator"
+            target: /var/www/html
+      networks:
+          - eg-net
+      ports:
+          - "9090:9090"
+  db:
+      image: eg_db # or natev/eg-docker-db:latest
+      build:
+          context: .
+          dockerfile: db_dockerfile
+      restart: always
+      environment:
+          MYSQL_ROOT_PASSWORD: someBigOleComplexPassword
+          MYSQL_DATABASE: eg_db
+          MYSQL_USER: eg_user
+          MYSQL_PASSWORD: somerandompassword
+      networks:
+          - eg-net
+      expose:
+            - "3306"
+networks:
+    eg-net:

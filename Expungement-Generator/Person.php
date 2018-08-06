@@ -5,7 +5,7 @@
 *	the main class representing a criminal defendant in a case.  contains all of the important helper functions for a Person.
 *
 *	Copyright 2011-2015 Community Legal Services
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -32,8 +32,8 @@ class Person
 	private $alias = array();
 	private $personID;
 	private $DOB;
-	
-	public function __construct($first, $last, $SSN, $street, $city, $state, $zip) 
+
+	public function __construct($first, $last, $SSN, $street, $city, $state, $zip)
 	{
 		$this->setFirst($first);
 		$this->setLast($last);
@@ -50,11 +50,11 @@ class Person
 	public function setStreet($street) { $this->street = $street; }
 	public function setCity($city) { $this->city = $city; }
 	public function setState($state) { $this->state = $state; }
-	public function setZip($zip) { $this->zip = $zip; }	
-	public function setAlias($alias) { $this->alias = $alias; }	
-	public function setPersonID($personID) { $this->personID = $personID; }	
-	public function setDOB($dob) { $this->DOB = $dob; }	
-	
+	public function setZip($zip) { $this->zip = $zip; }
+	public function setAlias($alias) { $this->alias = $alias; }
+	public function setPersonID($personID) { $this->personID = $personID; }
+	public function setDOB($dob) { $this->DOB = $dob; }
+
 	// getters
 	public function getFirst() { return $this->first; }
 	public function getLast() { return $this->last; }
@@ -62,28 +62,28 @@ class Person
 	public function getStreet() { return $this->street; }
 	public function getCity() { return $this->city; }
 	public function getState() { return $this->state; }
-	public function getZip() { return $this->zip; }	
-	public function getAlias() { return $this->alias; }	
+	public function getZip() { return $this->zip; }
+	public function getAlias() { return $this->alias; }
 	public function getAliasCommaList() { return implode("; ", $this->alias); }
 	public function getPersonID() { return $this->personID; }
 	public function getDOB() { return $this->DOB; }
-	
-	
+
+
 	public function addAliases($aliases)
 	{
 		// merge the current alias array with the new alias array, but cut out duplicate entries
 		// This could be done more quickly if I wrong my own function for array_unique, but there are so few aliases generally, I don't think it matters
 		$this->setAlias(array_unique(array_merge($this->getAlias(), $aliases)));
 	}
-	
+
 	// writes a person to the database, if there
 	public function writePersonToDB($db)
 	{
 		// if the person is already in the DB, then just exist
 		if ($this->checkInDB($db))
 			return;
-		
-		$sql = "INSERT INTO defendant (firstName, lastName, PP, SID, SSN, DOB, street, city, state, zip, alias) VALUES ('" . $this->getFirst() . "', '" . $this->getLast() . "', 0, '', '" . $this->getSSN() . "', '" . dateConvert($this->getDOB()) . "', '" . $this->getStreet() . "', '" . $this->getCity() . "', '" . $this->getState() . "', '" . $this->getZip() . "', '" . $this->getAliasCommaList() . "')";
+
+		$sql = "INSERT INTO defendant (firstName, lastName, PP, SID, SSN, DOB, street, city, state, zip, alias) VALUES ('" . $this->getFirst() . "', '" . $this->getLast() . "', 0, '', '" . "000-00-0000" . "', '" . dateConvert($this->getDOB()) . "', '" . $this->getStreet() . "', '" . $this->getCity() . "', '" . $this->getState() . "', '" . $this->getZip() . "', '" . $this->getAliasCommaList() . "')";
 		if (!$db->query($sql))
 		{
 			if ($GLOBALS['debug'])
@@ -94,7 +94,7 @@ class Person
 		$this->setPersonID($db->insert_id);
 		return;
 	}
-	
+
 	// checks to see if a person is already in the db
 	public function checkInDB($db)
 	{
@@ -102,14 +102,14 @@ class Person
 		if ($GLOBALS['debug'])
 			print $sql;
 		$result = $db->query($sql);
-		if (!$result) 
+		if (!$result)
 		{
 			if ($GLOBALS['debug'])
 				die('Could not check if the Defendant was in the DB:' . $db->error);
 			else
 				die('Could not check if the Defendant was in the DB');
 		}
-		
+
 		// if there is a row already, then set the person ID, return true, and get out
 		if ($result->num_rows>0)
 		{
@@ -124,7 +124,7 @@ class Person
 			return FALSE;
 		}
 	}
-	
+
 	public function getAge()
 	{
 		$birthDate = $this->getDOB();

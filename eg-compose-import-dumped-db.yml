@@ -1,0 +1,42 @@
+version: '3' #this refers to the version of the dockerfile format.
+
+# Version 3 of the docker-compose format:
+# https://docs.docker.com/compose/compose-file/
+
+# This compose file is for creating a stack in which
+# the database loads a preexisting sql dump of a database.
+
+services:
+    expungement_generator:
+        image: natev/eg-docker-frontend:latest
+        environment:
+            BASE_URL: "http://localhost:9090/"
+            CHARGE_DB_HOST: db
+            CHARGE_DB_USER: eg_user
+            CHARGE_DB_PASS: somerandompassword
+            CHARGE_DB_NAME: cpcms_aopc_summary
+            DB_HOST: db
+            DB_NAME: eg_db
+            DB_USER: eg_user
+            DB_PASS: somerandompassword
+            SENDGRID_KEY: somerandomkey
+        networks:
+            - eg-net
+        ports:
+            - "9090:80"
+    db:
+        image: mysql:5.7
+        restart: always
+        environment:
+            MYSQL_ROOT_PASSWORD: someBigOleComplexPassword
+            MYSQL_DATABASE: eg_db
+            MYSQL_USER: eg_user
+            MYSQL_PASSWORD: somerandompassword
+        networks:
+            - eg-net
+        expose:
+            - "3306"
+        volumes:
+            - ../eg-test.sql:/docker-entrypoint-initdb.d/init.sql
+networks:
+    eg-net:

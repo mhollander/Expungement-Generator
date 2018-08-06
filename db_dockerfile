@@ -1,0 +1,15 @@
+FROM mysql:5.7
+
+RUN apt-get update && apt-get install -y unattended-upgrades apt-listchanges
+
+COPY conf.d/disable_strict_mode.cnf /etc/mysql/conf.d/disable_strict_mode.cnf
+
+COPY ["Expungement-Generator/migrations/1 - eg_schema.sql", "/docker-entrypoint-initdb.d/1_eg_schema.sql"]
+
+COPY ["Expungement-Generator/migrations/2 - cpcms_aopc_summary.sql", "/docker-entrypoint-initdb.d/2_cpcms_aopc_summary.sql"]
+
+COPY ["Expungement-Generator/migrations/3 - database_initial_data.sql",  "/docker-entrypoint-initdb.d/3_database_initial_data.sql"]
+
+COPY ["Expungement-Generator/migrations/4 - add_saveDatabase_to_programtable.sql",  "/docker-entrypoint-initdb.d/4_add_saveDatabase_to_programtable.sql"]
+
+USER mysql:mysql
