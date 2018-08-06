@@ -47,17 +47,18 @@ else if ($attorney->getSaveCIToDatabase()==1)
     // check to see if we want to create a CSV file b/c there was a previous submit
     if (isset($_POST['submit']) and isset($_POST['names']))
     {
-        $link = createTrackingSpreadSheet($_POST['names']);
-        print "<a href=''>Link</a>";
+        $link = createTrackingSpreadsheet($_POST['names']);
+        print "<a href='secureServe.php?serveFile=" . basename($link). "'>Download Tracking Sheet</a><br/><br/>";
     }
 ?>
 		<form action="trackingsheet.php" method="post" enctype="multipart/form-data">
 		<div class="pure-input-1">
 			<label for="names">Client Names</label>
 			<div class="pure-input-1">
-				<textarea rows="20" name="names" id="names" class="pure-input-1" placeholder="('Bob','Barker'),
-('Phillis','Diller'),
-('Holden','Caulfield')"><?php printIfSet('names');?></textarea>
+				<textarea rows="20" name="names" id="names" class="pure-input-1" placeholder="Bob, Barker,
+Phillis, Diller
+Holden, Caulfield
+First, Last"><?php printIfSet('names');?></textarea>
 			</div>
 		</div> 
     	<div class="form-item">

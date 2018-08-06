@@ -263,3 +263,50 @@ function serveFile($filename)
         readfile($file);
     }
 }
+
+// takes a list of names in the form "('First', 'Last'), ('First', 'Last'),..." and runs a query to get all
+// of the expungements prepared for those people
+function createTrackingSpreadsheet($names)
+{
+    $namelist = preg_split('/\r\n|[\r\n]/', $names);
+    $filename = $GLOBALS['dataDir'] . time() . ".csv";
+    $csv = fopen($filename, 'w');
+    fputcsv($csv, array("First", "Last", "Case", "OTN", "Arrest Date", "E/R", "Order", "PSP", "Philly", "Docket", "Summary"));
+            
+    
+    if ($psql = $GLOBALS['db']->prepare("
+            SELECT  d.firstname as 'First', d.lastname as 'Last', a.docketNumPrimary as 'Case', a.OTN as 'OTN',
+             DATE_FORMAT(a.arrestDate, '%m/%d/%Y') as 'Arrest Date', 
+             if(e.isExpungement+e.isRedaction = 2, 'R', 'E') as 'E/R' FROM defendant as d left join 
+             expungement as e on d.defendantID = e.defendantID left join arrest as a on e.arrestid = a.arrestid
+             WHERE firstname=? AND lastname=? AND e.isRedaction+e.isSummaryExpungement > 0 
+             ORDER BY d.lastName, d.firstname"))
+    {
+        
+       
+        $psql->bind_param("ss", $first, $last);
+        
+        foreach ($namelist as $name)
+        {
+            list($first, $last) = array_map('trim', explode(",", $name));
+            $psql->execute();
+            $psql->bind_result($f, $l, $docket, $otn, $arrest_date, $type);
+            while($psql->fetch())
+            {
+                fputcsv($csv, array($f,$l,$docket,$otn,$arrest_date,$type,"","","","",""));
+            }
+        }
+            
+        fclose($csv);
+        return $filename;
+    }
+    
+    else
+    {
+        return "aasdf" . $GLOBALS['db']->error;
+    }
+                                  
+                                      
+//    return $sql;
+    
+}
