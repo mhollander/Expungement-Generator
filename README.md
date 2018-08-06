@@ -65,7 +65,7 @@ Follow these steps on your local machine (you need docker and docker-compose ins
 
 1. Clone the EG repository, and `cd` into the root of the repository.
 
-2.  Install php composer. You can run `curl -sS https://getcomposer.org/installer | php -- --install-dir ~/.local/bin/ --filename=composer` to install it to your local user account.
+2.  Install php composer on your host computer. If you're running linux, you can run `curl -sS https://getcomposer.org/installer | php -- --install-dir ~/.local/bin/ --filename=composer` to install it to your local user account.
 
 3.  Set up the config.php file with `cp docker-config.php Expungement-Generator/config.php`
 
