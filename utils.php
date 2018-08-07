@@ -263,3 +263,58 @@ function serveFile($filename)
         readfile($file);
     }
 }
+
+// takes a list of names in the form "('First', 'Last'), ('First', 'Last'),..." and runs a query to get all
+// of the expungements prepared for those people
+function createTrackingSpreadsheet($names, $programid)
+{
+    // remove newlines from teh name list
+    $namelist = preg_split('/\r\n|[\r\n]/', $names);
+    
+    // create a temporary file and open it; insert the headers for teh CSV
+    $filename = $GLOBALS['dataDir'] . time() . ".csv";
+    $csv = fopen($filename, 'w');
+    fputcsv($csv, array("First", "Last", "Case", "OTN", "Arrest Date", "E/R", "Order", "PSP", "Philly", "Docket", "Summary"));
+            
+    
+    // prepare the sql statement; this will be run through for each name.
+    if ($psql = $GLOBALS['db']->prepare("
+            SELECT  d.firstname as 'First', d.lastname as 'Last', a.docketNumPrimary as 'Case', a.OTN as 'OTN',
+             DATE_FORMAT(a.arrestDate, '%m/%d/%Y') as 'Arrest Date', 
+             if(e.isExpungement+e.isRedaction = 2, 'R', 'E') as 'E/R' FROM defendant as d left join 
+             expungement as e on d.defendantID = e.defendantID left join arrest as a on e.arrestid = a.arrestid
+             LEFT JOIN userinfo on e.userid=userinfo.userid WHERE d.firstname=? AND d.lastname=? 
+             AND e.isRedaction+e.isSummaryExpungement > 0 AND programid=" . $programid . "
+             ORDER BY d.lastName, d.firstname"))
+    {
+       
+        // bind the first and lst name as the variables that will be inserted
+        $psql->bind_param("ss", $first, $last);
+        
+        // run through each of the names in the list and run the query on each
+        foreach ($namelist as $name)
+        {
+            // be sure to first split the name into first and last, removing any whitespace
+            list($first, $last) = array_map('trim', explode(",", $name));
+            $psql->execute();
+            $psql->bind_result($f, $l, $docket, $otn, $arrest_date, $type);
+            
+            // fetch each result for this person and put it into the CSV file
+            while($psql->fetch())
+            {
+                fputcsv($csv, array($f,$l,$docket,$otn,$arrest_date,$type,"","","","",""));
+            }
+        }
+            
+        fclose($csv);
+        return $filename;
+    }
+
+    
+    // if there was some sort of problem preparing the statement, send an error to the screen
+    else
+        return "aasdf" . $GLOBALS['db']->error;
+                                  
+
+
+}
