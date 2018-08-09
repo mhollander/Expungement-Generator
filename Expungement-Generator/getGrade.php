@@ -1,6 +1,8 @@
 <?php
 
-$db = new mysqli("localhost", "cpcms", "cpcms", "cpcms_aopc_summary");
+require_once("config.php");
+
+$db = new mysqli($chargeDBHost, $chargeDBUser, $chargeDBPassword, "cpcms_aopc_summary");
 if ($db->connect_error) 
     die('Error connecting to the db: Connect Error (' . $db->connect_errno . ') ' . $db->connect_error);
 
