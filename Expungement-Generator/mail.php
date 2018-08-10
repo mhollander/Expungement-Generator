@@ -27,6 +27,8 @@
     require "vendor/autoload.php";                                                                            
     require_once("CPCMS.php");              
 
+
+
 if (!empty($_POST)) 
 {
     

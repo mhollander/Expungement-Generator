@@ -40,8 +40,9 @@ if (!empty($_POST))
     $ch = curl_init(); 
     
     // set url 
-    curl_setopt($ch, CURLOPT_URL, "https://" . $_SERVER['HTTP_HOST'] . "/mail.php");
-    
+    curl_setopt($ch, CURLOPT_URL, $baseURL . "mail.php");
+
+
     //return the transfer as a string 
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
@@ -60,7 +61,7 @@ if (!empty($_POST))
     
     // $output contains the output string 
     $output = curl_exec($ch); 
-    
+
     // close curl resource to free up system resources 
     curl_close($ch);      
 
