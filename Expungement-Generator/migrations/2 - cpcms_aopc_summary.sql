@@ -22,7 +22,7 @@
 CREATE DATABASE /*!32312 IF NOT EXISTS*/ `cpcms_aopc_summary` /*!40100 DEFAULT CHARACTER SET utf8 */;
 
 USE `cpcms_aopc_summary`;
-GRANT ALL on `cpcms_aopc_summary` TO 'eg_user'@'%';
+GRANT SELECT on `cpcms_aopc_summary`.* TO 'eg_user'@'%';
 FLUSH PRIVILEGES;
 --
 -- Table structure for table `crimes_w_subsection`
