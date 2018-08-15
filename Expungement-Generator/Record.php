@@ -1,0 +1,283 @@
+<?php
+
+/*************************************************
+*
+*	Record.php
+*	The class that describes an entire criminal record.  It is a collection of
+* arrests with a number of functions that help do things to/on those arrests.
+*
+*	Copyright 2011-2018 Community Legal Services
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file ehexcept in compliance with the License.
+* You may obtain a copy of the License at
+*
+*    http://www.apache.org/licenses/LICENSE-2.0
+
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*
+************************************************************/
+
+require_once("Arrest.php");
+require_once("Person.php");
+require_once("ArrestSummary.php");
+
+class Record
+{
+    private $arrests = array();
+    private $arrestSummary;
+    private $person;
+
+    // public function __construct($arrests)
+    // {
+    //     $this->arrests=$arrests;
+    // }
+
+    public function __construct($person)
+    {
+        $this->person = $person;//do nothing
+        $this->arrestSummary = new ArrestSummary();
+    }
+
+    public function getArrests() { return $this->arrests; }
+    public function getPerson() { return $this->person; }
+
+    public function addArrest($arrest)
+    {
+        $this->arrests[$arrest->getFirstDocketNumber()] = $arrest;
+    }
+
+    public function getTotalArrests()
+    {
+        return count($this->arrests);
+    }
+
+    // parse the docket sheets into Arrest objects and place them all into the
+    // $arrests arrays
+    public function parseDockets($tempFile, $pdftotext, $docketFiles)
+    {
+        // loop over all of the files that we uploaded and read them in to see if they are expungeable
+        foreach($docketFiles["userFile"]["tmp_name"] as $key => $file)
+        {
+            $command = $pdftotext . " -layout \"" . $file . "\" \"" . $tempFile . "\"";
+            //print $command;
+            system($command, $ret);
+
+            # print "<br>The pdftotext command: $command <BR />";
+
+            if ($ret == 0)
+            {
+                # print $filename . "<br />";
+                $thisRecord = file($tempFile);
+
+                $arrest = new Arrest();
+
+                if ($arrest->isDocketSheet($thisRecord[1]) || $arrest->checkIsJuvenilePhilly($thisRecord[0]))
+                {
+                    // if this is a regular docket sheet, use the regular parsing function
+                    $arrest->readArrestRecord($thisRecord, $this->person);
+
+                    // associate the PDF with the arrest for later saving to the DB
+                    // associate the real PDF file name with the arrest as well for use in the overview
+                    if ($docketFiles["userFile"]["size"][$key] > 0)
+                    {
+                        $arrest->setPDFFile($file);
+                        $arrest->setPDFFileName($docketFiles["userFile"]["name"][$key]);
+                    }
+
+                    // now add the arrest to the arrests array
+                    if ($arrest->isArrestCriminal())
+                        $this->addArrest($arrest);
+
+                }
+                elseif (ArrestSummary::isArrestSummary($thisRecord))
+                {
+                    // if this is a summary sheet of all arrests, make a separate array
+                    $this->arrestSummary->processArrestSummary($thisRecord);
+                }
+            }
+        }
+        try
+        {
+            unlink($tempFile);
+        }
+        catch (Exception $e) {}
+
+    }
+
+    // integrates information from the summaryArrest object and the arrests array.  The summary
+    // arrest object most commonly contains additional information about the judge, but could
+    // have other useful information like the OTN or DC number.
+    // also integrates information into the Person object if a PPID and SID exist
+    // Includes an optional $isAPI, default False. The function won't print to the screen if
+    // $isAPI is True.
+    public function integrateSummaryInformation($isAPI=False)
+    {
+        if ($this->arrestSummary != null && $this->arrestSummary->hasValuableInformation())
+        {
+            // integrate arrests together
+            foreach ($this->arrests as $arrest)
+            {
+                // grab the docket number off of the arrest
+                $docket = $arrest->getFirstDocketNumber();
+
+                // and combine with the like summary, if one exists
+                if ($this->arrestSummary->isArrestInSummary($docket))
+                $arrest->combineWithSummary($this->arrestSummary->getArrest($docket));
+            }
+
+            // warn the user about any cases that are in the summary, but that were not uploaded
+            $summaryKeys = $this->arrestSummary->getArrestKeys();
+            $arrestKeys = array_keys($this->arrests);
+            $missingDockets = array_diff($summaryKeys, $arrestKeys);
+
+            // this shoudl probably be moved elsewhere since it is printing to screen
+            if ( (count($missingDockets) > 0) && ($isAPI==False) )
+            {
+                print "<b>The following cases appear in the summary docket, but you didn't upload a corresponding docket sheet:</b><br/>";
+                foreach ($missingDockets as $missingDocket)
+                print "$missingDocket<br/>";
+                print "<br/>";
+
+            }
+        }
+
+        // integrate the DOB from the arrests into the person
+        foreach ($this->arrests as $arrest)
+        {
+            $DOB = $arrest->getDOB();
+            if($DOB != null and $DOB != "")
+            {
+                $this->person->setDOB($DOB);
+                return;
+            }
+        }
+
+    }
+
+    // takes an array of Arrests and determines which ones are part and parcel of the same case.
+    // @return the array of Arrests, pared down.
+    public function combineArrests()
+    {
+        // start by comparing the arrests and combining the ones with matching OTNS or DC numbers
+        foreach ($this->arrests as $key=>$arrest)
+        {
+            $innerArrests = $this->arrests;
+            foreach ($innerArrests as $innerKey=>$innerArrest)
+            {
+                if($arrest->combine($innerArrest))
+                {
+                    print "combining " . $arrest->getFirstDocketNumber() . " | " . $innerArrest->getFirstDocketNumber() . "<br />";
+                    unset($this->arrests[$innerKey]);
+                }
+            }
+        }
+        // reindex the arrests array now that some entries have been removed
+        $this->arrests = array_values($this->arrests);
+    }
+
+    // checks if anything is sealable by running through each case and checking if that case is sealable
+    // Not sealable if any case is not sealable or if there are 4 or more convictions on this record
+    // Returns true or false.  If true, still need to check later to get the reasons something may not
+    // be sealable (this is for isSealable > 1).
+    public function checkIfSealable()
+    {
+        $sealable = 1;
+        $convictions = 0;
+        foreach ($this->arrests as $arrest)
+        {
+            $sealable = $sealable * $arrest->isArrestSealable();
+            if ($sealable == 0)
+            break;
+
+            // if this is a conviction on a non-summary case, we need to increment convictions
+            if ($arrest->isArrestConviction() && !$arrest->getIsSummaryArrest())
+            {
+                $convictions++;
+                // if there are more than 4 convictions, then we can't seal
+                if ($convictions > 3)
+                {
+                    $sealable = 0;
+                    break;
+                }
+            }
+        }
+        $this->sealable = $sealable;
+        return $sealable;
+    }
+
+    public function parseArrests() {
+        // Similar to createOverview, but without the microsoft word
+        $results = Array();
+        //print("\nParsing arrests.\n");
+        //print_r($arrests);
+        //print("\n Size of arrests: ");
+        //print(sizeof($arrests));
+        //print("\n");
+        if (sizeof($this->arrests) == 0) {
+            $results['expungements_redactions'] = ["none"];
+        } else {
+            $results['expungements_redactions'] = Array();
+            $results['sealing'] = Array();
+            foreach($this->arrests as $arrest) {
+
+                $thisArrest = Array();
+
+                $thisArrest['docket'] = htmlspecialchars(implode(", ", $arrest->getDocketNumber()), ENT_COMPAT, 'UTF-8');
+                $thisArrest['otn'] = htmlspecialchars($arrest->getOTN(), ENT_COMPAT, 'UTF-8');
+
+                $expType = "No expungement possible";
+                if ($arrest->isArrestRedaction()) {
+                    $expType = "Partial Expungement";
+                }
+                if ($arrest->isArrestExpungement()) {
+                    $expType = "Expungement";
+                }
+                if ($arrest->isArrestARDExpungement()) {
+                    $expType = "ARD Expungement***";
+                }
+                if ($arrest->isArrestSummaryExpungement($this->arrests)) {
+                    $expType = "Summary Expungement";
+                }
+                if ($arrest->isArrestOver70Expungement($this->arrests, $this->person)) {
+                    $expType = "Expungement (over 70)";
+                }
+                // Ignoring act 5 sealing for now
+                $thisArrest['expungement_type'] = $expType;
+                $thisArrest['unpaid_costs'] = htmlspecialchars(number_format($arrest->getCostsTotal() - $arrest->getBailTotal(),2),ENT_COMPAT, 'UTF-8');
+                $thisArrest['bail'] = htmlspecialchars(number_format($arrest->getBailTotalTotal(),2), ENT_COMPAT, 'UTF-8');
+                $results['expungements_redactions'][] = $thisArrest;
+                if ($arrest->isArrestSealable()>0) {
+                    //then iterate over all the charges
+                    foreach ($arrest->getCharges() as $charge) {
+                        $thisCharge = Array();
+                        // check if the charge is a conviction and if it is sealable (non conviction charges get a 1)
+                        if ( $charge->isConviction() && ($charge->isSealable() >0) ) {
+                            $thisCharge['case_number'] = htmlspecialchars($arrest->getFirstDocketNumber(), ENT_COMPAT, 'UTF-8');
+                            $thisCharge['charge_name'] = htmlspecialchars($charge->getChargeName(), ENT_COMPAT, 'UTF-8');
+                            $thisCharge['code_section'] = htmlspecialchars($charge->getCodeSection(), ENT_COMPAT, 'UTF-8');
+                            if ($charge->isSealable()==1) {
+                                $thisCharge['sealable'] = "Yes";
+                            } else {
+                                $thisCharge['sealable'] = "No";
+                            }
+                            $thisCharge['additional_information'] = htmlspecialchars($charge->getSealablePercent(), ENT_COMPAT, 'UTF-8');
+                            $results['sealing'][] = $thisCharge;
+                        } // end processing if a charge is a conviction that is sealable
+                    } //end loop over charges for an arrest
+                } // end of checking if arrest is sealable
+
+            }//end of processing arrests
+
+        }// end of processing results
+        //error_log("Returning response:");
+        //error_log("-----------");
+        return $results;
+    }//end of parseArrests
+
+
+}
