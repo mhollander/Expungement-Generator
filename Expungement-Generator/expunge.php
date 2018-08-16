@@ -123,6 +123,7 @@ else
 
     // check to see if Act5 Sealable
     $sealable = $record->checkIfSealable();
+    $record->checkSealingEligibility();
 
 #xx    $sealable = $checkIfSealable($arrests);
 

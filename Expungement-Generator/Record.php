@@ -31,6 +31,7 @@ class Record
     private $arrests = array();
     private $arrestSummary;
     private $person;
+    private $cleanSlateEligible = array();
 
     // public function __construct($arrests)
     // {
@@ -279,5 +280,81 @@ class Record
         return $results;
     }//end of parseArrests
 
+    /** Right now this just checks to see if a case is Act 56 eligible.  In them
+    * future, this might also include other types of eligibility, which might
+    * mean that there should be other functions insie: checkCleanSlate, checkAc72, etc...
+    * This runs throgh each of the arrests and checks to see if each is eligible
+    * for clean slate or otherwize triggers some sort of diqualification from
+    * clean slate.
+    * @Return void.  It just sets some variables and then those can be checked
+    * later.
+    *********************************/
+    public function checkSealingEligibility()
+    {
+        $this->checkCleanSlateMurderFelony();
+        $this->checkCleanSlatePast10MFConviction();
+        $this->checkCleanSlatePast15MoreThanOneM1F();
+        $this->checkCleanSlatePast15ProhibitedConviction();
+        $this->checkCleanSlatePast20MoreThanThreeM2M1F();
+        $this->checkCleanSlatePast20FProhibitedConviction();
 
+        foreach ($this->arrests as $arrest)
+        {
+            // $arrest->hasOutstandingFinesCosts();
+
+        }
+    }
+
+    public static function not_empty($var)
+    {
+        return array_filter($var);
+    }
+
+    public function checkCleanSlateMurderFelony()
+    {
+        // if we have already gone through this before, just exit
+        if (isset($this->cleanSlateEligible['MurderF1']['answer']))
+            return;
+
+        foreach ($this->arrests as $arrest)
+        {
+            // check whether there are any murder/felony convictions on each
+            // and return true if there are
+            $this->cleanSlateEligible['MurderF1'][$arrest->getFirstDocketNumber()] = $arrest->checkCleanSlateMurderFelony();
+        }
+        // if we have inserted elements into the array, that means that there are
+        // potential F1 convictions.  TO check if there are elements in the array
+        // see if there are any non-null nodes in the array
+        if (array_filter($this->cleanSlateEligible['MurderF1'], array(__CLASS__, 'not_empty')))
+        {
+            $this->cleanSlateEligible['MurderF1']['answer'] = FALSE;
+        }
+        else
+            $this->cleanSlateEligible['MurderF1']['answer'] = TRUE;
+    }
+
+    public function checkCleanSlatePast10MFConviction()
+    {
+
+    }
+
+    public function checkCleanSlatePast15MoreThanOneM1F()
+    {
+
+    }
+
+    public function checkCleanSlatePast15ProhibitedConviction()
+    {
+
+    }
+
+    public function checkCleanSlatePast20MoreThanThreeM2M1F()
+    {
+
+    }
+
+    public function checkCleanSlatePast20FProhibitedConviction()
+    {
+
+    }
 }
