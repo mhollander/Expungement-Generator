@@ -335,7 +335,25 @@ class Record
 
     public function checkCleanSlatePast10MFConviction()
     {
+        // if we have already gone through this before, just exit
+        if (isset($this->cleanSlateEligible['Past10MFConviction']['answer']))
+            return;
 
+        foreach ($this->arrests as $arrest)
+        {
+            // check whether there are any murder/felony convictions on each
+            // and return true if there are
+            $this->cleanSlateEligible['Past10MFConviction'][$arrest->getFirstDocketNumber()] = $arrest->checkCleanSlatePast10MFConviction();
+        }
+        // if we have inserted elements into the array, that means that there are
+        // potential F1 convictions.  TO check if there are elements in the array
+        // see if there are any non-null nodes in the array
+        if (array_filter($this->cleanSlateEligible['Past10MFConviction'], array(__CLASS__, 'not_empty')))
+            $this->cleanSlateEligible['Past10MFConviction']['answer'] = FALSE;
+        else
+            $this->cleanSlateEligible['Past10MFConviction']['answer'] = TRUE;
+
+        print_r($this->cleanSlateEligible['Past10MFConviction']);
     }
 
     public function checkCleanSlatePast15MoreThanOneM1F()
@@ -345,7 +363,25 @@ class Record
 
     public function checkCleanSlatePast15ProhibitedConviction()
     {
+        // if we have already gone through this before, just exit
+        if (isset($this->cleanSlateEligible['Past15ProhibitedConviction']['answer']))
+            return;
 
+        foreach ($this->arrests as $arrest)
+        {
+            // check whether there are any murder/felony convictions on each
+            // and return true if there are
+            $this->cleanSlateEligible['Past15ProhibitedConviction'][$arrest->getFirstDocketNumber()] = $arrest->checkCleanSlatePast15ProhibitedConviction();
+        }
+        // if we have inserted elements into the array, that means that there are
+        // potential F1 convictions.  TO check if there are elements in the array
+        // see if there are any non-null nodes in the array
+        if (array_filter($this->cleanSlateEligible['Past15ProhibitedConviction'], array(__CLASS__, 'not_empty')))
+        {
+            $this->cleanSlateEligible['Past15ProhibitedConviction']['answer'] = FALSE;
+        }
+        else
+            $this->cleanSlateEligible['Past15ProhibitedConviction']['answer'] = TRUE;
     }
 
     public function checkCleanSlatePast20MoreThanThreeM2M1F()

@@ -2018,12 +2018,64 @@ class Arrest
 		{
 			$this->cleanSlateEligible['MurderF1'][] = $charge->checkCleanSlateMurderFelony();
 		}
-#		print $this->getFirstDocketNumber();
-#		print_r($this->cleanSlateEligible['MurderF1']);
 		return $this->cleanSlateEligible['MurderF1'];
 	}
 
+	/**
+	* @function checkCleanSlatePast10MFConviction
+	* @param: none
+	* @return: an associative array in the format charge: message
+	**/
+	public function checkCleanSlatePast10MFConviction()
+	{
+		// if we've done this before for this case, just return what we have
+		if (isset($this->cleanSlateEligible['Past10MFConviction']))
+			return $this->cleanSlateEligible['Past10MFConviction'];
 
+		// check to see if this conviction is more or less than 10 years old
+		// if it is less than 10, check to see if there is a conviction
+		// if more than 10, return
+		$thisDispDate = new DateTime($this->getBestDispositionDate());
+		$now = new DateTime();
+		$dateDiff = abs(dateDifference($thisDispDate, $now));
+		if ($dateDiff < 10 && $this->isArrestConviction())
+			$this->cleanSlateEligible['Past10MFConviction'][] = $dateDiff;
+
+		else
+			$this->cleanSlateEligible['Past10MFConviction'][] = null ;
+
+		return $this->cleanSlateEligible['Past10MFConviction'];
+	}
+
+
+	/**
+	* @function checkCleanSlatePast15ProhibitedConviction
+	* @param: none
+	* @return: an associative array in the format charge: message
+	**/
+	public function checkCleanSlatePast15ProhibitedConviction()
+	{
+		// if we've done this before for this case, just return what we have
+		if (isset($this->cleanSlateEligible['Past15ProhibitedConviction']))
+			return $this->cleanSlateEligible['Past15ProhibitedConviction'];
+
+		// first check  to see if this is a conviction arrest in the last 15
+		// years
+		$thisDispDate = new DateTime($this->getBestDispositionDate());
+		$now = new DateTime();
+		$dateDiff = abs(dateDifference($thisDispDate, $now));
+		if ($dateDiff < 15 && $this->isArrestConviction())
+		{
+			foreach ($this->getCharges() as $charge)
+			{
+				$this->cleanSlateEligible['Past15ProhibitedConviction'][] = $charge->checkCleanSlatePast15ProhibitedConviction();
+			}
+		}
+		else
+			$this->cleanSlateEligible['Past15ProhibitedConviction'][] = null;
+
+		return $this->cleanSlateEligible['Past15ProhibitedConviction'];
+	}
 }  // end class arrest
 
 ?>

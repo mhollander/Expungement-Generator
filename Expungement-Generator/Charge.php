@@ -73,6 +73,35 @@ class Charge
                                                           "3126" => "a7",
                                                           "4302" => "b");
 
+	  private static $cleanSlateExcludedOffenses = array("2904", "2910", "7507.1", "1801", "2424", "2425", "6318", "6320", "1591", "2243", "2244", "2251", "2260", "2421", "3121", "3123", "3124.1", "3125", "2241", "2242", "2244");
+      private static $cleanSlateExcludedOffensesWithSubsection = array("2902" => "b",
+                                                            "2903" => "b",
+                                                            "3124.2" => "a",
+                                                            "3126" => "A1",
+                                                            "3126" => "1",
+                                                            "6301" => "A1ii",
+                                                            "6312" => "d",
+                                                            "3011" => "b",
+                                                            "3124.2" => "a.2",
+                                                            "3126" => "a2",
+                                                            "3126" => "a3",
+                                                            "3126" => "a4",
+                                                            "3126" => "a5",
+                                                            "3126" => "a6",
+                                                            "3126" => "a8",
+                                                            "5901" => "b1",
+                                                            "5903" => "a3ii",
+                                                            "5903" => "a4ii",
+                                                            "5903" => "a5ii",
+                                                            "5903" => "a6",
+                                                            "6312" => "b",
+                                                            "6312" => "c",
+                                                            "2901" => "a1",
+                                                            "3122.1" => "b",
+                                                            "3124.2" => "a1",
+                                                            "3126" => "a7",
+                                                            "4302" => "b");
+
 	public function __construct($chargeName, $disposition, $codeSection, $dispDate, $grade)
 	{
 		$this->setChargeName($chargeName);
@@ -188,7 +217,7 @@ class Charge
         }
 
         // similar to above, but with specific subsection, but only if there is a subsection listed
-        elseif ((count($codeSection)>2) && ((trim($codeSection[0])=="18") && $this->inOffensesWithSubsection(trim($codeSection[1]), trim($codeSection[2]))))
+		elseif ((count($codeSection)>2) && ((trim($codeSection[0])=="18") && $this->inOffensesWithSubsection(trim($codeSection[1]), trim($codeSection[2]),Charge::$excludedOffensesWithSubsection)))
         {
             $this->setIsSealable(0);
             $this->setSealablePercent("This crime/subsection is one of the exclusionary crimes (but not simple assault)");
@@ -275,13 +304,13 @@ class Charge
     }
 
     // returns true if the given section and subsection exist in the excludedOffensesWIthSubsection array
-    private function inOffensesWithSubsection($section, $subsection)
+    private function inOffensesWithSubsection($section, $subsection, $offenses)
     {
         // first check the section as a key
-        if (!array_key_exists($section, Charge::$excludedOffensesWithSubsection))
+        if (!array_key_exists($section, $offenses))
             return false;
         // then check the subsection
-        if (stipos(Charge::$excludedOffensesWithSubsection[$section], $subsection)===0)
+        if (stipos($offenses[$section], $subsection)===0)
           return true;
         else
           return false;
@@ -324,7 +353,7 @@ class Charge
 
 		// this means that therew as a problem splitting the codeSection, so return 2
         if (count($codeSection) == 1)
-          	return array($this->getCodeSection(), 'Unknown/unreadable code section; assuming the worse');
+          	return array($this->getCodeSection(), 'Unknown/unreadable code section; assuming the worse: possibly murder or an F1');
 
   		// 18 PaCS 2502 is murder, so this checks to see if we are dealing with a murder conviction
         if (trim($codeSection[0])=="18" && trim($codeSection[1])=="2502")
@@ -361,5 +390,79 @@ class Charge
 
 	}
 
+	/**
+	* Checks if the current charge is a conviction for a 15 year prohibited offense
+	* and returns an array in the format charge:message
+	* @param: none
+	* @return: an associative array in the format charge: message
+	**/
+
+	public function checkCleanSlatePast15ProhibitedConviction()
+	{
+		// for now assume that this happened in the last 15 years, although
+		// maybe we want to change this?
+
+		// if this charge is somehow redactable or if it isn't a conviction
+		// then return null right away.
+		if ($this->isRedactable() || !$this->isConviction())
+			return null;
+
+		// get the code section of this case
+        $codeSection = preg_split("/\x{A7}+/u", $this->getCodeSection(), -1, PREG_SPLIT_NO_EMPTY);
+
+		// this means that therew as a problem splitting the codeSection, so return 2
+        if (count($codeSection) == 1)
+          	return array($this->getCodeSection(), 'Unknown/unreadable code section; assuming the worse: possibly a 15 year excluded offense');
+
+		// if this is title 18 and we are in the list of excludable offenses, return 0
+        elseif ((trim($codeSection[0])=="18") && in_array(trim($codeSection[1]), Charge::$cleanSlateExcludedOffenses))
+        {
+           $this->setIsSealable(0);
+            return 0;
+        }
+
+        // similar to above, but with specific subsection, but only if there is a subsection listed
+        elseif ((count($codeSection)>2) && ((trim($codeSection[0])=="18") && $this->inOffensesWithSubsection(trim($codeSection[1]), trim($codeSection[2]), Charge::$cleanSlateExcludedOffenses)))
+        {
+            $this->setIsSealable(0);
+            $this->setSealablePercent("This crime/subsection is one of the exclusionary crimes (but not simple assault)");
+            return 0;
+        }
+
+
+  		// 18 PaCS 2502 is murder, so this checks to see if we are dealing with a murder conviction
+        if (trim($codeSection[0])=="18" && trim($codeSection[1])=="2502")
+			return array($this->getCodeSection(), 'Murder Conviction');
+
+		// finally, check if this is either an F1 or may be an F1
+		if ($this->getGrade()=="F1")
+			return array($this->getCodeSection(), 'F1 Conviction');
+
+		if ($this->getGrade()=="unk")
+		{
+			// look in the database to find this particular code section and see whetherh or not
+			// it is potential and F1
+			if (count($codeSection) > 2)
+				$sql = "SELECT Percent_w_Subsection as P FROM crimes_w_subsection WHERE GRADE in ('F1') AND title='".trim($codeSection[0])."' AND section='".trim($codeSection[1])."' AND subsection like '".trim($codeSection[2])."%'";
+			else
+				$sql = "SELECT Percent as P FROM crimes_wo_subsection WHERE Grade in ('F1') AND title='".trim($codeSection[0])."' AND section='".trim($codeSection[1])."'";
+
+			$result = $GLOBALS['chargeDB']->query($sql);
+			if (!$result)
+				return array($this->getCodeSection(), 'There was a problem querying the DB for this charge');
+
+			// return the result as a percentage of charges that were F1
+			else
+			{
+				$p = mysqli_fetch_assoc($result);
+				if (!empty($p['P'])) // if p is empty, then there are no cases that fit the query above
+					return array($this->getCodeSection(), $p['P'] . " of charges like this were F1s.");
+			}
+		}
+
+		// if we got to here, then the offense isn't F1 or Murder and we can return null
+		return null;
+
+	}
 }
 ?>
