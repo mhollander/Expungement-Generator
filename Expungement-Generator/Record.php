@@ -310,6 +310,14 @@ class Record
         return array_filter($var);
     }
 
+    public static function test_not_empty($var)
+    {
+        print("<pre>a");
+        print_r($var);
+        print("a</pre>");
+        return !empty($var);
+    }
+
     public function checkCleanSlateMurderFelony()
     {
         // if we have already gone through this before, just exit
@@ -357,8 +365,40 @@ class Record
 
     public function checkCleanSlatePast15MoreThanOneM1F()
     {
+        // if we have already gone through this before, just exit
+        if (isset($this->cleanSlateEligible['Past15MoreThanOneM1F']['answer']))
+            return;
 
+        foreach ($this->arrests as $arrest)
+        {
+            // check whether there are any murder/felony convictions on each
+            // and return true if there are
+            $this->cleanSlateEligible['Past15MoreThanOneM1F'][$arrest->getFirstDocketNumber()] = $arrest->checkCleanSlatePast15MoreThanOneM1F();
+        }
+
+        // if we have inserted elements into the array, that means that there are
+        // potential M1 and F convictions.  Filter the array for non-null
+        // elements and then count the number of these elements. For the
+        $M1Fs = array_map('array_filter', $this->cleanSlateEligible['Past15MoreThanOneM1F']);
+
+        // array_map with count will create an array where the keys are the case
+        // numbers and the values are the counts of charges within the case
+        // numbers.
+        // array_sum then sums up all of those case numbers
+        // IMPORTANT: if you want to count the total cases represented in the
+        // array rather than the total charges, then change the line below to
+        // if (count($MF1s) >1).
+        // IMPORTANT #2: If you count this same array after true/false
+        // has been set, you have to subtract 1 from the count($MF1s) as
+        // ['answer'] will also get added into the count
+        if (array_sum(array_map("count", $M1Fs)) > 1)
+        {
+            $this->cleanSlateEligible['Past15MoreThanOneM1F']['answer'] = FALSE;
+        }
+        else
+            $this->cleanSlateEligible['Past15MoreThanOneM1F']['answer'] = TRUE;
     }
+
 
     public function checkCleanSlatePast15ProhibitedConviction()
     {
@@ -382,19 +422,70 @@ class Record
         else
             $this->cleanSlateEligible['Past15ProhibitedConviction']['answer'] = TRUE;
 
-        // print "<pre>";
-        // print_r($this->cleanSlateEligible['Past15ProhibitedConviction']);
-        // print "</pre>";
-
     }
 
     public function checkCleanSlatePast20MoreThanThreeM2M1F()
     {
+        // if we have already gone through this before, just exit
+        if (isset($this->cleanSlateEligible['Past20MoreThanThreeM2M1F']['answer']))
+            return;
+
+        foreach ($this->arrests as $arrest)
+        {
+            // check whether there are any murder/felony convictions on each
+            // and return true if there are
+            $this->cleanSlateEligible['Past20MoreThanThreeM2M1F'][$arrest->getFirstDocketNumber()] = $arrest->checkCleanSlatePast20MoreThanThreeM2M1F();
+        }
+
+        // if we have inserted elements into the array, that means that there are
+        // potential M1 and F convictions.  Filter the array for non-null
+        // elements and then count the number of these elements. For the
+        $M2M1Fs = array_map('array_filter', $this->cleanSlateEligible['Past20MoreThanThreeM2M1F']);
+
+        // array_map with count will create an array where the keys are the case
+        // numbers and the values are the counts of charges within the case
+        // numbers.
+        // array_sum then sums up all of those case numbers
+        // IMPORTANT: if you want to count the total cases represented in the
+        // array rather than the total charges, then change the line below to
+        // if (count($MF1s) >1).
+        // IMPORTANT #2: I THINK! If you count this same array after true/false
+        // has been set, you have to subtract 1 from the count($MF1s) as
+        // ['answer'] will also get added into the count
+        if (array_sum(array_map("count", $M2M1Fs)) > 3)
+        {
+            $this->cleanSlateEligible['Past20MoreThanThreeM2M1F']['answer'] = FALSE;
+        }
+        else
+            $this->cleanSlateEligible['Past20MoreThanThreeM2M1F']['answer'] = TRUE;
 
     }
 
     public function checkCleanSlatePast20FProhibitedConviction()
     {
+        // if we have already gone through this before, just exit
+        if (isset($this->cleanSlateEligible['Past20FProhibitedConviction']['answer']))
+            return;
+
+        foreach ($this->arrests as $arrest)
+        {
+            // check whether there are any murder/felony convictions on each
+            // and return true if there are
+            $this->cleanSlateEligible['Past20FProhibitedConviction'][$arrest->getFirstDocketNumber()] = $arrest->checkCleanSlatePast20FProhibitedConviction();
+        }
+        // if we have inserted elements into the array, that means that there are
+        // potential F1 convictions.  TO check if there are elements in the array
+        // see if there are any non-null nodes in the array
+        if (array_filter($this->cleanSlateEligible['Past20FProhibitedConviction'], array(__CLASS__, 'not_empty')))
+        {
+            $this->cleanSlateEligible['Past20FProhibitedConviction']['answer'] = FALSE;
+        }
+        else
+            $this->cleanSlateEligible['Past20FProhibitedConviction']['answer'] = TRUE;
+
+        print "<pre>";
+        print_r($this->cleanSlateEligible['Past20FProhibitedConviction']);
+        print "</pre>";
 
     }
 }

@@ -2076,6 +2076,94 @@ class Arrest
 
 		return $this->cleanSlateEligible['Past15ProhibitedConviction'];
 	}
+
+	/**
+	* @function checkCleanSlatePast15MoreThanOneM1F
+	* @param: none
+	* @return: an associative array in the format charge: message
+	**/
+	public function checkCleanSlatePast15MoreThanOneM1F()
+	{
+		// if we've done this before for this case, just return what we have
+		if (isset($this->cleanSlateEligible['Past15MoreThanOneM1F']))
+			return $this->cleanSlateEligible['Past15MoreThanOneM1F'];
+
+		// first check  to see if this is a conviction arrest in the last 15
+		// years
+		$thisDispDate = new DateTime($this->getBestDispositionDate());
+		$now = new DateTime();
+		$dateDiff = abs(dateDifference($thisDispDate, $now));
+		if ($dateDiff < 15 && $this->isArrestConviction())
+		{
+			foreach ($this->getCharges() as $charge)
+			{
+				$this->cleanSlateEligible['Past15MoreThanOneM1F'][] = $charge->checkCleanSlatePast15MoreThanOneM1F();
+			}
+		}
+		else
+			$this->cleanSlateEligible['Past15MoreThanOneM1F'][] = null;
+
+		return $this->cleanSlateEligible['Past15MoreThanOneM1F'];
+	}
+
+	/**
+	* @function checkCleanSlatePast20MoreThanThreeM2M1F
+	* @param: none
+	* @return: an associative array in the format charge: message
+	**/
+	public function checkCleanSlatePast20MoreThanThreeM2M1F()
+	{
+		// if we've done this before for this case, just return what we have
+		if (isset($this->cleanSlateEligible['Past20MoreThanThreeM2M1F']))
+			return $this->cleanSlateEligible['Past20MoreThanThreeM2M1F'];
+
+		// first check  to see if this is a conviction arrest in the last 20
+		// years
+		$thisDispDate = new DateTime($this->getBestDispositionDate());
+		$now = new DateTime();
+		$dateDiff = abs(dateDifference($thisDispDate, $now));
+		if ($dateDiff < 20 && $this->isArrestConviction())
+		{
+			foreach ($this->getCharges() as $charge)
+			{
+				$this->cleanSlateEligible['Past20MoreThanThreeM2M1F'][] = $charge->checkCleanSlatePast20MoreThanThreeM2M1F();
+			}
+		}
+		else
+			$this->cleanSlateEligible['Past20MoreThanThreeM2M1F'][] = null;
+
+		return $this->cleanSlateEligible['Past20MoreThanThreeM2M1F'];
+	}
+
+	/**
+	* @function checkCleanSlatePast15ProhibitedConviction
+	* @param: none
+	* @return: an associative array in the format charge: message
+	**/
+	public function checkCleanSlatePast20FProhibitedConviction()
+	{
+		// if we've done this before for this case, just return what we have
+		if (isset($this->cleanSlateEligible['Past20FProhibitedConviction']))
+			return $this->cleanSlateEligible['Past20FProhibitedConviction'];
+
+		// first check  to see if this is a conviction arrest in the last 20
+		// years
+		$thisDispDate = new DateTime($this->getBestDispositionDate());
+		$now = new DateTime();
+		$dateDiff = abs(dateDifference($thisDispDate, $now));
+		if ($dateDiff < 20 && $this->isArrestConviction())
+		{
+			foreach ($this->getCharges() as $charge)
+			{
+				$this->cleanSlateEligible['Past20FProhibitedConviction'][] = $charge->checkCleanSlatePast20FProhibitedConviction();
+			}
+		}
+		else
+			$this->cleanSlateEligible['Past20FProhibitedConviction'][] = null;
+
+		return $this->cleanSlateEligible['Past20FProhibitedConviction'];
+	}
+
 }  // end class arrest
 
 ?>

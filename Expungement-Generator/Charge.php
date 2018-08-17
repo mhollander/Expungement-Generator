@@ -302,6 +302,34 @@ class Charge
 	    if (isset($this->sealablePercent)) { return $this->sealablePercent; }
     }
 
+	// queries the database to see what percentage of time this charge is
+	// of $gradeList %; gradeList shoudl be in format ('F1', 'F2', 'F3', 'F', 'M1')
+	public function getCodeSectionGradePercent($gradeList)
+	{
+		// look in the database to find this particular code section and see whetherh or not
+		// it is potential and F1
+		$codeSection = preg_split("/\x{A7}+/u", $this->getCodeSection(), -1, PREG_SPLIT_NO_EMPTY);
+		// this means that therew as a problem splitting the codeSection, so return 2
+		if (count($codeSection) == 1)
+			return 'Unknown/unreadable code section';
+
+		if (count($codeSection) > 2)
+			$sql = "SELECT SUM(Percent_w_Subsection) as P FROM crimes_w_subsection WHERE GRADE in $gradeList AND title='".trim($codeSection[0])."' AND section='".trim($codeSection[1])."' AND subsection like '".trim($codeSection[2])."%'";
+		else
+			$sql = "SELECT SUM(Percent) as P FROM crimes_wo_subsection WHERE Grade in $gradeList AND title='".trim($codeSection[0])."' AND section='".trim($codeSection[1])."'";
+
+		$result = $GLOBALS['chargeDB']->query($sql);
+		if (!$result)
+			return 'There was a problem querying the DB for this charge';
+
+		// return the result as a percentage of charges that were F1
+		else
+		{
+			$p = mysqli_fetch_assoc($result);
+			if (!empty($p['P'])) // if p is empty, then there are no cases that fit the query above
+				return $p['P'];
+		}
+	}
 
 	public function isARD()
 	{
@@ -343,27 +371,9 @@ class Charge
 		if ($this->getGrade()=="F1")
 			return array($this->getCodeSection(), 'F1 Conviction');
 
-		if ($this->getGrade()=="unk")
-		{
-			// look in the database to find this particular code section and see whetherh or not
-			// it is potential and F1
-			if (count($codeSection) > 2)
-				$sql = "SELECT Percent_w_Subsection as P FROM crimes_w_subsection WHERE GRADE in ('F1') AND title='".trim($codeSection[0])."' AND section='".trim($codeSection[1])."' AND subsection like '".trim($codeSection[2])."%'";
-			else
-				$sql = "SELECT Percent as P FROM crimes_wo_subsection WHERE Grade in ('F1') AND title='".trim($codeSection[0])."' AND section='".trim($codeSection[1])."'";
-
-			$result = $GLOBALS['chargeDB']->query($sql);
-			if (!$result)
-				return array($this->getCodeSection(), 'There was a problem querying the DB for this charge');
-
-			// return the result as a percentage of charges that were F1
-			else
-			{
-				$p = mysqli_fetch_assoc($result);
-				if (!empty($p['P'])) // if p is empty, then there are no cases that fit the query above
-					return array($this->getCodeSection(), $p['P'] . " of charges like this were F1s.");
-			}
-		}
+		$percent = getCodeSectionGradePercent("('F1')");
+		if ($this->getGrade()=="unk" && $percent > 0)
+			return array($this->getCodeSection(), $percent . "% of charges like this were F1s.");
 
 		// if we got to here, then the offense isn't F1 or Murder and we can return null
 		return null;
@@ -376,7 +386,6 @@ class Charge
 	* @param: none
 	* @return: an associative array in the format charge: message
 	**/
-
 	public function checkCleanSlatePast15ProhibitedConviction()
 	{
 		// for now assume that this happened in the last 15 years, although
@@ -402,6 +411,164 @@ class Charge
 
 		// if we got to here, then the offense isn't F1 or Murder and we can return null
 		return null;
+
+	}
+
+	/**
+	* Checks if the current charge is a conviction for an M1, or any F
+	* and returns an array in the format charge:message
+	* @param: none
+	* @return: an associative array in the format charge: message
+	**/
+	public function checkCleanSlatePast15MoreThanOneM1F()
+	{
+		// for now assume that this happened in the last 15 years, although
+		// maybe we want to change this?
+
+		// if this charge is somehow redactable or if it isn't a conviction
+		// then return null right away.
+		if ($this->isRedactable() || !$this->isConviction())
+			return null;
+
+		// first check the grade of the offense
+		$grade = $this->getGrade();
+		if (in_array($grade, array("F1", "F2", "F3", "F", "M1")))
+			return array($this->getCodeSection(), "'" . $grade . "' conviction within the past 15 years.");
+
+		$percent = getCodeSectionGradePercent("('F1', 'F2', 'F3', 'F', 'M1')");
+		if ($this->getGrade()=="unk" && $percent > 0)
+			return array($this->getCodeSection(), $percent . "% of charges like this were M1s or Felonies.");
+
+		// if we got to here, then the offense isn't F1 or Murder and we can return null
+		return null;
+
+	}
+
+
+	/**
+	* Checks if the current charge is a conviction for an M2, M1, or any F
+	* and returns an array in the format charge:message
+	* @param: none
+	* @return: an associative array in the format charge: message
+	**/
+	public function checkCleanSlatePast20MoreThanThreeM2M1F()
+	{
+		// for now assume that this happened in the last 20 years, although
+		// maybe we want to change this?
+
+		// if this charge is somehow redactable or if it isn't a conviction
+		// then return null right away.
+		if ($this->isRedactable() || !$this->isConviction())
+			return null;
+
+		// first check the grade of the offense
+		$grade = $this->getGrade();
+		if (in_array($grade, array("F1", "F2", "F3", "F", "M1", "M2")))
+			return array($this->getCodeSection(), "'" . $grade . "' conviction within the past 20 years.");
+
+		$percent = getCodeSectionGradePercent("('F1', 'F2', 'F3', 'F', 'M1', 'M2')");
+		if ($this->getGrade()=="unk" && $percent > 0)
+			return array($this->getCodeSection(), $percent . "% of charges like this were M2s, M1s, or felonies.");
+
+		// if we got to here, then the offense isn't F1 or Murder and we can return null
+		return null;
+
+	}
+
+	/**
+	* Checks if the current charge is a conviction for a 20 year prohibited offense
+	* and returns an array in the format charge:message
+	* @param: none
+	* @return: an associative array in the format charge: message
+	**/
+	public function checkCleanSlatePast20FProhibitedConviction()
+	{
+		// for now assume that this happened in the last 15 years, although
+		// maybe we want to change this?
+
+		// if this charge is somehow redactable or if it isn't a conviction
+		// then return null right away.
+		if ($this->isRedactable() || !$this->isConviction())
+			return null;
+
+		// check the grade, if known.  If it isn't an F (or isn't unknwon),
+		// then we don't care about the conviction.
+		$grade = $this->getGrade();
+		if (!in_array($grade, array("F1", "F2", "F3", "F", "unk")))
+			return null;
+
+		$percent = getCodeSectionGradePercent("('F1', 'F2', 'F3', 'F')");
+		if ($percent==0)
+			return null;
+
+		// get the code section of this case
+		$codeSection = preg_split("/\x{A7}+/u", $this->getCodeSection(), -1, PREG_SPLIT_NO_EMPTY);
+
+		// this means that therew as a problem splitting the codeSection, so return 2
+		if (count($codeSection) == 1)
+			return array($this->getCodeSection(), 'Unknown/unreadable code section; assuming the worse: possibly a 20 year excluded offense');
+
+		// if this is an Article B, D, etc.. crime, add it
+		if ($this->isArticleBCrime()
+		{
+			if ($this->getGrade()=="unk")
+				return array($this->getCodeSection(), 'Article B offense; ' . $percent . "% of the time this is a Felony.");
+			else
+				return array($this->getCodeSection(), "Article B offense with grade of '" . $grade . "'.");
+		}
+
+		// if we got to here, then the offense isn't excluded
+		return null;
+	}
+
+	public function isArticleBCrime()
+	{
+		$codeSection = preg_split("/\x{A7}+/u", $this->getCodeSection(), -1, PREG_SPLIT_NO_EMPTY);
+
+		// this means that therew as a problem splitting the codeSection, so return false
+		if (count($codeSection) == 1)
+			return FALSE;
+
+		$section = intval(trim($codeSection[1]));
+		if (trim($codeSection[0])=="18" && $section > 2300 && $section < 3300)
+			return TRUE;
+
+		return FALSE;
+	}
+
+	public function isArticleDCrime()
+	{
+		$codeSection = preg_split("/\x{A7}+/u", $this->getCodeSection(), -1, PREG_SPLIT_NO_EMPTY);
+
+		// this means that therew as a problem splitting the codeSection, so return false
+		if (count($codeSection) == 1)
+			return FALSE;
+
+		$section = intval(trim($codeSection[1]));
+		if (trim($codeSection[0])=="18" && $section > 4300 && $section < 4500)
+			return TRUE;
+
+		return FALSE;
+
+	}
+
+	public function isChapter61Crime()
+	{
+		$codeSection = preg_split("/\x{A7}+/u", $this->getCodeSection(), -1, PREG_SPLIT_NO_EMPTY);
+
+		// this means that therew as a problem splitting the codeSection, so return false
+		if (count($codeSection) == 1)
+			return FALSE;
+
+		$section = intval(trim($codeSection[1]));
+		if (trim($codeSection[0])=="18" && $section > 6100 && $section < 6200)
+			return TRUE;
+
+		return FALSE;
+	}
+
+	public function isSexRegCrime()
+	{
 
 	}
 }
