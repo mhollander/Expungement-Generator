@@ -353,7 +353,6 @@ class Record
         else
             $this->cleanSlateEligible['Past10MFConviction']['answer'] = TRUE;
 
-        print_r($this->cleanSlateEligible['Past10MFConviction']);
     }
 
     public function checkCleanSlatePast15MoreThanOneM1F()
@@ -382,6 +381,11 @@ class Record
         }
         else
             $this->cleanSlateEligible['Past15ProhibitedConviction']['answer'] = TRUE;
+
+        // print "<pre>";
+        // print_r($this->cleanSlateEligible['Past15ProhibitedConviction']);
+        // print "</pre>";
+
     }
 
     public function checkCleanSlatePast20MoreThanThreeM2M1F()
