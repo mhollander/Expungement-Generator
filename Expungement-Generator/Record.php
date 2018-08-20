@@ -301,6 +301,7 @@ class Record
         foreach ($this->arrests as $arrest)
         {
             // $arrest->hasOutstandingFinesCosts();
+            // $arrest->isUnsealableOffense();
 
         }
     }

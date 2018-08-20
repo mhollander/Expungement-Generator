@@ -81,6 +81,14 @@ class Charge
 														 "5510", // abuse of corpse
 														 "5515"); // probhibiting paramilitary training
 
+	// these are the offenses defined in 42 PaCS 9799.14 and 9799.55 (there is significant overlap)
+	private static $cleanSlateTieredSexOffenses = array("2901a.1", "2902b",
+					"2903b", "2904", "2910b", "3011b", "3121", "3122.1b", "3123",
+					"3124.1", "3124.2a", "3124.2a.1", "3124.2a2", "3124.2a3",
+					"3125", "3126a1", "3126a2", "3126a3", "3126a4", "3126a5",
+					"3126a6", "3126a7", "3126a8", "4302b", "5902b", "5902b.1",
+					"5903a3ii", "5903a4ii", "5903a5ii", "5903a6", "6301a1ii",
+					"6312", "6318", "6320", "7507.1");
 
 	public function __construct($chargeName, $disposition, $codeSection, $dispDate, $grade)
 	{
@@ -290,7 +298,7 @@ class Charge
         if (!array_key_exists($section, $offenses))
             return false;
         // then check the subsection
-        if (stipos($offenses[$section], $subsection)===0)
+        if (stripos($offenses[$section], $subsection)===0)
           return true;
         else
           return false;
@@ -569,7 +577,40 @@ class Charge
 
 	public function isSexRegCrime()
 	{
+		$codeSection = preg_split("/\x{A7}+/u", $this->getCodeSection(), -1, PREG_SPLIT_NO_EMPTY);
+
+		// this means that therew as a problem splitting the codeSection, so return false
+		if (count($codeSection) == 1)
+			return FALSE;
+
+
+		// if the code section is 18 PaCS 2192(a)
+		// section will be 2192a
+		$section =trim($codeSection[1]);
+		if (count($codeSection)==3)
+			$section .= trim($codeSection[2])
+
+		if(trim($codeSection[0])=="18" && in_array($section, $cleanSlateTieredSexOffenses))
+			return TRUE;
+		else
+			return FALSE;
 
 	}
+
+	public function isCorruptionOfMinorsCrim()
+	{
+		$codeSection = preg_split("/\x{A7}+/u", $this->getCodeSection(), -1, PREG_SPLIT_NO_EMPTY);
+
+		// this means that therew as a problem splitting the codeSection, so return false
+		if (count($codeSection) < 3)
+			return FALSE;
+
+		// only return tru eif this matches 18 PaCS 6301(a)(1)
+		if(trim($codeSection[0])=="18" && trim($codeSection[1])=="6301" && trim($codeSection[2])=="a1")
+			return TRUE;
+		else
+			return FALSE;
+
+
 }
 ?>
