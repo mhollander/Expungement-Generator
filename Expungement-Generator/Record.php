@@ -300,23 +300,28 @@ class Record
 
         foreach ($this->arrests as $arrest)
         {
-            // $arrest->hasOutstandingFinesCosts();
-            // $arrest->isUnsealableOffense();
+            $this->cleanSlateEligible['FinesCosts'][$arrest->getFirstDocketNumber()] = $arrest->checkCleanSlateHasOutstandingFinesCosts();
+            $this->cleanSlateEligible['UnsealableCharge'][$arrest->getFirstDocketNumber()] = $arrest->checkCleanSlateIsUnsealableOffense();
+
+            // if (check all record level questions and then this arrest questions)
+                // set sealable on case
+                // set sealable on record
+                // Q: what to do about cases that are expungeable?  I guess
+                // I mark them as not sealable, but filter them later?
+
+
 
         }
+
+        print "<pre>";
+        print_r($this->cleanSlateEligible);
+        print "</pre>";
+
     }
 
     public static function not_empty($var)
     {
         return array_filter($var);
-    }
-
-    public static function test_not_empty($var)
-    {
-        print("<pre>a");
-        print_r($var);
-        print("a</pre>");
-        return !empty($var);
     }
 
     public function checkCleanSlateMurderFelony()
@@ -483,10 +488,6 @@ class Record
         }
         else
             $this->cleanSlateEligible['Past20FProhibitedConviction']['answer'] = TRUE;
-
-        print "<pre>";
-        print_r($this->cleanSlateEligible['Past20FProhibitedConviction']);
-        print "</pre>";
 
     }
 }

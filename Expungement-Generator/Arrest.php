@@ -2164,6 +2164,55 @@ class Arrest
 		return $this->cleanSlateEligible['Past20FProhibitedConviction'];
 	}
 
+	/**
+	* @function checkCleanSlateHasOutstandingFinesCosts
+	* @param: none
+	* @return: true if there are unpaid costs/fines, false otherwise
+	**/
+	public function checkCleanSlateHasOutstandingFinesCosts()
+	{
+		// if we've done this before for this case, just return what we have
+		if (isset($this->cleanSlateEligible['HasOutstandingFinesCosts']))
+			return $this->cleanSlateEligible['HasOutstandingFinesCosts'];
+
+		// first check  to see if this is a conviction arrest in the last 20
+		// years
+		if (intval($this->getCostsTotal()) > 0)
+			$this->cleanSlateEligible['HasOutstandingFinesCosts'] = TRUE;
+		else
+			$this->cleanSlateEligible['HasOutstandingFinesCosts'] = FALSE;
+
+		return $this->cleanSlateEligible['HasOutstandingFinesCosts'];
+	}
+
+
+	/**
+	* @function checkCleanSlateIsUnsealableOffense
+	* @param: none
+	* @return: an associative array in the format charge: message
+	**/
+	public function checkCleanSlateIsUnsealableOffense()
+	{
+		// if we've done this before for this case, just return what we have
+		if (isset($this->cleanSlateEligible['IsUnsealableOffense']))
+			return $this->cleanSlateEligible['IsUnsealableOffense'];
+
+		// first check  to see if this is a conviction arrest in the last 20
+		// years
+		if ($this->isArrestConviction())
+		{
+			foreach ($this->getCharges() as $charge)
+			{
+				$this->cleanSlateEligible['IsUnsealableOffense'][] = $charge->checkCleanSlateIsUnsealableOffense();
+			}
+		}
+		else
+			$this->cleanSlateEligible['IsUnsealableOffense'][] = null;
+
+		return $this->cleanSlateEligible['IsUnsealableOffense'];
+	}
+
+
 }  // end class arrest
 
 ?>

@@ -73,8 +73,8 @@ class Charge
                                                           "3126" => "a7",
                                                           "4302" => "b");
 
-	  private static $cleanSlateExcludedOffenses = array("3127", //indecent exposure
-	  													 "3129", //sexual intercourse with animals
+	private static $cleanSlateExcludedOffenses = array("3127", //indecent exposure
+														 "3129", //sexual intercourse with animals
 														 "4915.1", // failure to comply with reg requirements
 														 "4915.2", // failure to comply with reg requirements
 														 "5122", //weapons or implements for escape
@@ -379,7 +379,7 @@ class Charge
 		if ($this->getGrade()=="F1")
 			return array($this->getCodeSection(), 'F1 Conviction');
 
-		$percent = getCodeSectionGradePercent("('F1')");
+		$percent = $this->getCodeSectionGradePercent("('F1')");
 		if ($this->getGrade()=="unk" && $percent > 0)
 			return array($this->getCodeSection(), $percent . "% of charges like this were F1s.");
 
@@ -443,7 +443,7 @@ class Charge
 		if (in_array($grade, array("F1", "F2", "F3", "F", "M1")))
 			return array($this->getCodeSection(), "'" . $grade . "' conviction within the past 15 years.");
 
-		$percent = getCodeSectionGradePercent("('F1', 'F2', 'F3', 'F', 'M1')");
+		$percent = $this->getCodeSectionGradePercent("('F1', 'F2', 'F3', 'F', 'M1')");
 		if ($this->getGrade()=="unk" && $percent > 0)
 			return array($this->getCodeSection(), $percent . "% of charges like this were M1s or Felonies.");
 
@@ -474,7 +474,7 @@ class Charge
 		if (in_array($grade, array("F1", "F2", "F3", "F", "M1", "M2")))
 			return array($this->getCodeSection(), "'" . $grade . "' conviction within the past 20 years.");
 
-		$percent = getCodeSectionGradePercent("('F1', 'F2', 'F3', 'F', 'M1', 'M2')");
+		$percent = $this->getCodeSectionGradePercent("('F1', 'F2', 'F3', 'F', 'M1', 'M2')");
 		if ($this->getGrade()=="unk" && $percent > 0)
 			return array($this->getCodeSection(), $percent . "% of charges like this were M2s, M1s, or felonies.");
 
@@ -505,7 +505,7 @@ class Charge
 		if (!in_array($grade, array("F1", "F2", "F3", "F", "unk")))
 			return null;
 
-		$percent = getCodeSectionGradePercent("('F1', 'F2', 'F3', 'F')");
+		$percent = $this->getCodeSectionGradePercent("('F1', 'F2', 'F3', 'F')");
 		if ($percent==0)
 			return null;
 
@@ -517,7 +517,7 @@ class Charge
 			return array($this->getCodeSection(), 'Unknown/unreadable code section; assuming the worse: possibly a 20 year excluded offense');
 
 		// if this is an Article B, D, etc.. crime, add it
-		if ($this->isArticleBCrime()
+		if ($this->isArticleBCrime())
 		{
 			if ($this->getGrade()=="unk")
 				return array($this->getCodeSection(), 'Article B offense; ' . $percent . "% of the time this is a Felony.");
@@ -525,9 +525,114 @@ class Charge
 				return array($this->getCodeSection(), "Article B offense with grade of '" . $grade . "'.");
 		}
 
+		if ($this->isArticleDCrime())
+		{
+			if ($this->getGrade()=="unk")
+				return array($this->getCodeSection(), 'Article D offense; ' . $percent . "% of the time this is a Felony.");
+			else
+				return array($this->getCodeSection(), "Article D offense with grade of '" . $grade . "'.");
+		}
+
+		if ($this->isChapter61Crime())
+		{
+			if ($this->getGrade()=="unk")
+				return array($this->getCodeSection(), 'Chapter 61 offense; ' . $percent . "% of the time this is a Felony.");
+			else
+				return array($this->getCodeSection(), "Chapter 61 offense with grade of '" . $grade . "'.");
+		}
+
+		if ($this->isSexRegCrime())
+		{
+			if ($this->getGrade()=="unk")
+				return array($this->getCodeSection(), 'Sec 9799.14/.55 sexual registration offense; ' . $percent . "% of the time this is a Felony.");
+			else
+				return array($this->getCodeSection(), "Sec 9799.14/.55 sexual registration offense with grade of '" . $grade . "'.");
+		}
+
 		// if we got to here, then the offense isn't excluded
 		return null;
 	}
+
+
+
+	/**
+	* Checks if the current charge is a conviction for an unsealable crime
+	* and returns an array in the format charge:message
+	* @param: none
+	* @return: an associative array in the format charge: message
+	**/
+	public function checkCleanSlateIsUnsealableOffense()
+	{
+		// for now assume that this happened in the last 15 years, although
+		// maybe we want to change this?
+
+		// if this charge is somehow redactable or if it isn't a conviction
+		// then return null right away.
+		if ($this->isRedactable() || !$this->isConviction())
+			return null;
+
+		// check the grade, if known.  If it isn't an F, an M1 (or isn't unknwon),
+		// then we don't care about the conviction.
+		$grade = $this->getGrade();
+		if (!in_array($grade, array("F1", "F2", "F3", "F", "M1", "unk")))
+			return null;
+
+		$percent = $this->getCodeSectionGradePercent("('F1', 'F2', 'F3', 'F', 'M1')");
+		if ($percent==0)
+			return null;
+
+		// get the code section of this case
+		$codeSection = preg_split("/\x{A7}+/u", $this->getCodeSection(), -1, PREG_SPLIT_NO_EMPTY);
+
+		// this means that therew as a problem splitting the codeSection, so return 2
+		if (count($codeSection) == 1)
+			return array($this->getCodeSection(), 'Unknown/unreadable code section; assuming the worse: possibly an unsealable offense');
+
+		// if this is an Article B, D, etc.. crime, add it
+		if ($this->isArticleBCrime())
+		{
+			if ($this->getGrade()=="unk")
+				return array($this->getCodeSection(), 'Article B offense; ' . $percent . "% of the time this is an F or M1.");
+			else
+				return array($this->getCodeSection(), "Article B offense with grade of '" . $grade . "'.");
+		}
+
+		if ($this->isArticleDCrime())
+		{
+			if ($this->getGrade()=="unk")
+				return array($this->getCodeSection(), 'Article D offense; ' . $percent . "% of the time this is an F or M1.");
+			else
+				return array($this->getCodeSection(), "Article D offense with grade of '" . $grade . "'.");
+		}
+
+		if ($this->isChapter61Crime())
+		{
+			if ($this->getGrade()=="unk")
+				return array($this->getCodeSection(), 'Chapter 61 offense; ' . $percent . "% of the time this is an F or M1.");
+			else
+				return array($this->getCodeSection(), "Chapter 61 offense with grade of '" . $grade . "'.");
+		}
+
+		if ($this->isSexRegCrime())
+		{
+			if ($this->getGrade()=="unk")
+				return array($this->getCodeSection(), 'Sec 9799.14/.55 sexual registration offense; ' . $percent . "% of the time this is an F or M1.");
+			else
+				return array($this->getCodeSection(), "Sec 9799.14/.55 sexual registration offense with grade of '" . $grade . "'.");
+		}
+
+		if ($this->isCorruptionOfMinorsCrime())
+		{
+			if ($this->getGrade()=="unk")
+				return array($this->getCodeSection(), 'Conviction for 18 PaCS 6301a1; ' . $percent . "% of the time this is an F or M1.");
+			else
+				return array($this->getCodeSection(), "Conviction for 18 PaCS 6301a1 with grade of '" . $grade . "'.");
+		}
+		// if we got to here, then the offense isn't excluded
+		return null;
+	}
+
+
 
 	public function isArticleBCrime()
 	{
@@ -588,16 +693,16 @@ class Charge
 		// section will be 2192a
 		$section =trim($codeSection[1]);
 		if (count($codeSection)==3)
-			$section .= trim($codeSection[2])
+			$section .= trim($codeSection[2]);
 
-		if(trim($codeSection[0])=="18" && in_array($section, $cleanSlateTieredSexOffenses))
+		if (trim($codeSection[0])=="18" && in_array($section, $cleanSlateTieredSexOffenses))
 			return TRUE;
 		else
 			return FALSE;
 
 	}
 
-	public function isCorruptionOfMinorsCrim()
+	public function isCorruptionOfMinorsCrime()
 	{
 		$codeSection = preg_split("/\x{A7}+/u", $this->getCodeSection(), -1, PREG_SPLIT_NO_EMPTY);
 
@@ -610,7 +715,6 @@ class Charge
 			return TRUE;
 		else
 			return FALSE;
-
-
+	}
 }
 ?>
