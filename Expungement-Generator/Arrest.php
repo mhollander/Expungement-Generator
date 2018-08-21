@@ -97,6 +97,7 @@ class Arrest
 	private $isMDJ = 0;
     private $isJuvenilePhilly = false;
 	private $cleanSlateEligible = array();
+	private $isCleanSlateEligible;
 
 	public static $expungementTemplate = "790ExpungementTemplate.docx";
 	public static $act5Template = "791Act5SealingTemplate.docx";
@@ -109,6 +110,7 @@ class Arrest
 	protected static $unknownInfo = "N/A";
 	protected static $unknownOfficer = "Unknown officer";
 	protected static $unknownAgency = "Unknown agency";
+
 
 	protected static $mdjDistrictNumberSearch = "/Magisterial District Judge\s(.*)/i";
 	protected static $countySearch = "/\sof\s(\w+)\sCOUNTY/i";
@@ -240,6 +242,7 @@ class Arrest
 	public function getPDFFile() { return $this->pdfFile;}
 	public function getPDFFileName() { return $this->pdfFileName;}
 	public function getAliases() { return $this->aliases; }
+	public function getIsCleanSlateEligible() { return $this->isCleanSlateEligible; }
 
 	//setters
 	public function setMDJDistrictNumber($mdjDistrictNumber) { $this->mdjDistrictNumber = $mdjDistrictNumber; }
@@ -297,6 +300,7 @@ class Arrest
 	public function setPDFFile($pdfFile) { $this->pdfFile = $pdfFile; }
 	public function setPDFFileName($pdfFileName) { $this->pdfFileName = $pdfFileName; }
 	public function addAlias($a) { $this->aliases[] = $a; }
+	public function setIsCleanSlateEligible($a) { $this->isCleanSlateEligible = $a; }
 
 	// add a Bail amount to an already created bail figure
 	public function addBailTotal($bailTotal)
@@ -2038,8 +2042,8 @@ class Arrest
 		$thisDispDate = new DateTime($this->getBestDispositionDate());
 		$now = new DateTime();
 		$dateDiff = abs(dateDifference($thisDispDate, $now));
-		if ($dateDiff < 10 && $this->isArrestConviction())
-			$this->cleanSlateEligible['Past10MFConviction'][] = $dateDiff;
+		if ($dateDiff < 10 && $this->isArrestConviction() && !$this->getIsSummaryArrest())
+			$this->cleanSlateEligible['Past10MFConviction'][] = "This case happened less than 10 years ago (".$dateDiff.").";
 
 		else
 			$this->cleanSlateEligible['Past10MFConviction'][] = null ;
@@ -2064,7 +2068,7 @@ class Arrest
 		$thisDispDate = new DateTime($this->getBestDispositionDate());
 		$now = new DateTime();
 		$dateDiff = abs(dateDifference($thisDispDate, $now));
-		if ($dateDiff < 15 && $this->isArrestConviction())
+		if ($dateDiff < 15 && $this->isArrestConviction() && !$this->getIsSummaryArrest())
 		{
 			foreach ($this->getCharges() as $charge)
 			{
@@ -2093,7 +2097,7 @@ class Arrest
 		$thisDispDate = new DateTime($this->getBestDispositionDate());
 		$now = new DateTime();
 		$dateDiff = abs(dateDifference($thisDispDate, $now));
-		if ($dateDiff < 15 && $this->isArrestConviction())
+		if ($dateDiff < 15 && $this->isArrestConviction() && !$this->getIsSummaryArrest())
 		{
 			foreach ($this->getCharges() as $charge)
 			{
@@ -2122,7 +2126,7 @@ class Arrest
 		$thisDispDate = new DateTime($this->getBestDispositionDate());
 		$now = new DateTime();
 		$dateDiff = abs(dateDifference($thisDispDate, $now));
-		if ($dateDiff < 20 && $this->isArrestConviction())
+		if ($dateDiff < 20 && $this->isArrestConviction() && !$this->getIsSummaryArrest())
 		{
 			foreach ($this->getCharges() as $charge)
 			{
@@ -2151,7 +2155,7 @@ class Arrest
 		$thisDispDate = new DateTime($this->getBestDispositionDate());
 		$now = new DateTime();
 		$dateDiff = abs(dateDifference($thisDispDate, $now));
-		if ($dateDiff < 20 && $this->isArrestConviction())
+		if ($dateDiff < 20 && $this->isArrestConviction() && !$this->getIsSummaryArrest())
 		{
 			foreach ($this->getCharges() as $charge)
 			{

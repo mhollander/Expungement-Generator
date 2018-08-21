@@ -32,6 +32,7 @@ class Record
     private $arrestSummary;
     private $person;
     private $cleanSlateEligible = array();
+    private $cleanSlateEligibleCases = array();
 
     // public function __construct($arrests)
     // {
@@ -300,21 +301,49 @@ class Record
 
         foreach ($this->arrests as $arrest)
         {
-            $this->cleanSlateEligible['FinesCosts'][$arrest->getFirstDocketNumber()] = $arrest->checkCleanSlateHasOutstandingFinesCosts();
+            // check this arrest to see if there are fines/costs owed or if there are unsealable
+            // charges in the case
+            $this->cleanSlateEligible['FinesCosts'][$arrest->getFirstDocketNumber()]['answer'] = $arrest->checkCleanSlateHasOutstandingFinesCosts();
             $this->cleanSlateEligible['UnsealableCharge'][$arrest->getFirstDocketNumber()] = $arrest->checkCleanSlateIsUnsealableOffense();
 
-            // if (check all record level questions and then this arrest questions)
-                // set sealable on case
-                // set sealable on record
-                // Q: what to do about cases that are expungeable?  I guess
-                // I mark them as not sealable, but filter them later?
+            // if there are any unsealable charges, set to True so that we can filter this case out
+            if (array_filter($this->cleanSlateEligible['UnsealableCharge'][$arrest->getFirstDocketNumber()], array(__CLASS__, 'not_empty')))
+                $this->cleanSlateEligible['UnsealableCharge'][$arrest->getFirstDocketNumber()]['answer'] = TRUE;
+            else
+                $this->cleanSlateEligible['UnsealableCharge'][$arrest->getFirstDocketNumber()] = FALSE;
 
 
+            // if there are no global exclusions and this case is eligible
+            // then set clean slate to true
+            // TODO: Captures MD cases.  There is currently no function to
+            // filter out MD cases.  They are never sealable b/c they aren't
+            // criminal.  BUt the "isCriminal" function on arrests includes md arrests.
+            // The solution is probably to just make another function, but that feels silly.
+            // Maybe overload the function but with defaults to allow for
+            // MDs to be excluded?
+            if(!$this->cleanSlateEligible['MurderF1']['answer'] &&
+               !$this->cleanSlateEligible['Past10MFConviction']['answer'] &&
+               !$this->cleanSlateEligible['Past15MoreThanOneM1F']['answer'] &&
+               !$this->cleanSlateEligible['Past15ProhibitedConviction']['answer'] &&
+               !$this->cleanSlateEligible['Past20MoreThanThreeM2M1F']['answer'] &&
+               !$this->cleanSlateEligible['FinesCosts'][$arrest->getFirstDocketNumber()]['answer'] &&
+               !$this->cleanSlateEligible['UnsealableCharge']['answer'] &&
+               !$arrest->isArrestExpungement())
+            {
+               $arrest->setIsCleanSlateEligible(TRUE);
+               $this->cleanSlateEligibleCases[] = $arrest->getFirstDocketNumber();
+            }
+
+            else
+            {
+                $arrest->setIsCleanSlateEligible(FALSE);
+            }
 
         }
 
         print "<pre>";
         print_r($this->cleanSlateEligible);
+        print_r($this->cleanSlateEligibleCases);
         print "</pre>";
 
     }
@@ -341,10 +370,10 @@ class Record
         // see if there are any non-null nodes in the array
         if (array_filter($this->cleanSlateEligible['MurderF1'], array(__CLASS__, 'not_empty')))
         {
-            $this->cleanSlateEligible['MurderF1']['answer'] = FALSE;
+            $this->cleanSlateEligible['MurderF1']['answer'] = TRUE;
         }
         else
-            $this->cleanSlateEligible['MurderF1']['answer'] = TRUE;
+            $this->cleanSlateEligible['MurderF1']['answer'] = FALSE;
     }
 
     public function checkCleanSlatePast10MFConviction()
@@ -363,9 +392,9 @@ class Record
         // potential F1 convictions.  TO check if there are elements in the array
         // see if there are any non-null nodes in the array
         if (array_filter($this->cleanSlateEligible['Past10MFConviction'], array(__CLASS__, 'not_empty')))
-            $this->cleanSlateEligible['Past10MFConviction']['answer'] = FALSE;
-        else
             $this->cleanSlateEligible['Past10MFConviction']['answer'] = TRUE;
+        else
+            $this->cleanSlateEligible['Past10MFConviction']['answer'] = FALSE;
 
     }
 
@@ -399,10 +428,10 @@ class Record
         // ['answer'] will also get added into the count
         if (array_sum(array_map("count", $M1Fs)) > 1)
         {
-            $this->cleanSlateEligible['Past15MoreThanOneM1F']['answer'] = FALSE;
+            $this->cleanSlateEligible['Past15MoreThanOneM1F']['answer'] = TRUE;
         }
         else
-            $this->cleanSlateEligible['Past15MoreThanOneM1F']['answer'] = TRUE;
+            $this->cleanSlateEligible['Past15MoreThanOneM1F']['answer'] = FALSE;
     }
 
 
@@ -423,10 +452,10 @@ class Record
         // see if there are any non-null nodes in the array
         if (array_filter($this->cleanSlateEligible['Past15ProhibitedConviction'], array(__CLASS__, 'not_empty')))
         {
-            $this->cleanSlateEligible['Past15ProhibitedConviction']['answer'] = FALSE;
+            $this->cleanSlateEligible['Past15ProhibitedConviction']['answer'] = TRUE;
         }
         else
-            $this->cleanSlateEligible['Past15ProhibitedConviction']['answer'] = TRUE;
+            $this->cleanSlateEligible['Past15ProhibitedConviction']['answer'] = FALSE;
 
     }
 
@@ -460,10 +489,10 @@ class Record
         // ['answer'] will also get added into the count
         if (array_sum(array_map("count", $M2M1Fs)) > 3)
         {
-            $this->cleanSlateEligible['Past20MoreThanThreeM2M1F']['answer'] = FALSE;
+            $this->cleanSlateEligible['Past20MoreThanThreeM2M1F']['answer'] = TRUE;
         }
         else
-            $this->cleanSlateEligible['Past20MoreThanThreeM2M1F']['answer'] = TRUE;
+            $this->cleanSlateEligible['Past20MoreThanThreeM2M1F']['answer'] = FALSE;
 
     }
 
@@ -484,10 +513,10 @@ class Record
         // see if there are any non-null nodes in the array
         if (array_filter($this->cleanSlateEligible['Past20FProhibitedConviction'], array(__CLASS__, 'not_empty')))
         {
-            $this->cleanSlateEligible['Past20FProhibitedConviction']['answer'] = FALSE;
+            $this->cleanSlateEligible['Past20FProhibitedConviction']['answer'] = TRUE;
         }
         else
-            $this->cleanSlateEligible['Past20FProhibitedConviction']['answer'] = TRUE;
+            $this->cleanSlateEligible['Past20FProhibitedConviction']['answer'] = FALSE;
 
     }
 }

@@ -695,7 +695,7 @@ class Charge
 		if (count($codeSection)==3)
 			$section .= trim($codeSection[2]);
 
-		if (trim($codeSection[0])=="18" && in_array($section, $cleanSlateTieredSexOffenses))
+		if (trim($codeSection[0])=="18" && in_array($section, Charge::$cleanSlateTieredSexOffenses))
 			return TRUE;
 		else
 			return FALSE;
