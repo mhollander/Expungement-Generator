@@ -326,6 +326,7 @@ class Record
                !$this->cleanSlateEligible['Past15MoreThanOneM1F']['answer'] &&
                !$this->cleanSlateEligible['Past15ProhibitedConviction']['answer'] &&
                !$this->cleanSlateEligible['Past20MoreThanThreeM2M1F']['answer'] &&
+               !$this->cleanSlateEligible['Past20FProhibitedConviction']['answer'] &&
                !$this->cleanSlateEligible['FinesCosts'][$arrest->getFirstDocketNumber()]['answer'] &&
                !$this->cleanSlateEligible['UnsealableCharge']['answer'] &&
                !$arrest->isArrestExpungement())
