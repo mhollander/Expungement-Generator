@@ -1613,9 +1613,6 @@ class Arrest
 	    foreach ($this->getCharges() as $charge)
 		{
 
-            // testing!!! xxx
-            //print "<br /> " . $charge->getCodeSection() . " | " . $charge->getGrade() . " | " . $charge->getDisposition() . " | " . strval($charge->isSealable()) . " | " . $charge->getSealablePercent();
-
 			if (!$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['act5Regardless'] && !$this->isJuvenilePhilly)
 			{
 				if (!$this->isArrestSummaryExpungement && !$charge->isRedactable())

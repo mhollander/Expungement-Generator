@@ -12,7 +12,7 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
 	$files = array();
 
 	print "<table class='pure-table pure-table-horizontal pure-table-striped'>";
-    print "<thead><tr><th>Docket #</th><th>Expungeable</th><th>Sealable</th><th>Optional Petitions</th></tr></thead>";
+    print "<thead><tr><th>Docket #</th><th>Expungeable</th><th>Optional Petitions</th></tr></thead>";
 	foreach ($arrests as $arrest)
 	{
         print "<tr><td>".$arrest->getFirstDocketNumber()."</td><td>";
@@ -49,37 +49,7 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
             print "No";
 
 
-          print "</td><td>";
-
-          if ($arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestExpungement() || $arrest->isArrestOver70Expungement($arrests,$person))
-            print "--";
-          elseif ($arrest->isArrestSealable()==1)
-          {
-              if ($sealable==0)
-                print "Yes, but excluded by other cases";
-              if ($sealable==1)
-                print "Yes";
-              if ($sealable>1)
-                print "Yes, but maybe excluded by other cases";
-          }
-          elseif ($arrest->isArrestSealable() > 1)
-          {
-              if ($sealable==0)
-                print "Maybe, but excluded by other cases";
-              elseif ($sealable==1)
-                print "Maybe";
-              elseif ($sealable>1 && ($sealable != $arrest->isArrestSealable()))
-                print "Maybe, but maybe excluded by other cases";
-              else
-                // this means that sealable and arrest->sealable are the same; in other words,
-                // this is the potentially sealable case, so just say Maybe
-                print "Maybe";
-          }
-          elseif ($arrest->isArrestSealable() ==0)
-              print "No";
-
           print "</td>";
-
 
           // allow generation of Act 5 and Pardon petitions
           print "<td><a href='?act5Regardless=true&docket=" . implode("|",$arrest->getDocketNumber()) ."' target='_blank'>Act 5</a> | <a href='?expungeRegardless=true&docket=" . implode("|",$arrest->getDocketNumber()) ."' target='_blank'>Pardon</a></td></tr>";
@@ -127,7 +97,7 @@ function createOverview($arrests, $templateDir, $dataDir, $person, $sealable)
 
 	$docx->cloneRow("DOCKET", count($arrests));
 
-    $totalSealableCharges = getTotalSealableCharges($arrests);
+	$totalSealableCharges=0;
     if ($totalSealableCharges > 0)
         $docx->cloneRow("SEAL_DOCKET", $totalSealableCharges);
     else
@@ -164,45 +134,6 @@ function createOverview($arrests, $templateDir, $dataDir, $person, $sealable)
 		$docx->setValue("BAIL#" . $i, htmlspecialchars(number_format($arrest->getBailTotalTotal(),2), ENT_COMPAT, 'UTF-8'));
         $i = $i+1;
 
-        // if there are some sealable offenses in this arrest
-        if ($arrest->isArrestSealable() > 0)
-        {
-            // iterate over all of the charges
-            foreach ($arrest->getCharges() as $charge)
-            {
-                // check if they are both conviction charges and sealable (non-conviction charges get a 1)
-                if ($charge->isConviction() && ($charge->isSealable() > 0))
-                {
-                    $docx->setValue("SEAL_DOCKET#".$j, htmlspecialchars($arrest->getFirstDocketNumber(), ENT_COMPAT, 'UTF-8'));
-                    $docx->setValue("CHARGE_NAME#".$j, htmlspecialchars($charge->getChargeName(), ENT_COMPAT, 'UTF-8'));
-                    $docx->setValue("CHARGE_CODESECTION#".$j, htmlspecialchars($charge->getCodeSection(), ENT_COMPAT, 'UTF-8'));
-                    $docx->setValue("SEALABLE_INFO#".$j, htmlspecialchars($charge->getSealablePercent(), ENT_COMPAT, 'UTF-8'));
-
-                    $text = "Yes"; //default if sealable==1
-
-                    if ($charge->isSealable()==1)
-                    {
-                      if ($sealable==0)
-                        $text = "Yes, but excluded by other cases";
-                      if ($sealable>1)
-                        $text = "Yes, but maybe excluded by other cases";
-                    }
-                    else
-                    {
-                      if ($sealable==0)
-                          $text = "Maybe, but excluded by other cases";
-                      if ($sealable==1)
-                          $text = "Maybe";
-                      if ($sealable>1)
-                          $text = "Maybe, but maybe excluded by other cases";
-                    }
-                    $docx->setValue("SEALABLE#".$j, $text);
-
-                    $j++;
-
-                }
-            }
-        }
 	}
 
 	$outputFile = $dataDir . $person->getFirst() . $person->getLast() . "Overview.docx";

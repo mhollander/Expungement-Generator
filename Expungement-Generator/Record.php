@@ -33,6 +33,7 @@ class Record
     private $person;
     private $cleanSlateEligible = array();
     private $cleanSlateEligibleCases = array();
+    private static $sealingOverviewTemplate = "SealingOverview.docx";
 
     // public function __construct($arrests)
     // {
@@ -215,11 +216,6 @@ class Record
     public function parseArrests() {
         // Similar to createOverview, but without the microsoft word
         $results = Array();
-        //print("\nParsing arrests.\n");
-        //print_r($arrests);
-        //print("\n Size of arrests: ");
-        //print(sizeof($arrests));
-        //print("\n");
         if (sizeof($this->arrests) == 0) {
             $results['expungements_redactions'] = ["none"];
         } else {
@@ -321,13 +317,8 @@ class Record
             // The solution is probably to just make another function, but that feels silly.
             // Maybe overload the function but with defaults to allow for
             // MDs to be excluded?
-            if(!$this->cleanSlateEligible['MurderF1']['answer'] &&
-               !$this->cleanSlateEligible['Past10MFConviction']['answer'] &&
-               !$this->cleanSlateEligible['Past15MoreThanOneM1F']['answer'] &&
-               !$this->cleanSlateEligible['Past15ProhibitedConviction']['answer'] &&
-               !$this->cleanSlateEligible['Past20MoreThanThreeM2M1F']['answer'] &&
-               !$this->cleanSlateEligible['Past20FProhibitedConviction']['answer'] &&
-               !$this->cleanSlateEligible['FinesCosts'][$arrest->getFirstDocketNumber()]['answer'] &&
+           //
+            if(!$this->cleanSlateEligible['FinesCosts'][$arrest->getFirstDocketNumber()]['answer'] &&
                !$this->cleanSlateEligible['UnsealableCharge']['answer'] &&
                !$arrest->isArrestExpungement())
             {
@@ -342,11 +333,6 @@ class Record
 
         }
 
-        print "<pre>";
-        print_r($this->cleanSlateEligible);
-        print_r($this->cleanSlateEligibleCases);
-        print "</pre>";
-
     }
 
     public static function not_empty($var)
@@ -354,6 +340,8 @@ class Record
         return array_filter($var);
     }
 
+    // checks whether there are any murder of F1 convictions on the record
+    // under 18 PaCS 9122.1(b2i)
     public function checkCleanSlateMurderFelony()
     {
         // if we have already gone through this before, just exit
@@ -377,6 +365,8 @@ class Record
             $this->cleanSlateEligible['MurderF1']['answer'] = FALSE;
     }
 
+    // checks whether there are any convictions in the last 10 years
+    // under 18 PaCS 9122.1(a)
     public function checkCleanSlatePast10MFConviction()
     {
         // if we have already gone through this before, just exit
@@ -399,6 +389,8 @@ class Record
 
     }
 
+    // checks whether there are more than 1 M1 or F convictions in the last 15 years
+    // under 18 PaCS 9122.1(b2iii)
     public function checkCleanSlatePast15MoreThanOneM1F()
     {
         // if we have already gone through this before, just exit
@@ -435,7 +427,8 @@ class Record
             $this->cleanSlateEligible['Past15MoreThanOneM1F']['answer'] = FALSE;
     }
 
-
+    // checks whether there are any prohibited convictions the last 15 years
+    // under 18 PaCS 9122.1(b2iii)
     public function checkCleanSlatePast15ProhibitedConviction()
     {
         // if we have already gone through this before, just exit
@@ -460,6 +453,8 @@ class Record
 
     }
 
+    // checks whether there are more than 3 M2, M1, or F convictions in the last 20 years
+    // under 18 PaCS 9122.1(b2ii)
     public function checkCleanSlatePast20MoreThanThreeM2M1F()
     {
         // if we have already gone through this before, just exit
@@ -497,6 +492,8 @@ class Record
 
     }
 
+    // checks whether there are any prohibited F convictions in the last 20 years
+    // under 18 PaCS 9122.1(b2ii)
     public function checkCleanSlatePast20FProhibitedConviction()
     {
         // if we have already gone through this before, just exit
@@ -519,5 +516,173 @@ class Record
         else
             $this->cleanSlateEligible['Past20FProhibitedConviction']['answer'] = FALSE;
 
+    }
+
+    // create the overview file
+    public function generateCleanSlateOverview($templateDir, $dataDir)
+    {
+        $docx = new \PhpOffice\PhpWord\TemplateProcessor($templateDir . Record::$sealingOverviewTemplate);
+
+        // set name and date variables
+    	$docx->setValue("NAME", htmlspecialchars($this->person->getFirst() . " " . $this->person->getLast(), ENT_COMPAT, 'UTF-8'));
+        $docx->setValue("DATE", date("m/d/Y"));
+
+        // check to see if there are any record-wide restrictions on sealing
+        // and set that variable in the record
+        if (!$this->cleanSlateEligible['MurderF1']['answer'] &&
+           !$this->cleanSlateEligible['Past10MFConviction']['answer'] &&
+           !$this->cleanSlateEligible['Past15MoreThanOneM1F']['answer'] &&
+           !$this->cleanSlateEligible['Past15ProhibitedConviction']['answer'] &&
+           !$this->cleanSlateEligible['Past20MoreThanThreeM2M1F']['answer'] &&
+           !$this->cleanSlateEligible['Past20FProhibitedConviction']['answer'])
+        {
+            $docx->setValue("GLOBAL_SEALING_ELIGIBLE", "IS");
+            $docx->setValue("INELIGIBLE_REASONS", "");
+        }
+
+        else
+        {
+            // if we aren't eligible for sealing, state why and add the reason
+            // to a strong that we will set later.
+            $docx->setValue("GLOBAL_SEALING_ELIGIBLE", "IS NOT");
+            $reasons = "";
+            if ($this->cleanSlateEligible['MurderF1']['answer'])
+                $reasons .= "There is a murder or potential felony F1 conviction on the record.\r\n";
+            if ($this->cleanSlateEligible['Past10MFConviction']['answer'])
+                $reasons .= "There is an M or F conviction from the last 10 years on the record.\r\n";
+            if ($this->cleanSlateEligible['Past15MoreThanOneM1F']['answer'])
+                $reasons .= "There is potentially more than one M1 or F conviction on the record.\r\n";
+            if ($this->cleanSlateEligible['Past15ProhibitedConviction']['answer'])
+                $reasons .= "There is a prohibited conviction from the past 15 years (e.g. indecent assault, etc..).\r\n";
+            if ($this->cleanSlateEligible['Past20MoreThanThreeM2M1F']['answer'])
+                $reasons .= "There are potentially more than three M2, M1, or F convictions on the record.\r\n";
+            if ($this->cleanSlateEligible['Past20FProhibitedConviction']['answer'])
+                $reasons .= "There is potentially a F for a prohibited 20 year conviction (e.g. Article B, D, chapter 61, registration) on the record.";
+
+            $docx->setValue("INELIGIBLE_REASONS", $reasons);
+        }
+
+        // Now run through each piece of the eligibility array and print out
+        // the relevant sections; there may be information here that is helpful
+        // even if a case is eligible for sealing.
+        $this->setCleanSlateDisqualifiers($docx, 'MurderF1', 'MURDER_CASE_CHARGE', 'MURDER_REASON');
+        $this->setCleanSlateDisqualifiers($docx, 'Past10MFConviction', 'PAST_10_CONV_CASE_CHARGE', 'PAST_10_CONVICTION_REASON');
+        $this->setCleanSlateDisqualifiers($docx, 'Past15MoreThanOneM1F', 'PAST_15_M1F_CASE_CHARGE', 'PAST_15_M1F_REASON');
+        $this->setCleanSlateDisqualifiers($docx, 'Past15ProhibitedConviction', 'PAST_15_PROHIB_CASE_CHARGE', 'PAST_15_PROHIB_REASON');
+        $this->setCleanSlateDisqualifiers($docx, 'Past20MoreThanThreeM2M1F', 'PAST_20_M2M1F_CASE_CHARGE', 'PAST_20_M2M1F_REASON');
+        $this->setCleanSlateDisqualifiers($docx, 'Past20FProhibitedConviction', 'PAST_20_F_PROHIB_CASE_CHARGE', 'PAST_20_F_PROHIB_REASON');
+
+        // clone the case row for each case in the record that isn't otherwise
+        // an expungement
+        $i=0;
+        foreach ($this->arrests as $arrest)
+        {
+            if(!$arrest->isArrestExpungement() && !$arrest->isArrestARDExpungement() &&
+                !$arrest->isArrestSummaryExpungement($this->arrests) &&
+                !$arrest->isArrestOver70Expungement($this->arrests, $this->person))
+                $i = $i+1;
+        }
+
+        $docx->cloneRow("CASE", $i);
+
+        // fill in each row of the document
+        $i=1;
+        foreach($this->arrests as $arrest)
+        {
+            // we don't care about this arrest if it is otherwise expungeable
+            if($arrest->isArrestExpungement() || $arrest->isArrestARDExpungement() ||
+                $arrest->isArrestSummaryExpungement($this->arrests) ||
+                $arrest->isArrestOver70Expungement($this->arrests, $this->person))
+                continue;
+
+            # set the case number and F&C amount
+            $docx->setValue("CASE#".$i,$arrest->getFirstDocketNumber());
+            $docx->setValue("FC#".$i, "$" . $arrest->getCostsTotal());
+
+            $sCharges = array();
+            $sReasons = array();
+            // run through each charge and add a message to an array
+            // for each charge
+            foreach ($arrest->getCharges() as $charge)
+            {
+                // only print charges that are aren't otherwsise expungeable
+                if (!$charge->isRedactable() && $charge->isConviction())
+                {
+                    $sCharges[] = $charge->getCodeSection();
+                    $sReasons[] = $charge->getSealableMessage();
+                }
+            }
+
+            // and then write each charge and sealable reason to the document
+            $docx->setValue("CONV#".$i, implode("\r\n", $sCharges));
+            $docx->setValue("SEALABLE#".$i, implode("\r\n", $sReasons));
+
+            $i=$i+1;
+        }
+
+        // now write the overview to a file and return the file location
+    	$outputFile = $dataDir . $this->person->getFirst() . $this->person->getLast() . Record::$sealingOverviewTemplate;
+    	$docx->saveAs($outputFile);
+
+    	return $outputFile;
+
+    }
+
+    // given one of the subarrays of the checkCleanSlate variable,
+    // returns an array where one element is an array of all of the
+    // case numbers and charges; the other element is an array of
+    // all of the reasons that a case falls into that subarray
+    private function getCaseChargeAndReason($a)
+    {
+        // if this subarray has no answers in it, exit
+        if (empty($a))
+            return null;
+
+        $case_charge = array();
+        $reason = array();
+        // iterate over all of the cases
+        foreach($a as $case=>$infos)
+        {
+            // and each charge within the case
+            foreach($infos as $info)
+            {
+                // and add to the proper arrays the case num, charge, and description
+                if (!empty($info[0]))
+                {
+                    // info is usually two elements: charge and reason
+                    // but for 10-year convictions, it is just a reason
+                    if (count($info)>1)
+                    {
+                        $case_charge[] = $case . " | " . $info[0];
+                        $reason[] = $info[1];
+                    }
+                    else
+                    {
+                        $case_charge[] = $case;
+                        $reason[] = $info;
+                    }
+                }
+            }
+        }
+
+        return array($case_charge, $reason);
+
+    }
+
+    // a private internal funciton used to update a part of the sealing overview
+    // document.
+    private function setCleanSlateDisqualifiers($docx, $arrayElement, $case_charge, $reason)
+    {
+        $reasons = $this->getCaseChargeAndReason($this->cleanSlateEligible[$arrayElement]);
+        if (!empty($reasons) && !empty($reasons[0]))
+        {
+            $docx->setValue($case_charge, implode("\r\n",$reasons[0]));
+            $docx->setValue($reason, implode("\r\n",$reasons[1]));
+        }
+        else
+        {
+            $docx->setValue($case_charge, "");
+            $docx->setValue($reason, "");
+        }
     }
 }

@@ -109,11 +109,9 @@ else
         $docketFiles = CPCMS::downloadDockets($_SESSION['docket']);
 
     $record->parseDockets($tempFile, $pdftotext, $docketFiles);
-#xx    $arrests = parseDockets($tempFile, $pdftotext, $arrestSummary, $person, $docketFiles);
 
     // integrate the summary information in with the arrests
     $record->integrateSummaryInformation();
-#xx    integrateSummaryInformation($arrests, $person, $arrestSummary);
 
     print "<b>EXPUNGEMENT INFORMATION</b><br/><br/>";
     // combine the docket sheets that are from the same arrest
@@ -122,16 +120,15 @@ else
 
 
     // check to see if Act5 Sealable
-    $sealable = $record->checkIfSealable();
     $record->checkSealingEligibility();
 
-#xx    $sealable = $checkIfSealable($arrests);
 
     // do the expungements in PDF form
+    $sealable=false; #xx get rid of this call to sealable!
     $files = doExpungements($record->getArrests(), $templateDir, $dataDir, $record->getPerson(), $attorney, $_SESSION['expungeRegardless'], $db, $sealable);
-
-
     $files[] = createOverview($record->getArrests(), $templateDir, $dataDir, $record->getPerson(), $sealable);
+
+    $files[] = $record->generateCleanSlateOverview($templateDir, $dataDir);
 
     // zip up the final PDFs
     $zipFile = zipFiles($files, $dataDir, $docketFiles, $record->getPerson()->getFirst() . $record->getPerson()->getLast() . "Expungements");
