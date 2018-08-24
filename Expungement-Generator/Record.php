@@ -183,36 +183,6 @@ class Record
         $this->arrests = array_values($this->arrests);
     }
 
-    // checks if anything is sealable by running through each case and checking if that case is sealable
-    // Not sealable if any case is not sealable or if there are 4 or more convictions on this record
-    // Returns true or false.  If true, still need to check later to get the reasons something may not
-    // be sealable (this is for isSealable > 1).
-    public function checkIfSealable()
-    {
-        $sealable = 1;
-        $convictions = 0;
-        foreach ($this->arrests as $arrest)
-        {
-            $sealable = $sealable * $arrest->isArrestSealable();
-            if ($sealable == 0)
-            break;
-
-            // if this is a conviction on a non-summary case, we need to increment convictions
-            if ($arrest->isArrestConviction() && !$arrest->getIsSummaryArrest())
-            {
-                $convictions++;
-                // if there are more than 4 convictions, then we can't seal
-                if ($convictions > 3)
-                {
-                    $sealable = 0;
-                    break;
-                }
-            }
-        }
-        $this->sealable = $sealable;
-        return $sealable;
-    }
-
     public function parseArrests() {
         // Similar to createOverview, but without the microsoft word
         $results = Array();
@@ -249,26 +219,6 @@ class Record
                 $thisArrest['unpaid_costs'] = htmlspecialchars(number_format($arrest->getCostsTotal() - $arrest->getBailTotal(),2),ENT_COMPAT, 'UTF-8');
                 $thisArrest['bail'] = htmlspecialchars(number_format($arrest->getBailTotalTotal(),2), ENT_COMPAT, 'UTF-8');
                 $results['expungements_redactions'][] = $thisArrest;
-                if ($arrest->isArrestSealable()>0) {
-                    //then iterate over all the charges
-                    foreach ($arrest->getCharges() as $charge) {
-                        $thisCharge = Array();
-                        // check if the charge is a conviction and if it is sealable (non conviction charges get a 1)
-                        if ( $charge->isConviction() && ($charge->isSealable() >0) ) {
-                            $thisCharge['case_number'] = htmlspecialchars($arrest->getFirstDocketNumber(), ENT_COMPAT, 'UTF-8');
-                            $thisCharge['charge_name'] = htmlspecialchars($charge->getChargeName(), ENT_COMPAT, 'UTF-8');
-                            $thisCharge['code_section'] = htmlspecialchars($charge->getCodeSection(), ENT_COMPAT, 'UTF-8');
-                            if ($charge->isSealable()==1) {
-                                $thisCharge['sealable'] = "Yes";
-                            } else {
-                                $thisCharge['sealable'] = "No";
-                            }
-                            $thisCharge['additional_information'] = htmlspecialchars($charge->getSealablePercent(), ENT_COMPAT, 'UTF-8');
-                            $results['sealing'][] = $thisCharge;
-                        } // end processing if a charge is a conviction that is sealable
-                    } //end loop over charges for an arrest
-                } // end of checking if arrest is sealable
-
             }//end of processing arrests
 
         }// end of processing results
@@ -544,7 +494,7 @@ class Record
         {
             // if we aren't eligible for sealing, state why and add the reason
             // to a strong that we will set later.
-            $docx->setValue("GLOBAL_SEALING_ELIGIBLE", "IS NOT");
+            $docx->setValue("GLOBAL_SEALING_ELIGIBLE", "IS POSSIBLY NOT");
             $reasons = "";
             if ($this->cleanSlateEligible['MurderF1']['answer'])
                 $reasons .= "There is a murder or potential felony F1 conviction on the record.\r\n";
@@ -557,7 +507,7 @@ class Record
             if ($this->cleanSlateEligible['Past20MoreThanThreeM2M1F']['answer'])
                 $reasons .= "There are potentially more than three M2, M1, or F convictions on the record.\r\n";
             if ($this->cleanSlateEligible['Past20FProhibitedConviction']['answer'])
-                $reasons .= "There is potentially a F for a prohibited 20 year conviction (e.g. Article B, D, chapter 61, registration) on the record.";
+                $reasons .= "There is potentially an F for a prohibited 20 year conviction (e.g. Article B, D, chapter 61, registration) on the record.";
 
             $docx->setValue("INELIGIBLE_REASONS", $reasons);
         }
@@ -674,7 +624,9 @@ class Record
     private function setCleanSlateDisqualifiers($docx, $arrayElement, $case_charge, $reason)
     {
         $reasons = $this->getCaseChargeAndReason($this->cleanSlateEligible[$arrayElement]);
-        if (!empty($reasons) && !empty($reasons[0]))
+
+        // only set reasons if there a) are any and b) there is a sealing disuqualification from this offense
+        if (!empty($reasons) && !empty($reasons[0]) && $this->cleanSlateEligible[$arrayElement]['answer'])
         {
             $docx->setValue($case_charge, implode("\r\n",$reasons[0]));
             $docx->setValue($reason, implode("\r\n",$reasons[1]));

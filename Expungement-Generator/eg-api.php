@@ -86,7 +86,7 @@
 
 		// TODO get rid of this?
 		getInfoFromGetVars($request); //this sets session variables based on the GET or
-		// POST variables 'docket', 'act5Regardless', 'expungeRegardless', and
+		// POST variables 'docket', 'sealingRegardless', 'expungeRegardless', and
 		// 'zipOnly'
 		$response['personFirst'] = $urlPerson['First'];
 		$response['personLast'] = $urlPerson['Last'];
@@ -132,17 +132,16 @@
 			# TODO Could add a function to insert a string of arrest information into $response.
 			# TODO Could also add a function to insert information about chargeObjects (child of Arrest)
 		}
-		$sealable = $record->checkIfSealable();
-
         $files=[];
 
 		error_log("beginning to create petitions, if requested.");
 		if (preg_match('/^(t|true|1)$/i', $request['createPetitions'])===1) {
     		$files = doExpungements($record->getArrests(), $templateDir, $dataDir, $record->getPerson(),
 	    		$attorney, $_SESSION['expungeRegardless'],
-		    	$db, $sealable);
+		    	$db);
 	    	//$response['results']['sealing'] = $parsed_results['sealing'];
-			$files[] = createOverview($record->getArrests(), $templateDir, $dataDir, $record->getPerson(), $sealable);
+			$files[] = createOverview($record->getArrests(), $templateDir, $dataDir, $record->getPerson());
+			$files[] = $record->generateCleanSlateOverview($templateDir, $dataDir);
         }//end of creating petitions if createPetitions was set.
 
 		ob_end_clean();

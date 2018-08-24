@@ -124,9 +124,8 @@ else
 
 
     // do the expungements in PDF form
-    $sealable=false; #xx get rid of this call to sealable!
-    $files = doExpungements($record->getArrests(), $templateDir, $dataDir, $record->getPerson(), $attorney, $_SESSION['expungeRegardless'], $db, $sealable);
-    $files[] = createOverview($record->getArrests(), $templateDir, $dataDir, $record->getPerson(), $sealable);
+    $files = doExpungements($record->getArrests(), $templateDir, $dataDir, $record->getPerson(), $attorney, $_SESSION['expungeRegardless'], $db);
+    $files[] = createOverview($record->getArrests(), $templateDir, $dataDir, $record->getPerson());
 
     $files[] = $record->generateCleanSlateOverview($templateDir, $dataDir);
 

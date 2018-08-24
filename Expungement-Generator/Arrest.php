@@ -87,7 +87,6 @@ class Arrest
 	private $isArrestSummaryExpungement;
 	private $isArrestOver70Expungement;
     private $isArrestConviction;
-    private $sealableMaybeReasons = array();
 	private $pdfFile;
 	private $pdfFileName;
 	private $aliases = array();
@@ -100,7 +99,7 @@ class Arrest
 	private $isCleanSlateEligible;
 
 	public static $expungementTemplate = "790ExpungementTemplate.docx";
-	public static $act5Template = "791Act5SealingTemplate.docx";
+	public static $act5Template = "791SealingTemplate.docx";
 	public static $juvenileExpungementTemplate = "JuvenileExpungementTemplate.docx";
 	public static $IFPTemplate = "IFPTemplate.docx";
     public static $COSTemplate = "MontcoCertificateofServiceTemplate.docx";
@@ -232,11 +231,9 @@ class Arrest
 	public function getIsARDExpungement()  { return $this->isARDExpungement; }
 	public function getIsExpungement()  { return $this->isExpungement; }
 	public function getIsRedaction()  { return $this->isRedaction; }
-	public function getIsSealable()  { return $this->isSealable; }
 	public function getIsHeldForCourt()  { return $this->isHeldForCourt; }
 	public function getIsOnlyHeldForCourt()  { return $this->isOnlyHeldForCourt; }
 	public function getIsSummaryArrest()  { return $this->isSummaryArrest; }
-    public function getSealableMaybeReasons() { return $this->sealableMaybeReasons; }
 	public function getIsMDJ() { return $this->isMDJ; }
 	public function getIsJuvenilePhilly() { return $this->isJuvenilePhilly; }
 	public function getPDFFile() { return $this->pdfFile;}
@@ -290,7 +287,6 @@ class Arrest
 	public function setIsARDExpungement($isARDExpungement)  {  $this->isARDExpungement = $isARDExpungement; }
 	public function setIsExpungement($isExpungement)  {  $this->isExpungement = $isExpungement; }
 	public function setIsRedaction($isRedaction)  {  $this->isRedaction = $isRedaction; }
-	public function setIsSealable($isSealable)  {  $this->isSealable = $isSealable; }
 	public function setIsArrestSummaryExpungement($isSummaryExpungement) { $this->isArrestSummaryExpungement = $isSummaryExpungement; }
 	public function setIsArrestOver70Expungement($isOver70Expungement) { $this->isArrestOver70Expungement = $isOver70Expungement; }
 	public function setIsHeldForCourt($isHeldForCourt)  {  $this->isHeldForCourt = $isHeldForCourt; }
@@ -1186,43 +1182,6 @@ class Arrest
 	}
 
 
-    // returns the sealable value of this arrest
-    // 0 is not sealable; 1 is definitely sealable; >1 is maybe sealable;
-    // also collates the reasons why something is potentially sealable in an array, for use in displaying
-    // to the user.
-    // QUESTION To MYSELF: what happens if this is sealable only by virtue of also being expungeable or
-    // held for court?  I geuss we have to check for that in future logic.
-    public function isArrestSealable()
-    {
-        if (isset($this->isSealable))
-          return $this->getIsSealable();
-        else
-        {
-            $sealable = 1; // default to sealable
-            $charges = $this->getCharges();
-
-            // if there are no charges recognizable in this case, then it isn't sealable
-            if (count($charges) == 0)
-            {
-                $this->setIsSealable(0);
-                return 0;
-            }
-            foreach ($charges as $charge)
-            {
-                $chargeSealable = $charge->isSealable();
-                // multiplying!  math!  basically, if any charge isn't seable, the whole sealing fails
-                // under Act 5 of 2016. So multiply all of the sealable ratings together.  If there are
-                // any 0s, then sealable will zero out.  If everythign is a 1, then we can return 1;
-                // if anything is > 1, we'll know that this is a maybe
-                $sealable = $sealable * $chargeSealable;
-                if ($chargeSealable > 1)
-                  $this->sealableMaybeReasons[] = $charge->getSealablePercent();
-            }
-            $this->setIsSealable($sealable);
-            return $this->getIsSealable();
-        }
-    }
-
 	// returns true if this is a redactable offense.  this is true if there are charges that are NOT
 	// guilty or guilty plea or held for court.  returns true for expungements as well.
 	public function isArrestRedaction()
@@ -1334,7 +1293,7 @@ class Arrest
 	public function writeExpungement($inputDir, $outputDir, $person, $attorney, $expungeRegardless, $db)
 	{
         // act 5 petitions use a different template since the wording is very different
-	    if ($_SESSION['act5Regardless'])
+	    if ($_SESSION['sealingRegardless'])
           $docx = new \PhpOffice\PhpWord\TemplateProcessor($inputDir . Arrest::$act5Template);
         else if ($this->isJuvenilePhilly)
             $docx = new \PhpOffice\PhpWord\TemplateProcessor($inputDir . Arrest::$juvenileExpungementTemplate);
@@ -1391,9 +1350,9 @@ class Arrest
 
         if (!$this->isJuvenilePhilly)
         {
-    		if (($this->isArrestRedaction() && !$this->isArrestExpungement()) && !$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['act5Regardless'])
+    		if (($this->isArrestRedaction() && !$this->isArrestExpungement()) && !$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['sealingRegardless'])
 	    		$docx->setValue("EXPUNGEMENT_OR_REDACTION","Partial Expungement");
-    		else if (!$_SESSION['act5Regardless'] && ($this->isArrestExpungement() || $this->isArrestSummaryExpungement || $this->isArrestOver70Expungement || $expungeRegardless))
+    		else if (!$_SESSION['sealingRegardless'] && ($this->isArrestExpungement() || $this->isArrestSummaryExpungement || $this->isArrestOver70Expungement || $expungeRegardless))
 	    		$docx->setValue("EXPUNGEMENT_OR_REDACTION", "Expungement");
 
     		if ($attorney->getIFP()==1)
@@ -1454,7 +1413,7 @@ class Arrest
 			$docx->setValue("SUMMARY_EXTRA", htmlspecialchars(" and the Petitioner is over 70 years old has been free of arrest or prosecution for ten years following from completion the sentence", ENT_COMPAT, 'UTF-8'));
 		}
         // these fields don't exist on act5 petitions
-	    else if ($_SESSION['act5Regardless'])
+	    else if ($_SESSION['sealingRegardless'])
           ;
 
         // these fields don't exist on juvenile expungement petitions
@@ -1586,7 +1545,7 @@ class Arrest
     		// whether the 490 or 790 rule is the proper one under which to do expungements of summary offenses
 	    	// that are dropped, not convictions.  But the court wants 490 petitions in that case
     		// so now all SU cases are going to be summary expungements under 490.
-            if (!$_SESSION['act5Regardless'])
+            if (!$_SESSION['sealingRegardless'])
             {
 	    	    if ($this->getIsSummaryArrest() || $this->getIsMDJ() == 1)
 		    	    $docx->setValue("490_OR_790", "490");
@@ -1613,7 +1572,7 @@ class Arrest
 	    foreach ($this->getCharges() as $charge)
 		{
 
-			if (!$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['act5Regardless'] && !$this->isJuvenilePhilly)
+			if (!$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['sealingRegardless'] && !$this->isJuvenilePhilly)
 			{
 				if (!$this->isArrestSummaryExpungement && !$charge->isRedactable())
 					continue;
@@ -1636,7 +1595,7 @@ class Arrest
 		$j = 1;
         foreach ($this->getCharges() as $charge)
 	    {
-		    if (!$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['act5Regardless'] && !$this->isJuvenilePhilly)
+		    if (!$this->isArrestOver70Expungement && !$expungeRegardless && !$_SESSION['sealingRegardless'] && !$this->isJuvenilePhilly)
 		    {
 			    if (!$this->isArrestSummaryExpungement && !$charge->isRedactable())
 			        continue;
@@ -1676,8 +1635,8 @@ class Arrest
 
 		// save template to file
 		$outputFile = $outputDir . $this->getFirstName() . $this->getLastName() . $this->getFirstDocketNumber();
-		if ($_SESSION['act5Regardless'])
-            $outputFile .= "Act5Sealing";
+		if ($_SESSION['sealingRegardless'])
+            $outputFile .= "Sealing";
         else if ($this->isArrestARDExpungement())
 			$outputFile .= "ARDExpungement";
         else if ($this->isJuvenilePhilly)
@@ -2037,8 +1996,9 @@ class Arrest
 		// if it is less than 10, check to see if there is a conviction
 		// if more than 10, return
 		$thisDispDate = new DateTime($this->getBestDispositionDate());
-		$now = new DateTime();
-		$dateDiff = abs(dateDifference($thisDispDate, $now));
+
+		$dateDiff=($thisDispDate->diff(new DateTime(), TRUE))->y;
+		
 		if ($dateDiff < 10 && $this->isArrestConviction() && !$this->getIsSummaryArrest())
 			$this->cleanSlateEligible['Past10MFConviction'][] = "This case happened less than 10 years ago (".$dateDiff.").";
 
@@ -2063,8 +2023,8 @@ class Arrest
 		// first check  to see if this is a conviction arrest in the last 15
 		// years
 		$thisDispDate = new DateTime($this->getBestDispositionDate());
-		$now = new DateTime();
-		$dateDiff = abs(dateDifference($thisDispDate, $now));
+
+		$dateDiff=($thisDispDate->diff(new DateTime(), TRUE))->y;
 		if ($dateDiff < 15 && $this->isArrestConviction() && !$this->getIsSummaryArrest())
 		{
 			foreach ($this->getCharges() as $charge)
@@ -2092,8 +2052,8 @@ class Arrest
 		// first check  to see if this is a conviction arrest in the last 15
 		// years
 		$thisDispDate = new DateTime($this->getBestDispositionDate());
-		$now = new DateTime();
-		$dateDiff = abs(dateDifference($thisDispDate, $now));
+
+		$dateDiff=($thisDispDate->diff(new DateTime(), TRUE))->y;
 		if ($dateDiff < 15 && $this->isArrestConviction() && !$this->getIsSummaryArrest())
 		{
 			foreach ($this->getCharges() as $charge)
@@ -2121,8 +2081,8 @@ class Arrest
 		// first check  to see if this is a conviction arrest in the last 20
 		// years
 		$thisDispDate = new DateTime($this->getBestDispositionDate());
-		$now = new DateTime();
-		$dateDiff = abs(dateDifference($thisDispDate, $now));
+
+		$dateDiff=($thisDispDate->diff(new DateTime(), TRUE))->y;
 		if ($dateDiff < 20 && $this->isArrestConviction() && !$this->getIsSummaryArrest())
 		{
 			foreach ($this->getCharges() as $charge)
@@ -2150,8 +2110,8 @@ class Arrest
 		// first check  to see if this is a conviction arrest in the last 20
 		// years
 		$thisDispDate = new DateTime($this->getBestDispositionDate());
-		$now = new DateTime();
-		$dateDiff = abs(dateDifference($thisDispDate, $now));
+
+		$dateDiff=($thisDispDate->diff(new DateTime(), TRUE))->y;
 		if ($dateDiff < 20 && $this->isArrestConviction() && !$this->getIsSummaryArrest())
 		{
 			foreach ($this->getCharges() as $charge)

@@ -7,7 +7,7 @@
 
 // loops through all of the Arrests in $arrests and does a paper and to screen expungement
 // @return an array of the file names that were created during this process.
-function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $expungeRegardless, $db, $sealable)
+function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $expungeRegardless, $db)
 {
 	$files = array();
 
@@ -24,7 +24,7 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
         }
         else
         {
-	  	  if ($arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestExpungement() ||  $arrest->isArrestOver70Expungement($arrests, $person) || $arrest->isArrestRedaction() || $expungeRegardless || $_SESSION['act5Regardless'])
+	  	  if ($arrest->isArrestSummaryExpungement($arrests) || $arrest->isArrestExpungement() ||  $arrest->isArrestOver70Expungement($arrests, $person) || $arrest->isArrestRedaction() || $expungeRegardless || $_SESSION['sealingRegardless'])
 		  {
 			$files[] = $arrest->writeExpungement($templateDir, $dataDir, $person, $attorney, $expungeRegardless, $db);
 
@@ -40,8 +40,8 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
 				print "Expungement";
 			else if ($arrest->isArrestOver70Expungement($arrests, $person))
 				print "Expungement (over 70)";
-            else if ($_SESSION['act5Regardless'])
-                print "Act 5 Sealing";
+            else if ($_SESSION['sealingRegardless'])
+                print "Sealing Sealing";
 			else
 				print "Partial Expungement";
           }
@@ -51,39 +51,16 @@ function doExpungements($arrests, $templateDir, $dataDir, $person, $attorney, $e
 
           print "</td>";
 
-          // allow generation of Act 5 and Pardon petitions
-          print "<td><a href='?act5Regardless=true&docket=" . implode("|",$arrest->getDocketNumber()) ."' target='_blank'>Act 5</a> | <a href='?expungeRegardless=true&docket=" . implode("|",$arrest->getDocketNumber()) ."' target='_blank'>Pardon</a></td></tr>";
+          // allow generation of sealing and Pardon petitions
+          print "<td><a href='?sealingRegardless=true&docket=" . implode("|",$arrest->getDocketNumber()) ."' target='_blank'>Sealing</a> | <a href='?expungeRegardless=true&docket=" . implode("|",$arrest->getDocketNumber()) ."' target='_blank'>Pardon</a></td></tr>";
         } // if held for court
 	}
 	print "</table>";
 	return $files;
 }
 
-// runs through every arrest and counts each charge that is sealble (and not expungeable)
-function getTotalSealableCharges($arrests)
-{
-    $i=0;
-    foreach ($arrests as $arrest)
-    {
-        if ($arrest->isArrestOnlyHeldForCourt())
-          continue;
-        // todo - add in over70expungements to this list
-        if ($arrest->isArrestExpungement() || $arrest->isArrestSummaryExpungement($arrests))
-          continue;
-        if ($arrest->isArrestSealable())
-        {
-            foreach ($arrest->getCharges() as $charge)
-            {
-                if (($charge->isSealable() > 0) && $charge->isConviction())
-                  $i++;
-            }
-        }
-
-    }
-    return $i;
-}
 // creates an overview document that lists all of the relevant information for the advocate
-function createOverview($arrests, $templateDir, $dataDir, $person, $sealable)
+function createOverview($arrests, $templateDir, $dataDir, $person)
 {
     $docx = new \PhpOffice\PhpWord\TemplateProcessor($templateDir . Arrest::$overviewTemplate);
 
@@ -96,18 +73,6 @@ function createOverview($arrests, $templateDir, $dataDir, $person, $sealable)
 		$docx->setValue("DOB", htmlspecialchars($arrests[0]->getDOB(), ENT_COMPAT, 'UTF-8'));
 
 	$docx->cloneRow("DOCKET", count($arrests));
-
-	$totalSealableCharges=0;
-    if ($totalSealableCharges > 0)
-        $docx->cloneRow("SEAL_DOCKET", $totalSealableCharges);
-    else
-    {
-        $docx->setValue("SEAL_DOCKET", "NA");
-        $docx->setValue("CHARGE_NAME", "NA");
-        $docx->setValue("CHARGE_CODESECTION", "NA");
-        $docx->setValue("SEALABLE", "NA");
-        $docx->setValue("SEALABLE_INFO", "NA");
-    }
 
     $i = 1;
     $j=1;
@@ -124,8 +89,8 @@ function createOverview($arrests, $templateDir, $dataDir, $person, $sealable)
 			$expType = "Summary Expungement";
 		if ($arrest->isArrestOver70Expungement($arrests, $person))
 			$expType = "Expungement (over 70)";
-        if ($_SESSION['act5Regardless'])
-            $expType = "Act 5 Sealing";
+        if ($_SESSION['sealingRegardless'])
+            $expType = "Sealing";
 		$docx->setValue("DOCKET#" . $i, htmlspecialchars(implode(", ", $arrest->getDocketNumber()), ENT_COMPAT, 'UTF-8'));
 		$docx->setValue("PDFNAME#" . $i, htmlspecialchars($arrest->getPDFFileName(), ENT_COMPAT, 'UTF-8'));
 		$docx->setValue("OTN#" . $i, htmlspecialchars($arrest->getOTN(), ENT_COMPAT, 'UTF-8'));

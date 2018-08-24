@@ -71,7 +71,6 @@ class Charge
 	public function setIsRedactable($isRedactable) { $this->isRedactable=$isRedactable; }
 	public function setIsSummaryRedactable($isRedactable) { $this->isSummaryRedactable=$isRedactable; }
 	public function setIsSealable($isSealable) { $this->isSealable=$isSealable; }
-    public function setSealablePercent($percent) { $this->sealablePercent = $percent;}
 	public function setIsARD($isARD) { $this->isARD=$isARD; }
 	public function setGrade($grade) { $this->grade=$grade; }
 
@@ -158,7 +157,7 @@ class Charge
 		{
 			$p = mysqli_fetch_assoc($result);
 			if (!empty($p['P'])) // if p is empty, then there are no cases that fit the query above
-				return $p['P'];
+				return round($p['P'],1);
 		}
 	}
 
@@ -429,15 +428,17 @@ class Charge
 		// this means that therew as a problem splitting the codeSection, so return 2
 		if (count($codeSection) == 1)
 		{
-			$this->sealableMessage = 'Maybe unsealable. Unknown/unreadable code section so assuming the worst.';
+			$this->sealableMessage = 'Maybe sealable. Unknown/unreadable code section so assuming the worst.';
 			$this->isSealable = FALSE;
 			return array($this->getCodeSection(), $this->sealableMessage);
 		}
 		// if this is an Article B, D, etc.. crime, add it
 		if ($this->isArticleBCrime())
 		{
-			if ($this->getGrade()=="unk")
-				$this->sealableMessage = 'Maybe unsealable. Article B offense; ' . $percent . "% of the time this is an F or M1.";
+			if ($this->getGrade()=="unk" && $percent==100)
+				$this->sealableMessage = 'Not sealable. Article B offense; ' . $percent . "% of the time this is an F or M1.";
+			else if ($this->getGrade()=="unk")
+				$this->sealableMessage = 'Maybe sealable. Article B offense; ' . $percent . "% of the time this is an F or M1.";
 			else
 				$this->sealableMessage = "Not sealable. Article B offense with grade of '" . $grade . "'.";
 
@@ -447,8 +448,10 @@ class Charge
 
 		if ($this->isArticleDCrime())
 		{
-			if ($this->getGrade()=="unk")
-				$this->sealableMessage =  'Maybe unsealable. Article D offense; ' . $percent . "% of the time this is an F or M1.";
+			if ($this->getGrade()=="unk" && $percent==100)
+				$this->sealableMessage =  'Not sealable. Article D offense; ' . $percent . "% of the time this is an F or M1.";
+			else if ($this->getGrade()=="unk")
+				$this->sealableMessage =  'Maybe sealable. Article D offense; ' . $percent . "% of the time this is an F or M1.";
 			else
 				$this->sealableMessage = "Not sealable. Article D offense with grade of '" . $grade . "'.";
 
@@ -458,8 +461,10 @@ class Charge
 
 		if ($this->isChapter61Crime())
 		{
-			if ($this->getGrade()=="unk")
-				$this->sealableMessage = 'Maybe unsealable. Chapter 61 offense; ' . $percent . "% of the time this is an F or M1.";
+			if ($this->getGrade()=="unk" && $percent==100)
+				$this->sealableMessage = 'Not sealable. Chapter 61 offense; ' . $percent . "% of the time this is an F or M1.";
+			else if ($this->getGrade()=="unk")
+				$this->sealableMessage = 'Maybe sealable. Chapter 61 offense; ' . $percent . "% of the time this is an F or M1.";
 			else
 				$this->sealableMessage = "Not sealable. Chapter 61 offense with grade of '" . $grade . "'.";
 
@@ -469,8 +474,10 @@ class Charge
 
 		if ($this->isSexRegCrime())
 		{
-			if ($this->getGrade()=="unk")
-				$this->sealableMessage = 'Maybe unsealable. Sec 9799.14/.55 sexual registration offense; ' . $percent . "% of the time this is an F or M1.";
+			if ($this->getGrade()=="unk" && $percent==100)
+				$this->sealableMessage = 'Not sealable. Sec 9799.14/.55 sexual registration offense; ' . $percent . "% of the time this is an F or M1.";
+			else if ($this->getGrade()=="unk")
+				$this->sealableMessage = 'Maybe sealable. Sec 9799.14/.55 sexual registration offense; ' . $percent . "% of the time this is an F or M1.";
 			else
 				$this->sealableMessage = "Not sealable. Sec 9799.14/.55 sexual registration offense with grade of '" . $grade . "'.";
 
@@ -480,8 +487,10 @@ class Charge
 
 		if ($this->isCorruptionOfMinorsCrime())
 		{
+			if ($this->getGrade()=="unk" && $percent==100)
+				$this->sealableMessage = 'Not sealable. Conviction for 18 PaCS 6301a1; ' . $percent . "% of the time this is an F or M1.";
 			if ($this->getGrade()=="unk")
-				$this->sealableMessage = 'Maybe unsealable. Conviction for 18 PaCS 6301a1; ' . $percent . "% of the time this is an F or M1.";
+				$this->sealableMessage = 'Maybe sealable. Conviction for 18 PaCS 6301a1; ' . $percent . "% of the time this is an F or M1.";
 			else
 				$this->sealableMessage = "Not sealable. Conviction for 18 PaCS 6301a1 with grade of '" . $grade . "'.";
 
@@ -492,10 +501,16 @@ class Charge
 		// if it wasn't specifically unsealable, check to see if this is potentially
 		// a felony.
 		$percent = $this->getCodeSectionGradePercent("('F1', 'F2', 'F3', 'F')");
-		if ($percent>0)
+		if ($percent==100)
 		{
 			$this->isSealable = FALSE;
-			$this->sealableMessage = "Maybe unsealable. " . $percent . "% of the time this is an F.";
+			$this->sealableMessage = "Not sealable. " . $percent . "% of the time this is an F.";
+			return array($this->getCodeSection(), $this->sealableMessage);
+		}
+		else if ($percent>0)
+		{
+			$this->isSealable = FALSE;
+			$this->sealableMessage = "Maybe sealable. " . $percent . "% of the time this is an F.";
 			return array($this->getCodeSection(), $this->sealableMessage);
 		}
 
