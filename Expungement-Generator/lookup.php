@@ -87,11 +87,12 @@ if ($submit)
     $cpcms = new cpcms($first, $last, $dob);
     $status = $cpcms->cpcmsSearch();
     $statusMDJ = $cpcms->cpcmsSearch(true);
-    if (!preg_match("/0/",$status[0]) && !preg_match("/0/", $statusMDJ[0]))
+    if ((!preg_match("/Status: 0/",$status[0]) || preg_match("/error/", status[0])) && 
+       (!preg_match("/Status: 0/", $statusMDJ[0]) || preg_match("/error/", statusMDJ[0])))
+
     {                                                                      
         print "<br/><b>Your search returned no results.  This is probably because there is no one with the name $first $last in the court database.  You can try searching <a href='http://ujsportal.pacourts.us' target='_blank'>CPCMS directly</a> if you think that there is some error.";
-        //print $status[0];
-        //print "<br/>" . $statusMDJ[0]; 
+         
     }
     else
     {

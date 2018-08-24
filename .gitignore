@@ -1,6 +1,5 @@
-vendor/*
-composer.*
-config.php
+**/vendor/*
+**/config.php
 *~
-data/*
+**/data/*
 docketsheets/*
